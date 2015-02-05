@@ -1,6 +1,8 @@
 SCI-Solver_Level-Set
 ====================
 
+**Currently in pre-alpha stage, estimated stable release: April 2015**
+
 SCI-Solver_Level-Set is a C++/CUDA library written to solve a system of level set equations on unstructured meshes. It is designed to solve the equations quickly by using GPU hardware.
 
 The code was written by Zhisong Fu. The theory behind this code is published in the paper: "Fast Parallel Solver for the Levelset Equations on Unstructured Meshes"

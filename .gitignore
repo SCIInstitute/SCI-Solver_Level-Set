@@ -1,0 +1,10 @@
+levelset/levelset_d
+Release
+Debug
+*~
+*.swp
+.cproject
+.project
+*.o
+*.lib
+*.a

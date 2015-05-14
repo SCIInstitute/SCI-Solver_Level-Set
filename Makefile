@@ -30,7 +30,7 @@ OBJS=$(SRCS:.cu=.o)
 INCLUDE_FILES=$(wildcard include/*.h) $(wildcard include/*/*.h) $(wildcard include/*/*/*.h) $(wildcard src/include/*.h)
 
 %.o : %.cu $(INCLUDE_FILES)
-	    nvcc ${LIB_INCLUDE} ${OPT_FLAGS} ${CXX_FLAGS} ${CUDA_CC_FLAGS} -c $< -o $@ 
+	    /usr/local/cuda/bin/nvcc ${LIB_INCLUDE} ${OPT_FLAGS} ${CXX_FLAGS} ${CUDA_CC_FLAGS} -c $< -o $@ 
 
 lib/levelset.a: lib $(OBJS)
 	ar ruv lib/levelset.a $(OBJS)
@@ -45,12 +45,12 @@ lib:
 				rm -f levelset/levelset_d
 
 levelset/levelset_d: levelset/levelset.cu lib/levelset.a metis-4.0.3/libmetis.a /lib64/libdl.so.2
-	nvcc -o levelset/levelset_d ${LIB_INCLUDE} ${OPT_FLAGS} ${LD_LIBS} ${CUDA_CC_FLAGS} levelset/levelset.cu lib/levelset.a --linker-options metis-4.0.3/libmetis.a --linker-options /lib64/libdl.so.2
+	/usr/local/cuda/bin/nvcc -o levelset/levelset_d ${LIB_INCLUDE} ${OPT_FLAGS} ${LD_LIBS} ${CUDA_CC_FLAGS} levelset/levelset.cu lib/levelset.a --linker-options metis-4.0.3/libmetis.a --linker-options /lib64/libdl.so.2
 
 #examples/cusp_sa: examples/CUSP_smoothed_aggregation.cu lib/amg.a
-#	nvcc -o examples/cusp_sa -I include ${OPT_FLAGS} ${CUDA_CC_FLAGS} lib/amg.a examples/CUSP_smoothed_aggregation.cu 
+#	/usr/local/cuda/bin/nvcc -o examples/cusp_sa -I include ${OPT_FLAGS} ${CUDA_CC_FLAGS} lib/amg.a examples/CUSP_smoothed_aggregation.cu 
 
 #examples/BoomerAMG: examples/BoomerAMG.cu lib/amg.a
-#	nvcc -o examples/BoomerAMG -I include -I /home/sci/zhisong/hypre-2.8.0b/src/hypre/include -I /usr/lib64/mpi/gcc/openmpi/include ${OPT_FLAGS} ${CUDA_CC_FLAGS} lib/amg.a examples/BoomerAMG.cu \
+#	/usr/local/cuda/bin/nvcc -o examples/BoomerAMG -I include -I /home/sci/zhisong/hypre-2.8.0b/src/hypre/include -I /usr/lib64/mpi/gcc/openmpi/include ${OPT_FLAGS} ${CUDA_CC_FLAGS} lib/amg.a examples/BoomerAMG.cu \
 #				--linker-options /home/sci/zhisong/hypre-2.8.0b/src/hypre/lib64/libHYPRE.a \
 #				--linker-options /usr/lib64/mpi/gcc/openmpi/lib64/libmpi.so

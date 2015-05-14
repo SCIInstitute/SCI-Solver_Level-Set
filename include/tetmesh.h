@@ -21,7 +21,6 @@ Class for triangle meshes.
 #include <vector>
 #include <list>
 #include <types.h>
-using std::vector;
 
 class TetMesh
 {
@@ -41,6 +40,7 @@ public:
 
     Face()
     {
+      speedInv = 0;
     }
 
     Face(const int &v0, const int &v1, const int &v2)
@@ -48,6 +48,7 @@ public:
       v[0] = v0;
       v[1] = v1;
       v[2] = v2;
+      speedInv = 0;
     }
 
     Face(const int *v_)
@@ -55,6 +56,7 @@ public:
       v[0] = v_[0];
       v[1] = v_[1];
       v[2] = v_[2];
+      speedInv = 0;
     }
 
     int &operator[] (int i)
@@ -101,6 +103,7 @@ public:
 
     Tet()
     {
+      speedInv = 0;
     }
 
     Tet(const int &v0, const int &v1, const int &v2, const int &v3)
@@ -109,6 +112,7 @@ public:
       v[1] = v1;
       v[2] = v2;
       v[3] = v3;
+      speedInv = 0;
     }
 
     Tet(const int *v_)
@@ -117,6 +121,7 @@ public:
       v[1] = v_[1];
       v[2] = v_[2];
       v[3] = v_[3];
+      speedInv = 0;
     }
 
     int &operator[] (int i)
@@ -154,59 +159,33 @@ public:
   };
 
   // The basics: vertices and faces
-  vector<point> vertices;
-  vector<Face> faces;
-  vector<Tet> tets;
-//  vector<Color> colors;
+  std::vector<point> vertices;
+  std::vector<Face> faces;
+  std::vector<Tet> tets;
 
   // Computed per-vertex properties
-  vector<vec> normals;
-  vector<vec> pdir1, pdir2;
-  vector<LevelsetValueType> curv1, curv2;
-  vector< Vec < 4, LevelsetValueType> > dcurv;
-  vector<vec> cornerareas;
-  vector<LevelsetValueType> pointareas;
-  vector<LevelsetValueType> vertT;
+  std::vector<vec> normals;
+  std::vector<vec> pdir1, pdir2;
+  std::vector<LevelsetValueType> curv1, curv2;
+  std::vector< Vec < 4, LevelsetValueType> > dcurv;
+  std::vector<vec> cornerareas;
+  std::vector<LevelsetValueType> pointareas;
+  std::vector<LevelsetValueType> vertT;
 
   // Connectivity structures:
   //  For each vertex, all neighboring vertices
-  vector< vector<int> > neighbors;
+  std::vector< std::vector<int> > neighbors;
   //  For each vertex, all neighboring faces
-  vector< vector<int> > adjacenttets;
-  vector<Tet> across_face;
+  std::vector< std::vector<int> > adjacenttets;
+  std::vector<Tet> across_face;
 
-  vector<LevelsetValueType> radiusInscribe;
-
-
-  vector< vector<Tet> > vertOneringTets;
-  //  For each face, the three faces attached to its edges
-  //  (for example, across_edge[3][2] is the number of the face
-  //   that's touching the edge opposite vertex 2 of face 3)
-  //vector<Face> across_edge;
-
-  vector<LevelsetValueType> noiseOnVert;
-  //vector<LevelsetValueType> noiseOnFace;
+  std::vector<LevelsetValueType> radiusInscribe;
 
 
-  //int SPEEDTYPE;
-  // Compute all this stuff...
-  //void setSpeedType(int st)
-  //{
-  //ST = st;
-  //}
-  //void need_tstrips();
-  //void convert_strips(tstrip_rep rep);
-  //void unpack_tstrips();
-  //void triangulate_grid();
-  //void need_faces()
-  //{
-  //	if (!faces.empty())
-  //		return;
-  //	if (!tstrips.empty())
-  //		unpack_tstrips();
-  //	else if (!grid.empty())
-  //		triangulate_grid();
-  //}
+  std::vector< std::vector<Tet> > vertOneringTets;
+
+  std::vector<LevelsetValueType> noiseOnVert;
+
 	void reorient();
   void rescale(LevelsetValueType size);
   void need_faceedges();
@@ -222,8 +201,8 @@ public:
   void need_meshinfo();
   void need_Rinscribe();
   bool IsNonObtuse(int v, Tet t);
-  void SplitFace(vector<Tet> &acTets, int v, Tet ct, int nfAdj);
-  vector<Tet> GetOneRing(int v);
+  void SplitFace(std::vector<Tet> &acTets, int v, Tet ct, int nfAdj);
+  std::vector<Tet> GetOneRing(int v);
 
   // FIM: check angle for at a given vertex, for a given face
 

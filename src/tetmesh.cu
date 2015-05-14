@@ -108,7 +108,7 @@ void TetMesh::need_neighbors()
   {
     for(int j = 0; j < 4; j++)
     {
-      vector<int> &me = neighbors[tets[i][j]];
+      std::vector<int> &me = neighbors[tets[i][j]];
       int n1 = tets[i][(j + 1) % 4];
       int n2 = tets[i][(j + 2) % 4];
       int n3 = tets[i][(j + 3) % 4];
@@ -131,12 +131,10 @@ void TetMesh::need_adjacenttets()
   if(!adjacenttets.empty())
     return;
 
-  cout << "Finding adjacenttets... " << endl;
+  std::cout << "Finding adjacenttets... " << std::endl;
   int nv = vertices.size(), nt = tets.size();
 
   adjacenttets.resize(vertices.size());
-  //for (int i = 0; i < nv; i++)
-  //	adjacentfaces[i].reserve(numadjacentfaces[i]);
 
   for(int i = 0; i < nt; i++)
   {
@@ -153,7 +151,7 @@ void TetMesh::need_adjacenttets()
 
   printf("Max number of adjacent tet is: %d\n", maxNumAjTets);
 
-  cout << "Done.\n" << endl;
+  std::cout << "Done.\n" << std::endl;
 }
 
 bool TetMesh::IsNonObtuse(int v, Tet t)
@@ -268,7 +266,6 @@ void TetMesh::SplitFace(vector<Tet> &acTets, int v, Tet ct, int nfAdj)
     }
     else
       printf("NO cross edge!!! Maybe a hole!!\n");
-    //SplitFace(acFaces,v,f2,nfAdj_new,currentVert);
   }
 }
 
@@ -346,9 +343,6 @@ vector<TetMesh::Tet> TetMesh::GetOneRing(int v)
       t_tets.clear();
       if(IsNonObtuse(v, ct))// check angle: if non-obtuse, return existing face
       {
-        //this->colors[cf[0]] = Color::red();
-        //this->colors[cf[1]] = Color::red();
-        //this->colors[cf[2]] = Color::red();
         t_tets.push_back(ct);
       }
       else
@@ -365,14 +359,10 @@ vector<TetMesh::Tet> TetMesh::GetOneRing(int v)
 
       for(int tf = 0; tf < t_tets.size(); tf++)
       {
-        //this->colors[t_faces[tf][0]] = Color::red();
-        //this->colors[t_faces[tf][1]] = Color::red();
-        //this->colors[t_faces[tf][2]] = Color::red();
         oneRingTets.push_back(t_tets[tf]);
       }
     }
   }
-  //this->colors[v] = Color::green();
   return oneRingTets;
 }
 

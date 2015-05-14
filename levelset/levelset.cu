@@ -50,7 +50,6 @@ int main(int argc, char *argv[])
   }
   int nsteps = atoi(argv[2]);
 	LevelsetValueType timestep = atof(argv[3]);
-//	printf("timestep=%f\n", timestep);
 	int inside_niter = atoi(argv[4]);
 	int nside = atoi(argv[5]);
 	int block_size = atoi(argv[6]);
@@ -61,11 +60,9 @@ int main(int argc, char *argv[])
 	LevelsetValueType domain_size = 16.0;
   themesh.init(in.pointlist, in.numberofpoints, in.trifacelist, in.numberoffacets, in.tetrahedronlist, in.numberoftetrahedra, in.numberoftetrahedronattributes, in.tetrahedronattributelist);
   themesh.reorient();
-//  themesh.rescale(domain_size);
   themesh.need_neighbors();
   themesh.need_adjacenttets();
   meshFIM* FIMPtr = new meshFIM(&themesh);
-  //  FIMPtr->SetMesh(&themesh, 1);
   FIMPtr->GenerateData(filename, nsteps, timestep, inside_niter, nside, block_size, bandwidth, part_type, metis_size);
   return 0;
 }

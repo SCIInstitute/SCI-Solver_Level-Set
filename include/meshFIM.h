@@ -47,14 +47,16 @@ public:
     m_meshPtr = mesh;
     vertT_out = Vector_d(nn, 0.0);
     tmp_vertT_before_permute_d = Vector_d(nn, 0.0);
-    //    m_ele_offsets_d = IdxVector_d(nparts + 1);
-    //    ones = IdxVector_d(full_num_ele, 1);
-    //    tmp = IdxVector_d(full_num_ele);
-    //    reduce_output = IdxVector_d(full_num_ele);
-    //    ele_full_label = IdxVector_d(full_num_ele);
     ele_label_d = IdxVector_d(ne);
     ele_offsets_d = IdxVector_d(ne + 1);
     m_mem_location_offsets = IdxVector_d(nn + 1);
+    m_largest_num_inside_mem = 0;
+    NumComputation = 0;
+    full_num_ele = 0;
+    nparts = 0;
+    largest_vert_part = 0;
+    largest_ele_part = 0;
+    m_redist = 0;
   };
 
   ~meshFIM()

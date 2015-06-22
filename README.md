@@ -9,9 +9,9 @@ The code was written by Zhisong Fu. The theory behind this code is published in 
 
 **AUTHORS:** Zhisong Fu(*a*,*b*), Sergey Yakovlev(*b*), Robert M. Kirby(*a*,*b*), Ross T. Whitaker(*a*,*b*)
 
-  - School of Computing, University of Utah, Salt Lake City, UT, USA
+- School of Computing, University of Utah, Salt Lake City, UT, USA
 
-  - Scientific Computing and Imaging Institute, University of Utah, Salt Lake City, USA
+- Scientific Computing and Imaging Institute, University of Utah, Salt Lake City, USA
 
 **ABSTRACT:**
 Levelset method is a numerical technique for tracking interfaces and shapes. It is actively used within various areas such as physics, chemistry, fluid mechanics, computer vision and microchip fabrication to name a few. Applying the levelset method entails solving the levelset partial differential equation. This paper presents a parallel algorithm for solving the levelset equation on fully unstructured 2D or 3D meshes or manifolds. By taking into account constraints and capabilities of two different computing platforms, the method is suitable for both the coarse-grained parallelism found on CPU-based systems and the fine-grained parallelism of modern massively-SIMD architectures such as graphics processors. In order to solve levelset equation efficiently, we combine the narrowband scheme with domain decomposition: the narrowband fast iterative method (nbFIM) to compute the distance transform by solving an eikonal equation and the patched narrowband (patchNB) scheme to evolve the embedding are proposed in this paper. We also introduce the Hybrid Gathering parallelism strategy to enable regular and lock-free computations in both the nbFIM and patchNB. Finally, we provide the detailed description of the implementation and data structures for the proposed strategies, as well as the performance data for both CPU and GPU implementations.
@@ -50,68 +50,68 @@ nmake
 ```
 
 **Note:** For all platforms, you may need to specify your CUDA toolkit location (especially if you have multiple CUDA versions installed):
-  ```c++
-     cmake -DCUDA_TOOLKIT_ROOT_DIR="~/NVIDIA/CUDA-7.0" ../src
-     ```
-     (Assuming this is the location).
+```c++
+cmake -DCUDA_TOOLKIT_ROOT_DIR="~/NVIDIA/CUDA-7.0" ../src
+```
+(Assuming this is the location).
 
-     **Note:** If you have compile errors such as <code>undefined reference: atomicAdd</code>, it is likely you need to set your compute capability manually. CMake outputs whether compute capability was determined automatically, or if you need to set it manually. The default (and known working) minimum compute capability is 2.0.
+**Note:** If you have compile errors such as <code>undefined reference: atomicAdd</code>, it is likely you need to set your compute capability manually. CMake outputs whether compute capability was determined automatically, or if you need to set it manually. The default (and known working) minimum compute capability is 2.0.
 
-     ```c++
-     cmake -DCUDA_COMPUTE_CAPABILITY=20 ../src
-     make
-     ```
+```c++
+cmake -DCUDA_COMPUTE_CAPABILITY=20 ../src
+make
+```
 
 
-     Running Examples
-     ==============
+Running Examples
+==============
 
-     You will need to enable examples in your build to compile and run them
+You will need to enable examples in your build to compile and run them
 
-     ```c++
-     cmake -DBUILD_EXAMPLES=ON ../src
-     make
-     ```
+```c++
+cmake -DBUILD_EXAMPLES=ON ../src
+make
+```
 
-     You will find the example binaries built in the <code>build/examples</code> directory.
+You will find the example binaries built in the <code>build/examples</code> directory.
 
-     Run the examples in the build directory:
+Run the examples in the build directory:
 
-     ```c++
-     examples/Example1
-     examples/Example2
-     ...
-     ```
+```c++
+examples/Example1
+examples/Example2
+...
+```
 
-     Follow the example source code in <code>src/examples</code> to learn how to use the library.
+Follow the example source code in <code>src/examples</code> to learn how to use the library.
 
-     Using the Library
-     ==============
+Using the Library
+==============
 
-     A basic usage of the library links to the <code>libLEVELSET_CORE</code> library during build and includes the headers needed, which are usually no more than:
+A basic usage of the library links to the <code>libLEVELSET_CORE</code> library during build and includes the headers needed, which are usually no more than:
 
-     ```c++
+```c++
 #include "meshFIM.h"
-     ```
-     TODO?:
+```
+TODO?:
 
-     Then a program would setup the FEM parameters using the
-     <code>AMG_Config</code> object and call <code>setup_solver()</code> to generate
-     the answer matrices.
+Then a program would setup the FEM parameters using the
+<code>AMG_Config</code> object and call <code>setup_solver()</code> to generate
+the answer matrices.
 
-     You will need to make sure your CMake/Makfile/Build setup knows where to point for the library and header files. See the examples and their CMakeLists.txt.
+You will need to make sure your CMake/Makfile/Build setup knows where to point for the library and header files. See the examples and their CMakeLists.txt.
 
-     Testing
-     ==============
-     The repo comes with a set of regression tests to see if recent changes break expected results. To build the tests, you will need to set <code>BUILD_TESTING</code> to "ON" in either <code>ccmake</code> or when calling CMake:
+Testing
+==============
+The repo comes with a set of regression tests to see if recent changes break expected results. To build the tests, you will need to set <code>BUILD_TESTING</code> to "ON" in either <code>ccmake</code> or when calling CMake:
 
-     ```c++
-     cmake -DBUILD_TESTING=ON ../src
-     ```
-     <h4>Windows</h4>
-     The gtest library included in the repo needs to be built with forced shared libraries on Windows, so use the following:
+```c++
+cmake -DBUILD_TESTING=ON ../src
+```
+<h4>Windows</h4>
+The gtest library included in the repo needs to be built with forced shared libraries on Windows, so use the following:
 
-     ```c++
-     cmake -DBUILD_TESTING=ON -Dgtest_forced_shared_crt=ON ../src
-     ```
-     Be sure to include all other necessary CMake definitions as annotated above.
+```c++
+cmake -DBUILD_TESTING=ON -Dgtest_forced_shared_crt=ON ../src
+```
+Be sure to include all other necessary CMake definitions as annotated above.

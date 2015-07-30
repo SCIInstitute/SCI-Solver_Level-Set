@@ -87,33 +87,19 @@ void meshFIM::writeVTK()
 void meshFIM::updateT_single_stage_d(LevelsetValueType timestep, int niter, IdxVector_d& narrowband, int num_narrowband)
 {
   int nn = m_meshPtr->vertices.size();
-  int ne = full_num_ele;
   int nblocks = num_narrowband;
   int nthreads = largest_ele_part;
   thrust::fill(vertT_out.begin(), vertT_out.end(), 0.0);
   int shared_size = sizeof(LevelsetValueType)* 4 * largest_ele_part + sizeof(short)*largest_vert_part*m_largest_num_inside_mem;
-  //  int shared_size = sizeof(LevelsetValueType) * 3 * largest_vert_part;
-  //  printf("niter=%d, nblocks=%d, nthreads=%d, shared_size=%d\n", niter, nblocks, nthreads, shared_size);
   cudaSafeCall((kernel_updateT_single_stage << <nblocks, nthreads, shared_size >> >(timestep, CAST(narrowband), largest_ele_part, largest_vert_part, full_num_ele,
           CAST(m_ele_after_permute_d), CAST(m_ele_offsets_d), CAST(m_cadv_local_d),
           nn, CAST(m_vert_offsets_d), CAST(m_vert_after_permute_d), CAST(m_vertT_after_permute_d),
           CAST(m_ele_local_coords_d), m_largest_num_inside_mem, CAST(m_mem_locations), CAST(m_mem_location_offsets),
           CAST(vertT_out))));
-  //  Vector_h tmp_h = vertT_out;
-  //  for(int i=0; i<tmp_h.size(); i++)
-  //  {
-  //    printf("vertT_out[%d]=%f\n", i, tmp_h[i]);
-  //  }
 
   nthreads = largest_vert_part;
   cudaSafeCall((CopyOutBack_levelset << <nblocks, nthreads >> >(CAST(narrowband),
           CAST(m_vert_offsets_d), CAST(m_vertT_after_permute_d), CAST(vertT_out))));
-  //  m_vertT_after_permute_d = vertT_out;
-  //  Vector_h tmp_h = m_vertT_after_permute_d;
-  //  for(int i=0; i<tmp_h.size(); i++)
-  //  {
-  //    printf("m_vert_after_permute_d[%d]=%f\n", i, tmp_h[i]);
-  //  }
 }
 
 //Single stage update
@@ -224,8 +210,6 @@ void meshFIM::updateT_single_stage(LevelsetValueType timestep, int nside, int ni
     for(int i = 0; i < 4; i++)
     {
       K[i] = volume * (sigma DOT nablaN[i]); // for H(\nabla u) = sigma DOT \nabla u
-      //      K[i] = volume * (nablaPhi DOT nablaN[i]) / len(nablaPhi); // for F(x) = 1
-      //      K[i] = -volume* (nablaPhi DOT nablaN[i]) / len(nablaPhi); // for F(x) = -1
       Hintegral += K[i] * values[i];
       Kplus[i] = fmax(K[i], (LevelsetValueType)0.0);
       Kminus[i] = fmin(K[i], (LevelsetValueType)0.0);
@@ -278,12 +262,9 @@ void meshFIM::updateT_single_stage(LevelsetValueType timestep, int nside, int ni
     LevelsetValueType eikonal = up[vidx] / down[vidx];
     LevelsetValueType curvature = curv_up[vidx] / node_grad_phi_down[vidx];
     LevelsetValueType node_eikonal = len(node_grad_phi_up[vidx]) / node_grad_phi_down[vidx];
-    //    if(niter == 49) printf("%d %.15f %.15f %.15f\n", vidx, eikonal, up[vidx], down[vidx]);
     if(fabs(down[vidx]) > 1e-16)
     {
       m_meshPtr->vertT[vidx] -= epsilon * node_eikonal * curvature * timestep;
-      //      m_meshPtr->vertT[vidx] -= eikonal * timestep;
-      //      m_meshPtr->vertT[vidx] -= epsilon * node_eikonal * timestep;
     }
   }
 }
@@ -305,7 +286,6 @@ void meshFIM::GraphPartition_Square(int squareLength, int squareWidth, int squar
   }
 
   m_largest_num_inside_mem = 0;
-  //  for (int bidx = 0; bidx < nparts; bidx++)
   for(int i = 0; i < nn; i++)
   {
     if(m_meshPtr->adjacenttets[i].size() > m_largest_num_inside_mem)
@@ -463,42 +443,19 @@ void meshFIM::InitPatches()
   m_part_label_d = IdxVector_d(m_npart_d.begin(), m_npart_d.end());
   int nthreads = 256;
   int nblocks = min((int)ceil((LevelsetValueType)ne / nthreads), 65535);
-  //  IdxVector_d ele_label_d(ne);
   cudaSafeCall((kernel_compute_ele_npart << <nblocks, nthreads >> >(ne, thrust::raw_pointer_cast(&m_npart_d[0]), thrust::raw_pointer_cast(&ele_d[0]), thrust::raw_pointer_cast(&ele_label_d[0]))));
 
-  //  cudaThreadSynchronize();
-  //  printf("line 437\n");
 
   full_num_ele = thrust::reduce(ele_label_d.begin(), ele_label_d.end());
-  //  cudaThreadSynchronize();
-  //  printf("line 446\n");
   printf("full_num_ele = %d\n", full_num_ele);
-  //  IdxVector_d ele_offsets_d(ne + 1);
   ele_offsets_d[0] = 0;
   thrust::inclusive_scan(ele_label_d.begin(), ele_label_d.end(), ele_offsets_d.begin() + 1);
-  //  cudaThreadSynchronize();
-  //  printf("line 450\n");
   ele_full_label = IdxVector_d(full_num_ele);
   ele_permute = IdxVector_d(full_num_ele);
 
-  //  IdxVector_h tmp_h;
-  //  printf("size of ele_offsets_d is %d\n", ele_offsets_d.size());
-  //  tmp_h = ele_offsets_d;
-  //  for(int i = 0; i < tmp_h.size(); i++)
-  //  {
-  //    printf("ele_offsets_d[%d] = %d\n", i, tmp_h[i]);
-  //  }
   cudaSafeCall((kernel_fill_ele_label << <nblocks, nthreads >> >(ne, thrust::raw_pointer_cast(&ele_permute[0]), thrust::raw_pointer_cast(&ele_offsets_d[0]),
           thrust::raw_pointer_cast(&m_npart_d[0]), thrust::raw_pointer_cast(&ele_d[0]),
           thrust::raw_pointer_cast(&ele_full_label[0]))));
-
-  //  cudaThreadSynchronize();
-  //  printf("line 453\n");
-  //  tmp = ele_full_label;
-  //  for(int i = 0; i < full_num_ele; i++)
-  //  {
-  //    printf("ele_full_label[%d] = %d\n", i, tmp[i]);
-  //  }
 
   clock_t starttime, endtime;
   double duration;
@@ -508,15 +465,14 @@ void meshFIM::InitPatches()
   endtime = clock();
   duration = (double)(endtime - starttime) / (double)CLOCKS_PER_SEC;
   printf("Sorting time : %.10lf s\n", duration);
-  //  cusp::print(ele_permute);
   m_ele_offsets_d = IdxVector_d(nparts + 1);
   ones = IdxVector_d(full_num_ele, 1);
   tmp = IdxVector_d(full_num_ele);
   reduce_output = IdxVector_d(full_num_ele);
-  thrust::reduce_by_key(ele_full_label.begin(), ele_full_label.end(), ones.begin(), tmp.begin(), reduce_output.begin());
-  //  thrust::reduce_by_key(tmp_h.begin(), tmp_h.end(), ones.begin(), tmp.begin(), reduce_output_h.begin());
-  //  IdxVector_d reduce_output = IdxVector_d(reduce_output_h.begin(), reduce_output_h.begin() + nparts);
-  largest_ele_part = thrust::reduce(reduce_output.begin(), reduce_output.begin() + nparts, -1, thrust::maximum<int>());
+  thrust::reduce_by_key(ele_full_label.begin(), 
+    ele_full_label.end(), ones.begin(), tmp.begin(), reduce_output.begin());
+  largest_ele_part = thrust::reduce(reduce_output.begin(), 
+  reduce_output.begin() + nparts, -1, thrust::maximum<int>());
   printf("Largest element partition size is: %d\n", largest_ele_part);
   if(largest_ele_part > 1024)
   {
@@ -525,30 +481,17 @@ void meshFIM::InitPatches()
   }
   m_ele_offsets_d[0] = 0;
   thrust::inclusive_scan(reduce_output.begin(), reduce_output.begin() + nparts, m_ele_offsets_d.begin() + 1);
-  //  cusp::print(m_ele_offsets_d);
-  //  tmp_h = m_ele_offsets_d;
-  //  for(int i= 0; i < nparts + 1; i++)
-  //  {
-  //    printf("m_ele_offsets_d[%d] = %d\n", i, tmp_h[i]);
-  //  }
 }
 
 void meshFIM::InitPatches2()
 {
   int ne = m_meshPtr->tets.size();
   int nn = m_meshPtr->vertices.size();
-  //compute invert vert permute
   IdxVector_d vert_permute(nn, 0);
   IdxVector_d vert_ipermute(nn, 0);
-  //  thrust::sequence(vert_permute.begin(), vert_permute.end(), 0, 1);
   int nthreads = 256;
   int nblocks = min((int)ceil((LevelsetValueType)nn / nthreads), 65535);
   cudaSafeCall((kernel_fill_sequence << <nblocks, nthreads >> >(nn, CAST(vert_permute))));
-  //  IdxVector_h tmp_h = vert_permute;
-  //  for(int i = 0; i < tmp_h.size(); i++)
-  //  {
-  //    printf("vert_permute[%d] = %d\n", i, tmp_h[i]);
-  //  }
   thrust::sort_by_key(m_part_label_d.begin(), m_part_label_d.end(), vert_permute.begin());
   nblocks = min((int)ceil((LevelsetValueType)nn / nthreads), 65535);
   cudaSafeCall((kernel_compute_vert_ipermute << <nblocks, nthreads >> >(nn, thrust::raw_pointer_cast(&vert_permute[0]), thrust::raw_pointer_cast(&vert_ipermute[0]))));
@@ -556,14 +499,6 @@ void meshFIM::InitPatches2()
   m_vert_permute_d = IdxVector_d(vert_permute);
   m_vert_offsets_d = IdxVector_d(nparts + 1);
   cusp::detail::indices_to_offsets(m_part_label_d, m_vert_offsets_d);
-
-  //  cudaThreadSynchronize();
-  //  printf("line 491\n");
-  //  tmp_h = m_vert_offsets_d;
-  //  for(int i= 0; i < nparts + 1; i++)
-  //  {
-  //    printf("m_vert_offsets_d[%d] = %d\n", i, tmp_h[i]);
-  //  }
 
   //permute the vert and ele values
   m_ele_after_permute_d = IdxVector_d(4 * full_num_ele);
@@ -576,23 +511,9 @@ void meshFIM::InitPatches2()
           CAST(vert_permute),
           thrust::raw_pointer_cast(&vert_ipermute[0]))));
 
-  //  Vector_h LevelsetValueType_tmp_h = m_vert_after_permute_d;
-  //  for(int i = 0; i < 3*nn ; i++)
-  //  {
-  //    printf("m_vert_after_permute_d[%d] = %f\n", i, LevelsetValueType_tmp_h[i]);
-  //  }
-  //
-  //  tmp_h = vert_ipermute;
-  //  for(int i = 0; i < nn; i++)
-  //  {
-  //    printf("vert_ipermute[%d] = %d\n", i, tmp_h[i]);
-  //  }
-  //
   //compute the local coords for each element
   m_ele_local_coords_d = Vector_d(6 * full_num_ele);
   m_cadv_local_d = Vector_d(3 * full_num_ele);
-  //  nthreads = largest_ele_part;
-  //  nblocks = nparts;
   nthreads = 256;
   nblocks = min((int)ceil((LevelsetValueType)full_num_ele / nthreads), 65535);
   cudaSafeCall((kernel_compute_local_coords << <nblocks, nthreads >> >(full_num_ele, nn,
@@ -600,12 +521,6 @@ void meshFIM::InitPatches2()
           thrust::raw_pointer_cast(&m_vert_after_permute_d[0]),
           thrust::raw_pointer_cast(&m_ele_local_coords_d[0]),
           CAST(m_cadv_global_d), CAST(m_cadv_local_d))));
-  //  Vector_h LevelsetValueType_tmp_h = m_ele_local_coords_d;
-  //  for(int i = 0; i < 6 * full_num_ele; i++)
-  //  {
-  //    printf("m_ele_local_coords_d[%d] = %f\n", i, LevelsetValueType_tmp_h[i]);
-  //  }
-
   //Generate redution list
 
   m_mem_locations = IdxVector_d(4 * full_num_ele);
@@ -615,17 +530,6 @@ void meshFIM::InitPatches2()
   m_mem_location_offsets = IdxVector_d(nn + 1);
   cusp::detail::indices_to_offsets(tmp2, m_mem_location_offsets);
 
-  //  tmp_h = tmp2;
-  //  for(int i = 0; i < 4 * full_num_ele; i++)
-  //  {
-  //    printf("tmp2[%d] = %d\n", i, tmp_h[i]);
-  //  }
-  //
-  //  tmp_h = m_mem_location_offsets;
-  //  for(int i = 0; i < nn + 1; i++)
-  //  {
-  //    printf("m_mem_location_offsets[%d] = %d\n", i, tmp_h[i]);
-  //  }
 }
 
 void meshFIM::GenerateBlockNeighbors()
@@ -635,60 +539,28 @@ void meshFIM::GenerateBlockNeighbors()
   // Declaring temporary vectors:
   adjacencyBlockLabel = IdxVector_d(m_adjncy_d.size(), 0);
   blockMappedAdjacency = IdxVector_d(m_adjncy_d.size(), 0);
-  //  adjacencyBlockLabel.resize(m_adjncy_d.size(), 0);
-  //  blockMappedAdjacency.resize(m_adjncy_d.size(), 0);
 
   mapAdjacencyToBlock(m_xadj_d, m_adjncy_d, adjacencyBlockLabel, blockMappedAdjacency, m_npart_d);
-  //
-  //  IdxVector_h tmp_h = adjacencyBlockLabel;
-  //  for(int i=0; i<tmp_h.size(); i++)
-  //  {
-  //    printf("adjacencyBlockLabel[%d] = %d\n", i, tmp_h[i]);
-  //  }
-  //
-  //  tmp_h = blockMappedAdjacency;
-  //  for(int i=0; i<tmp_h.size(); i++)
-  //  {
-  //    printf("blockMappedAdjacency[%d] = %d\n", i, tmp_h[i]);
-  //  }
   // Zip up the block label and block mapped vectors and sort:
   thrust::sort(thrust::make_zip_iterator(thrust::make_tuple(adjacencyBlockLabel.begin(), blockMappedAdjacency.begin())),
       thrust::make_zip_iterator(thrust::make_tuple(adjacencyBlockLabel.end(), blockMappedAdjacency.end())));
-  //  thrust::stable_sort_by_key(blockMappedAdjacency.begin(), blockMappedAdjacency.end(), adjacencyBlockLabel.begin());
-  //  thrust::stable_sort_by_key(adjacencyBlockLabel.begin(), adjacencyBlockLabel.end(), blockMappedAdjacency.begin());
 
   // Remove Duplicates and resize:
   int newSize = thrust::unique(thrust::make_zip_iterator(thrust::make_tuple(adjacencyBlockLabel.begin(), blockMappedAdjacency.begin())),
       thrust::make_zip_iterator(thrust::make_tuple(adjacencyBlockLabel.end(), blockMappedAdjacency.end()))) -
     thrust::make_zip_iterator(thrust::make_tuple(adjacencyBlockLabel.begin(), blockMappedAdjacency.begin()));
 
-  //  thrust::unique(thrust::make_zip_iterator(thrust::make_tuple(adjacencyBlockLabel.begin(), blockMappedAdjacency.begin())),
-  //                 thrust::make_zip_iterator(thrust::make_tuple(adjacencyBlockLabel.end(), blockMappedAdjacency.end())));
 
   adjacencyBlockLabel.resize(newSize);
   blockMappedAdjacency.resize(newSize);
   getPartIndicesNegStart(adjacencyBlockLabel, m_block_xadj_d);
   m_block_adjncy_d.resize(blockMappedAdjacency.size() - 1);
   thrust::copy(blockMappedAdjacency.begin() + 1, blockMappedAdjacency.end(), m_block_adjncy_d.begin());
-  //
-  //  cudaThreadSynchronize();
-  //  tmp_h = m_block_xadj_d;
-  //  for(int i = 0; i < m_block_xadj_d.size(); i++)
-  //  {
-  //    printf("m_block_xadj_d[%d] = %d\n", i, tmp_h[i]);
-  //  }
-  //
-  //  tmp_h = m_block_adjncy_d;
-  //  for(int i = 0; i < m_block_adjncy_d.size(); i++)
-  //  {
-  //    printf("m_block_adjncy_d[%d] = %d\n", i, tmp_h[i]);
-  //  }
 }
 
 void meshFIM::GenerateData(char* filename, int nsteps, LevelsetValueType timestep, int inside_niter, int nside, int block_size, LevelsetValueType bandwidth, int part_type, int metis_size)
 {
   printf("Starting meshFIM::GenerateData\n");
-  LevelsetValueType oldT1, newT1, oldT2, newT2;
   int nv = m_meshPtr->vertices.size();
   int nt = m_meshPtr->tets.size();
   int domain_size = 63.0;
@@ -701,10 +573,7 @@ void meshFIM::GenerateData(char* filename, int nsteps, LevelsetValueType timeste
   int squareBlockDepth = block_size;
   //  LevelsetValueType starttime, endtime, duration;
   clock_t starttime, endtime, starttime1, endtime1;
-  clock_t start_seed, end_seed, start_sign, end_sign;
   LevelsetValueType duration, duration1 = 0.0, duration2 = 0.0;
-  LevelsetValueType duration_seed = 0.0, duration_sign = 0.0;
-  //  starttime = CLOCK();
 
   if(part_type == 1)
     GraphPartition_Square(squareLength, squareWidth, squareDepth, squareBlockLength, squareBlockWidth, squareBlockDepth);
@@ -714,7 +583,6 @@ void meshFIM::GenerateData(char* filename, int nsteps, LevelsetValueType timeste
   }
   //Initialize the values
   vec3 origin1 = vec3(domain_size / 2.0, domain_size / 2.0, domain_size / 2.0);
-  LevelsetValueType radius = 8.0;
 
   if(m_meshPtr->vertT.size() == 0)
     m_meshPtr->vertT.resize(nv);
@@ -724,9 +592,6 @@ void meshFIM::GenerateData(char* filename, int nsteps, LevelsetValueType timeste
   {
     vec3 v1 = (vec3)m_meshPtr->vertices[i];
     vec3 v1o1 = v1 - origin1;
-    //    m_meshPtr->vertT[i] = 2.0 * (LevelsetValueType)(((sqrt(v1o1 DOT v1o1) - radius) > 0) - 0.5);
-    //    m_meshPtr->vertT[i] = sqrt(v1o1 DOT v1o1) - radius;
-    //   m_meshPtr->vertT[i] = 2*(sqrt(v1o1 DOT v1o1) - radius);
     m_meshPtr->vertT[i] = v1[0] - 7.7;
     h_vertT[i] = m_meshPtr->vertT[i];
   }
@@ -743,12 +608,9 @@ void meshFIM::GenerateData(char* filename, int nsteps, LevelsetValueType timeste
     cadv_h[2 * full_num_ele + i] = 0.0;
   }
   m_cadv_global_d = Vector_d(cadv_h);
-  //  m_cadv_global_d = Vector_d(3 * full_num_ele, 1.0);
   InitPatches2();
   GenerateBlockNeighbors();
-  //  cudaThreadSynchronize();
   printf("After  preprocessing\n");
-  //  endtime = CLOCK();
   endtime = clock();
   duration = (LevelsetValueType)(endtime - starttime) / CLOCKS_PER_SEC;
   printf("pre processing time : %.10lf s\n", duration);
@@ -760,25 +622,16 @@ void meshFIM::GenerateData(char* filename, int nsteps, LevelsetValueType timeste
   IdxVector_d narrowband_d(nparts);
   int num_narrowband = 0;
 
-  //  starttime = CLOCK();
   starttime = clock();
   for(int stepcount = 0; stepcount < nsteps; stepcount++)
   {
-    //    start_seed = clock();
     m_redist->FindSeedPoint(narrowband_d, num_narrowband, m_meshPtr, m_vertT_after_permute_d, nparts, largest_vert_part, largest_ele_part, m_largest_num_inside_mem, full_num_ele,
         m_vert_after_permute_d, m_vert_offsets_d, m_ele_after_permute_d, m_ele_offsets_d, m_ele_local_coords_d, m_mem_location_offsets, m_mem_locations,
         m_part_label_d, m_block_xadj_d, m_block_adjncy_d);
-    //    cudaThreadSynchronize();
-    //    end_seed = clock();
-    //    duration_seed += (LevelsetValueType)(end_seed - start_seed) / CLOCKS_PER_SEC;
-    //    start_sign = clock();
 
     m_redist->ReInitTsign(m_meshPtr, m_vertT_after_permute_d, nparts, largest_vert_part, largest_ele_part, m_largest_num_inside_mem, full_num_ele,
         m_vert_after_permute_d, m_vert_offsets_d, m_ele_after_permute_d, m_ele_offsets_d, m_ele_local_coords_d, m_mem_location_offsets, m_mem_locations,
         m_part_label_d, m_block_xadj_d, m_block_adjncy_d);
-    //    cudaThreadSynchronize();
-    //    end_sign = clock();
-    //    duration_sign += (LevelsetValueType)(end_sign - start_sign) / CLOCKS_PER_SEC;
     starttime1 = clock();
     m_redist->GenerateData(narrowband_d, num_narrowband, bandwidth, stepcount, m_meshPtr, m_vertT_after_permute_d, nparts, largest_vert_part, largest_ele_part, m_largest_num_inside_mem, full_num_ele,
         m_vert_after_permute_d, m_vert_offsets_d, m_ele_after_permute_d, m_ele_offsets_d, m_ele_local_coords_d, m_mem_location_offsets, m_mem_locations,
@@ -786,16 +639,6 @@ void meshFIM::GenerateData(char* filename, int nsteps, LevelsetValueType timeste
     cudaThreadSynchronize();
     endtime1 = clock();
     duration1 += endtime1 - starttime1;
-
-
-    //    Vector_h tmp_h = m_vertT_after_permute_d;
-    //    for(int i = 0; i < tmp_h.size(); i++)
-    //    {
-    //      printf("Before: m_vertT_after_permute_d[%d] = %f\n", i, tmp_h[i]);
-    //    }
-
-    //    if(stepcount == 0)
-    //    {
     starttime1 = clock();
     for(int niter = 0; niter < inside_niter; niter++)
       updateT_single_stage_d(timestep, stepcount, narrowband_d, num_narrowband);
@@ -806,18 +649,12 @@ void meshFIM::GenerateData(char* filename, int nsteps, LevelsetValueType timeste
   }
 
   cudaThreadSynchronize();
-  //  endtime = CLOCK();
   endtime = clock();
-  //  printf("generate seed time : %.10lf s\n", duration_seed);
-  //  printf("reinit sign time : %.10lf s\n", duration_sign);
   printf("redistance time : %.10lf s\n", (LevelsetValueType)duration1 / CLOCKS_PER_SEC);
   printf("levelset update time : %.10lf s\n", (LevelsetValueType)duration2 / CLOCKS_PER_SEC);
   duration = (double)(endtime - starttime) / (double)CLOCKS_PER_SEC;
   printf("Processing time : %.10lf s\n", duration);
   //  ////////////////////////done updating/////////////////////////////////////////////////
-  //
-  //  narrowband.clear();
-  //  m_vertT_after_permute_d = m_redist->m_DT_d;
   int nthreads = 256;
   int nblocks = min((int)ceil((LevelsetValueType)nv / nthreads), 655535);
   cudaSafeCall((kernel_compute_vertT_before_permute << <nblocks, nthreads >> >(nv, CAST(m_vert_permute_d), CAST(m_vertT_after_permute_d), CAST(tmp_vertT_before_permute_d))));

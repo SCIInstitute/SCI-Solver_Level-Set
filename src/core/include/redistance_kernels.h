@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   redistance_kernels.h
  * Author: zhisong
  *
@@ -6,7 +6,7 @@
  */
 
 #ifndef REDISTANCE_KERNELS_H
-#define	REDISTANCE_KERNELS_H
+#define  REDISTANCE_KERNELS_H
 
 #include <redistance.h>
 
@@ -23,7 +23,6 @@ template<int SZ>
 __global__ void kernel_compute_new_narrowband(int* new_narrowband, LevelsetValueType* vertT, int* vert_offsets, LevelsetValueType bandwidth)
 {
   int block_idx = blockIdx.x;
-  int maxblocksize = blockDim.x;
   int tx = threadIdx.x;
   int start = vert_offsets[block_idx];
   int end = vert_offsets[block_idx + 1];
@@ -59,7 +58,6 @@ template<int SZ>
 __global__ void run_reduction_bandwidth(int *con, int *blockCon, int* ActiveList, LevelsetValueType* vertT, LevelsetValueType* block_vertT_min, int* vert_offsets)
 {
   int list_idx = blockIdx.x;
-  int maxblocksize = blockDim.x;
   int tx = threadIdx.x;
   int block_idx = ActiveList[list_idx];
   int start = vert_offsets[block_idx];
@@ -101,7 +99,6 @@ __global__ void run_reduction_bandwidth(int *con, int *blockCon, int* ActiveList
 __global__ void run_reduction(int *con, int *blockCon, int* ActiveList, int* vert_offsets)
 {
   int list_idx = blockIdx.x;
-  int maxblocksize = blockDim.x;
   int tx = threadIdx.x;
   int block_idx = ActiveList[list_idx];
   int start = vert_offsets[block_idx];
@@ -174,9 +171,9 @@ __device__ LevelsetValueType localSolverTet1(LevelsetValueType TA, LevelsetValue
   p = (TAB * TAB * ACAC - gammax * gammax) + (BCBC * TAB * TAB - gammay * gammay) - ((ACBC + ACBC) * TAB * TAB - 2 * gammax * gammay);
 
   q = -(BCBC * TAB * TAB - gammay * gammay)*2 +
-          ((ACBC + ACBC) * TAB * TAB - 2 * gammax * gammay) +
-          ((ACCD + ACCD) * TAB * TAB - 2 * gammax * gammaz) -
-          ((BCCD + BCCD) * TAB * TAB - 2 * gammay * gammaz);
+    ((ACBC + ACBC) * TAB * TAB - 2 * gammax * gammay) +
+    ((ACCD + ACCD) * TAB * TAB - 2 * gammax * gammaz) -
+    ((BCCD + BCCD) * TAB * TAB - 2 * gammay * gammaz);
 
   r = (TAB * TAB * BCBC - gammay * gammay) + ((BCCD + BCCD) * TAB * TAB - 2 * gammay * gammaz) + (TAB * TAB * CDCD - gammaz * gammaz);
 
@@ -247,9 +244,9 @@ __device__ LevelsetValueType localSolverTet1(LevelsetValueType TA, LevelsetValue
   p = (TAC * TAC * ACAC - ACAC * ACAC) * h * h + (BCBC * TAC * TAC - ACBC * ACBC) * s * s + ((ACBC + ACBC) * TAC * TAC - 2 * ACAC * ACBC) * s*h;
 
   q = (BCBC * TAC * TAC - ACBC * ACBC)*2 * s * t +
-          ((ACBC + ACBC) * TAC * TAC - 2 * ACAC * ACBC) * t * h +
-          ((ACCD + ACCD) * TAC * TAC - 2 * ACAC * ACCD) * h * h +
-          ((BCCD + BCCD) * TAC * TAC - 2 * ACBC * ACCD) * s*h;
+    ((ACBC + ACBC) * TAC * TAC - 2 * ACAC * ACBC) * t * h +
+    ((ACCD + ACCD) * TAC * TAC - 2 * ACAC * ACCD) * h * h +
+    ((BCCD + BCCD) * TAC * TAC - 2 * ACBC * ACCD) * s*h;
 
   r = (TAC * TAC * BCBC - ACBC * ACBC) * t * t + ((BCCD + BCCD) * TAC * TAC - 2 * ACBC * ACCD) * t * h + (TAC * TAC * CDCD - ACCD * ACCD) * h*h;
 
@@ -288,8 +285,8 @@ __device__ LevelsetValueType localSolverTet1(LevelsetValueType TA, LevelsetValue
 }
 
 __global__ void kernel_update_values(int* active_block_list, int* seed_label, int largest_ele_part, int largest_vert_part, int full_ele_num, int* ele, int* ele_offsets,
-                                     int* vert_offsets, LevelsetValueType* vertT, LevelsetValueType* ele_local_coords,
-                                     int largest_num_inside_mem, int* mem_locations, int* mem_location_offsets, const int NITER, LevelsetValueType* vertT_out, int* con)
+    int* vert_offsets, LevelsetValueType* vertT, LevelsetValueType* ele_local_coords,
+    int largest_num_inside_mem, int* mem_locations, int* mem_location_offsets, const int NITER, LevelsetValueType* vertT_out, int* con)
 {
   int bidx = active_block_list[blockIdx.x];
   int tidx = threadIdx.x;
@@ -300,18 +297,16 @@ __global__ void kernel_update_values(int* active_block_list, int* seed_label, in
 
   int nv = vert_end - vert_start;
   int ne = ele_end - ele_start;
-  LevelsetValueType oldoldT, oldT, newT;
-  //	if(threadIdx.x==0)printf("%d %d %d %d %d %d\n", bidx, tidx, vert_start, vert_end ,ele_start, ele_end);
+  LevelsetValueType oldT, newT;
 
   extern __shared__ char s_array[];
   LevelsetValueType* s_vertT = (LevelsetValueType*)s_array;
   LevelsetValueType* s_eleT = (LevelsetValueType*)s_array;
   short* s_mem = (short*)&s_vertT[largest_vert_part];
   short l_mem[32] = {-1, -1, -1, -1, -1, -1, -1, -1,
-                     -1, -1, -1, -1, -1, -1, -1, -1,
-                     -1, -1, -1, -1, -1, -1, -1, -1,
-                     -1, -1, -1, -1, -1, -1, -1, -1};
-  //  short* l_mem = (short*)&s_eleT[4 * largest_ele_part];
+    -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1};
   int count = 0;
   if (tidx < nv)
   {
@@ -320,7 +315,6 @@ __global__ void kernel_update_values(int* active_block_list, int* seed_label, in
     s_vertT[tidx] = vertT[vert_start + tidx];
     oldT = s_vertT[tidx];
     newT = oldT;
-    oldoldT = oldT;
     for (int i = mem_start; i < mem_end; i++)
     {
       int lmem = mem_locations[i];
@@ -329,7 +323,6 @@ __global__ void kernel_update_values(int* active_block_list, int* seed_label, in
         int local_ele_index = (lmem % full_ele_num) - ele_start;
         int ele_off = lmem / full_ele_num;
         s_mem[tidx * largest_num_inside_mem + count] = (short)(local_ele_index * 4 + ele_off);
-        //        l_mem[tidx * largest_num_inside_mem + count] = (short)(local_ele_index * 4 + ele_off);
         count++;
       }
     }
@@ -384,7 +377,6 @@ __global__ void kernel_update_values(int* active_block_list, int* seed_label, in
     for (int i = 0; i < 6; i++)
     {
       L[i] = ele_local_coords[i * full_ele_num + (tidx + ele_start) ];
-      //			if( bidx == 0 &&  (tidx == 13 || tidx == 14)) printf("bidx=%d, tidx=%d, L[%d]=%f\n", bidx, tidx, i, L[i]);
     }
     LevelsetValueType ACBC = L[1]*(L[1] - L[0]) + L[2] * L[2];
     LevelsetValueType BCCD = (L[1] - L[0])*(L[3] - L[1]) + L[2] * (L[4] - L[2]);
@@ -395,22 +387,18 @@ __global__ void kernel_update_values(int* active_block_list, int* seed_label, in
 
     LevelsetValueType ADBC = ACBC + BCCD;
     LevelsetValueType ACBD = ACBC + ACCD;
-    LevelsetValueType ABCD = ACCD - BCCD;
     LevelsetValueType CDBD = ADBD - ACBD;
     LevelsetValueType ADCD = ADBD - ADBC;
     LevelsetValueType CDCD = ADCD - ACCD;
     LevelsetValueType ADAD = ADCD + ACAD;
     LevelsetValueType ACAC = ACAD - ACCD;
-    LevelsetValueType ACAB = ACAD - ACBD;
     LevelsetValueType BDBD = BCBD + CDBD;
     LevelsetValueType BCBC = BCBD - BCCD;
 
-    bool converged = false;
     for (int iter = 0; iter < NITER; iter++)
     {
       if (tidx < nv)
       {
-        //        oldT = s_eleT[l_mem[tidx * largest_num_inside_mem + 0]];
         oldT = s_eleT[l_mem[0]];
       }
       __syncthreads();
@@ -419,59 +407,43 @@ __global__ void kernel_update_values(int* active_block_list, int* seed_label, in
       TB = s_eleT[tidx * 4 + 1];
       TC = s_eleT[tidx * 4 + 2];
       TD = s_eleT[tidx * 4 + 3];
-      //      if (bidx == 4 && tidx == 1 && iter == 0) printf("bidx=%d, tidx=%d, iter=%d, TA=%f, TB=%f, TC=%f, TD=%f\n", bidx, tidx, iter, TA, TB, TC, TD);
 
       s_eleT[tidx * 4 + 3] = fmin(TD, localSolverTet1(TA, TB, TC, ACAC, ACBC, ACCD, BCBC, BCCD, CDCD));
       s_eleT[tidx * 4 + 0] = fmin(TA, localSolverTet1(TB, TD, TC, BCBC, -BCCD, -ACBC, CDCD, ACCD, ACAC));
       s_eleT[tidx * 4 + 1] = fmin(TB, localSolverTet1(TA, TD, TC, ACAC, -ACCD, -ACBC, CDCD, BCCD, BCBC));
       s_eleT[tidx * 4 + 2] = fmin(TC, localSolverTet1(TA, TB, TD, ADAD, ADBD, -ADCD, BDBD, -CDBD, CDCD));
       __syncthreads();
-      //      if (bidx == 4 && tidx == 0) for (int i = 0; i < 11; i++) if (l_mem[i] > -1) printf("iter=%d, i=%d, s_eleT[%d]=%f\n", iter, i, l_mem[i], s_eleT[l_mem[i]]);
 
 
       if (tidx < nv)
       {
         newT = s_eleT[l_mem[0]];
-        //        newT = s_eleT[l_mem[tidx * largest_num_inside_mem + 0]];
 #pragma unroll
         for (int i = 1; i < 32; i++)
-          //        for (int i = 1; i < count; i++)
         {
           short lmem = l_mem[i];
-          //          short lmem = l_mem[tidx * largest_num_inside_mem + i];
           if (lmem > -1)
             newT = fmin(s_eleT[lmem], newT);
         }
 
 #pragma unroll
         for (int i = 0; i < 32; i++)
-          //        for (int i = 0; i < count; i++)
         {
           short lmem = l_mem[i];
-          //          short lmem = l_mem[tidx * largest_num_inside_mem + i];
           if (lmem > -1)
             s_eleT[lmem] = newT;
         }
-
-        //        if (tidx == 3) printf("bidx=%d, tidx=%d, vert_start=%d, iter=%d, oldT=%f, newT=%f, vert_start = %d, vert_end = %d\n", bidx, tidx, vert_start, iter, oldT, newT, vert_start, vert_end);
-        //        if (oldT - newT < SMALLNUM) converged = true;
-        //        else converged = false;
-        //        if (bidx == 60)
-        //          printf("bidx=%d, tidx=%d, iter=%d, oldT=%f, newT=%f, converged=%d\n", bidx, tidx, iter, oldT, newT, converged);
       }
       __syncthreads();
     }
 
     if (tidx < nv)
     {
-      //      if (vert_start + tidx == 3)
-      //        printf("bidx=%d, tidx=%d, vert_start=%d,seed_label=%d, newT=%f\n", bidx, tidx, vert_start, seed_label[vert_start + tidx], newT);
       if (seed_label[vert_start + tidx] != redistance::SeedPoint)
       {
         vertT_out[vert_start + tidx] = newT;
         if (oldT - newT < SMALLNUM) con[vert_start + tidx] = true;
         else con[vert_start + tidx] = false;
-        //        con[vert_start + tidx] = converged;
       }
       else
         con[vert_start + tidx] = true;
@@ -480,8 +452,8 @@ __global__ void kernel_update_values(int* active_block_list, int* seed_label, in
 }
 
 __global__ void kernel_run_check_neghbor(int* active_block_list, int* seed_label, int largest_ele_part, int largest_vert_part, int full_ele_num, int* ele, int* ele_offsets,
-                                         int* vert_offsets, LevelsetValueType* vertT, LevelsetValueType* ele_local_coords,
-                                         int largest_num_inside_mem, int* mem_locations, int* mem_location_offsets, const int NITER, LevelsetValueType* vertT_out, int* con)
+    int* vert_offsets, LevelsetValueType* vertT, LevelsetValueType* ele_local_coords,
+    int largest_num_inside_mem, int* mem_locations, int* mem_location_offsets, const int NITER, LevelsetValueType* vertT_out, int* con)
 {
   int bidx = active_block_list[blockIdx.x];
   int tidx = threadIdx.x;
@@ -492,17 +464,16 @@ __global__ void kernel_run_check_neghbor(int* active_block_list, int* seed_label
 
   int nv = vert_end - vert_start;
   int ne = ele_end - ele_start;
-  LevelsetValueType oldoldT, oldT, newT;
-  //	if(threadIdx.x==0)printf("%d %d %d %d %d %d\n", bidx, tidx, vert_start, vert_end ,ele_start, ele_end);
+  LevelsetValueType oldT, newT;
 
   extern __shared__ char s_array[];
   LevelsetValueType* s_vertT = (LevelsetValueType*)s_array;
   LevelsetValueType* s_eleT = (LevelsetValueType*)s_array;
   short* s_mem = (short*)&s_vertT[largest_vert_part];
   short l_mem[32] = {-1, -1, -1, -1, -1, -1, -1, -1,
-                     -1, -1, -1, -1, -1, -1, -1, -1,
-                     -1, -1, -1, -1, -1, -1, -1, -1,
-                     -1, -1, -1, -1, -1, -1, -1, -1};
+    -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1};
   int count = 0;
   if (tidx < nv)
   {
@@ -511,7 +482,6 @@ __global__ void kernel_run_check_neghbor(int* active_block_list, int* seed_label
     s_vertT[tidx] = vertT[vert_start + tidx];
     oldT = s_vertT[tidx];
     newT = oldT;
-    oldoldT = oldT;
     for (int i = mem_start; i < mem_end; i++)
     {
       int lmem = mem_locations[i];
@@ -519,9 +489,6 @@ __global__ void kernel_run_check_neghbor(int* active_block_list, int* seed_label
       {
         int local_ele_index = (lmem % full_ele_num) - ele_start;
         int ele_off = lmem / full_ele_num;
-        //				printf("%d %d %d %d\n", bidx, tidx, local_ele_index, ele_off);
-        //        l_mem[count] = (short) (lmem - ele_start);
-        //        if(bidx == 4 && tidx ==0) printf("%d %d %d %d=%d\n", bidx, tidx, i, local_ele_index, ele_off);
         s_mem[tidx * largest_num_inside_mem + count] = (short)(local_ele_index * 4 + ele_off);
         count++;
       }
@@ -539,7 +506,6 @@ __global__ void kernel_run_check_neghbor(int* active_block_list, int* seed_label
         l_mem[i] = s_mem[tidx * largest_num_inside_mem + i];
     }
   }
-  //  if (bidx == 4 && tidx == 0) for (int i = 0; i < 32; i++) printf("%d %d %d l_mem[%d]=%d\n", bidx, tidx, count, i, l_mem[i]);
 
   LevelsetValueType eleT[4];
   if (tidx < ne)
@@ -579,7 +545,6 @@ __global__ void kernel_run_check_neghbor(int* active_block_list, int* seed_label
     for (int i = 0; i < 6; i++)
     {
       L[i] = ele_local_coords[i * full_ele_num + (tidx + ele_start) ];
-      //			if( bidx == 0 &&  (tidx == 13 || tidx == 14)) printf("bidx=%d, tidx=%d, L[%d]=%f\n", bidx, tidx, i, L[i]);
     }
     LevelsetValueType ACBC = L[1]*(L[1] - L[0]) + L[2] * L[2];
     LevelsetValueType BCCD = (L[1] - L[0])*(L[3] - L[1]) + L[2] * (L[4] - L[2]);
@@ -590,22 +555,18 @@ __global__ void kernel_run_check_neghbor(int* active_block_list, int* seed_label
 
     LevelsetValueType ADBC = ACBC + BCCD;
     LevelsetValueType ACBD = ACBC + ACCD;
-    LevelsetValueType ABCD = ACCD - BCCD;
     LevelsetValueType CDBD = ADBD - ACBD;
     LevelsetValueType ADCD = ADBD - ADBC;
     LevelsetValueType CDCD = ADCD - ACCD;
     LevelsetValueType ADAD = ADCD + ACAD;
     LevelsetValueType ACAC = ACAD - ACCD;
-    LevelsetValueType ACAB = ACAD - ACBD;
     LevelsetValueType BDBD = BCBD + CDBD;
     LevelsetValueType BCBC = BCBD - BCCD;
 
-    bool converged = false;
     for (int iter = 0; iter < NITER; iter++)
     {
       if (tidx < nv)
       {
-        //				LevelsetValueType minT = s_eleT[s_mem[tidx*largest_num_inside_mem+0]];
         oldT = s_eleT[l_mem[0]];
       }
       __syncthreads();
@@ -614,14 +575,12 @@ __global__ void kernel_run_check_neghbor(int* active_block_list, int* seed_label
       TB = s_eleT[tidx * 4 + 1];
       TC = s_eleT[tidx * 4 + 2];
       TD = s_eleT[tidx * 4 + 3];
-      //      if (bidx == 4 && tidx == 1 && iter == 0) printf("bidx=%d, tidx=%d, iter=%d, TA=%f, TB=%f, TC=%f, TD=%f\n", bidx, tidx, iter, TA, TB, TC, TD);
 
       s_eleT[tidx * 4 + 3] = fmin(TD, localSolverTet1(TA, TB, TC, ACAC, ACBC, ACCD, BCBC, BCCD, CDCD));
       s_eleT[tidx * 4 + 0] = fmin(TA, localSolverTet1(TB, TD, TC, BCBC, -BCCD, -ACBC, CDCD, ACCD, ACAC));
       s_eleT[tidx * 4 + 1] = fmin(TB, localSolverTet1(TA, TD, TC, ACAC, -ACCD, -ACBC, CDCD, BCCD, BCBC));
       s_eleT[tidx * 4 + 2] = fmin(TC, localSolverTet1(TA, TB, TD, ADAD, ADBD, -ADCD, BDBD, -CDBD, CDCD));
       __syncthreads();
-      //      if (bidx == 4 && tidx == 0) for (int i = 0; i < 11; i++) if (l_mem[i] > -1) printf("iter=%d, i=%d, s_eleT[%d]=%f\n", iter, i, l_mem[i], s_eleT[l_mem[i]]);
 
 
       if (tidx < nv)
@@ -631,7 +590,6 @@ __global__ void kernel_run_check_neghbor(int* active_block_list, int* seed_label
         for (int i = 1; i < 32; i++)
         {
           short lmem = l_mem[i];
-          //					short lmem = s_mem[tidx*largest_num_inside_mem+i];
           if (lmem > -1)
             newT = fmin(s_eleT[lmem], newT);
         }
@@ -640,15 +598,11 @@ __global__ void kernel_run_check_neghbor(int* active_block_list, int* seed_label
         for (int i = 0; i < 32; i++)
         {
           short lmem = l_mem[i];
-          //					short lmem = s_mem[tidx*largest_num_inside_mem+i];
           if (lmem > -1)
             s_eleT[lmem] = newT;
         }
 
 
-        //        if (bidx == 2 && tidx == 2) printf("iter=%d, oldT=%f, newT=%f\n", iter, oldT, newT);
-        //        if(bidx == 1 && tidx == 0)
-        //          printf("bidx=%d, tidx=%d, iter=%d, oldT=%f, newT=%f, converged=%d\n", bidx, tidx, iter, oldT, newT, converged);
       }
       __syncthreads();
     }
@@ -657,7 +611,6 @@ __global__ void kernel_run_check_neghbor(int* active_block_list, int* seed_label
     {
       if (seed_label[vert_start + tidx] != redistance::SeedPoint)
       {
-        //        vertT_out[vert_start + tidx] = newT;
         if (oldT - newT < SMALLNUM) con[vert_start + tidx] = true;
         else con[vert_start + tidx] = false;
       }
@@ -678,13 +631,6 @@ __global__ void kernel_seedlabel(int nn, int full_ele_num, LevelsetValueType* ve
   if (tidx == 0) isSeed[0] = false;
   __syncthreads();
 
-  //load values to shared memory
-  //  extern __shared__ LevelsetValueType s_vertT[];
-  //  for (int vidx = vert_start; vidx < vert_end; vidx++)
-  //  {
-  //      s_vertT[vidx - vert_start] = vertT_after_permute[vidx];
-  //  }
-  //  __syncthreads();
 
   if (tidx < ne)
   {
@@ -697,59 +643,38 @@ __global__ void kernel_seedlabel(int nn, int full_ele_num, LevelsetValueType* ve
     LevelsetValueType v1 = vertT_after_permute[e1];
     LevelsetValueType v2 = vertT_after_permute[e2];
     LevelsetValueType v3 = vertT_after_permute[e3];
-    //    if (e0 == 3 || e1 == 3 || e2 == 3 || e3 == 3)
-    //    {
-    //      printf("some is three: %d %d %f %f %f %f %d %d %d %d\n", bidx, tidx, v0, v1, v2, v3, e0, e1, e2, e3);
-    //    }
-    //    if (bidx == 0 && (tidx == 25 || tidx == 26))
-    //    {
-    //      printf("%d %d %f %f %f %f %d %d %d %d\n", bidx, tidx, v0, v1, v2, v3, e0, e1, e2, e3);
-    //    }
 
     if (v0 == 0.0)
     {
-      //      if (bidx == 0 && tidx == 25) printf("v0 == 0.0\n");
       label[e0] = redistance::SeedPoint;
-      //			if (e0==3) printf("e0 is set: %d %d %f %f %f %f %d %d %d %d\n", bidx, tidx, v0, v1, v2, v3, e0, e1, e2, e3);
       isSeed[0] = true;
       DT[e0] = fabs(v0);
     }
     if (v1 == 0.0)
     {
-      //      if (bidx == 0 && tidx == 25) printf("v1 == 0.0\n");
       label[e1] = redistance::SeedPoint;
-      //			if (e1==3) printf("e1 is set: %d %d %f %f %f %f %d %d %d %d\n", bidx, tidx, v0, v1, v2, v3, e0, e1, e2, e3);
       isSeed[0] = true;
       DT[e1] = fabs(v1);
     }
     if (v2 == 0.0)
     {
-      //      if (bidx == 0 && tidx == 25) printf("v2 == 0.0\n");
       label[e2] = redistance::SeedPoint;
-      //			if (e2==3) printf("e2 is set: %d %d %f %f %f %f %d %d %d %d\n", bidx, tidx, v0, v1, v2, v3, e0, e1, e2, e3);
       isSeed[0] = true;
       DT[e2] = fabs(v2);
     }
     if (v3 == 0.0)
     {
-      //      if (bidx == 0 && tidx == 25) printf("v3 == 0.0\n");
       label[e3] = redistance::SeedPoint;
-      //			if (e3==3) printf("e3 is set: %d %d %f %f %f %f %d %d %d %d\n", bidx, tidx, v0, v1, v2, v3, e0, e1, e2, e3);
       isSeed[0] = true;
       DT[e3] = fabs(v3);
     }
 
     if (!((v0 >= 0 && v1 >= 0 && v2 >= 0 && v3 >= 0) || (v0 <= 0 && v1 <= 0 && v2 <= 0 && v3 <= 0)))
     {
-      //      if (bidx == 0 && tidx == 25) printf("four v\n");
       label[e0] = redistance::SeedPoint;
       label[e1] = redistance::SeedPoint;
       label[e2] = redistance::SeedPoint;
       label[e3] = redistance::SeedPoint;
-      //			if (e0 == 3 || e1 == 3 || e2 == 3 || e3 == 3)
-      //      {
-      //        printf("3 is set: %d %d %f %f %f %f %d %d %d %d\n", bidx, tidx, v0, v1, v2, v3, e0, e1, e2, e3);
-      //      }
       isSeed[0] = true;
       DT[e0] = fabs(v0);
       DT[e1] = fabs(v1);
@@ -781,14 +706,6 @@ __global__ void kernel_seedlabel_narrowband(int nn, int full_ele_num, const int*
   if (tidx == 0) isSeed[0] = false;
   __syncthreads();
 
-  //load values to shared memory
-  //  extern __shared__ LevelsetValueType s_vertT[];
-  //  for (int vidx = vert_start; vidx < vert_end; vidx++)
-  //  {
-  //      s_vertT[vidx - vert_start] = vertT_after_permute[vidx];
-  //  }
-  //  __syncthreads();
-
   if (tidx < ne)
   {
     int e0 = ele_after_permute[0 * full_ele_num + ele_start + tidx];
@@ -800,59 +717,38 @@ __global__ void kernel_seedlabel_narrowband(int nn, int full_ele_num, const int*
     LevelsetValueType v1 = vertT_after_permute[e1];
     LevelsetValueType v2 = vertT_after_permute[e2];
     LevelsetValueType v3 = vertT_after_permute[e3];
-    //    if (e0 == 3 || e1 == 3 || e2 == 3 || e3 == 3)
-    //    {
-    //      printf("some is three: %d %d %f %f %f %f %d %d %d %d\n", bidx, tidx, v0, v1, v2, v3, e0, e1, e2, e3);
-    //    }
-    //    if (bidx == 0 && (tidx == 25 || tidx == 26))
-    //    {
-    //      printf("%d %d %f %f %f %f %d %d %d %d\n", bidx, tidx, v0, v1, v2, v3, e0, e1, e2, e3);
-    //    }
 
     if (v0 == 0.0)
     {
-      //      if (bidx == 0 && tidx == 25) printf("v0 == 0.0\n");
       label[e0] = redistance::SeedPoint;
-      //			if (e0==3) printf("e0 is set: %d %d %f %f %f %f %d %d %d %d\n", bidx, tidx, v0, v1, v2, v3, e0, e1, e2, e3);
       isSeed[0] = true;
       DT[e0] = fabs(v0);
     }
     if (v1 == 0.0)
     {
-      //      if (bidx == 0 && tidx == 25) printf("v1 == 0.0\n");
       label[e1] = redistance::SeedPoint;
-      //			if (e1==3) printf("e1 is set: %d %d %f %f %f %f %d %d %d %d\n", bidx, tidx, v0, v1, v2, v3, e0, e1, e2, e3);
       isSeed[0] = true;
       DT[e1] = fabs(v1);
     }
     if (v2 == 0.0)
     {
-      //      if (bidx == 0 && tidx == 25) printf("v2 == 0.0\n");
       label[e2] = redistance::SeedPoint;
-      //			if (e2==3) printf("e2 is set: %d %d %f %f %f %f %d %d %d %d\n", bidx, tidx, v0, v1, v2, v3, e0, e1, e2, e3);
       isSeed[0] = true;
       DT[e2] = fabs(v2);
     }
     if (v3 == 0.0)
     {
-      //      if (bidx == 0 && tidx == 25) printf("v3 == 0.0\n");
       label[e3] = redistance::SeedPoint;
-      //			if (e3==3) printf("e3 is set: %d %d %f %f %f %f %d %d %d %d\n", bidx, tidx, v0, v1, v2, v3, e0, e1, e2, e3);
       isSeed[0] = true;
       DT[e3] = fabs(v3);
     }
 
     if (!((v0 >= 0 && v1 >= 0 && v2 >= 0 && v3 >= 0) || (v0 <= 0 && v1 <= 0 && v2 <= 0 && v3 <= 0)))
     {
-      //      if (bidx == 0 && tidx == 25) printf("four v\n");
       label[e0] = redistance::SeedPoint;
       label[e1] = redistance::SeedPoint;
       label[e2] = redistance::SeedPoint;
       label[e3] = redistance::SeedPoint;
-      //			if (e0 == 3 || e1 == 3 || e2 == 3 || e3 == 3)
-      //      {
-      //        printf("3 is set: %d %d %f %f %f %f %d %d %d %d\n", bidx, tidx, v0, v1, v2, v3, e0, e1, e2, e3);
-      //      }
       isSeed[0] = true;
       DT[e0] = fabs(v0);
       DT[e1] = fabs(v1);
@@ -919,5 +815,5 @@ __global__ void kernel_recover_Tsign_whole(int nn, LevelsetValueType* vertT, cha
 
 
 
-#endif	/* REDISTANCE_KERNELS_H */
+#endif  /* REDISTANCE_KERNELS_H */
 

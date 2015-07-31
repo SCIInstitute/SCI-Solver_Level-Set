@@ -2,7 +2,6 @@
 #define REDIST_H
 
 #include <tetmesh.h>
-//#include <TriMesh_algo.h>
 #include <typeinfo>
 #include <functional>
 #include <queue>
@@ -34,7 +33,7 @@ public:
   void GenerateData(IdxVector_d& new_narrowband, int& num_new_narrowband, LevelsetValueType bandwidth, int stepcount, TetMesh* mesh, Vector_d& vertT_after_permute_d, int nparts, int largest_vert_part, int largest_ele_part, int largest_num_inside_mem, int full_num_ele,
                     Vector_d& vert_after_permute_d, IdxVector_d& vert_offsets_d,
                     IdxVector_d& ele_after_permute_d, IdxVector_d& ele_offsets_d, Vector_d& ele_local_coords_d, IdxVector_d& mem_location_offsets, IdxVector_d& mem_locations,
-                    IdxVector_d& part_label_d, IdxVector_d& block_xadj, IdxVector_d& block_adjncy);
+                    IdxVector_d& part_label_d, IdxVector_d& block_xadj, IdxVector_d& block_adjncy, bool verbose = false);
   void ReInitTsign(TetMesh* mesh, Vector_d& vertT_after_permute_d, int nparts, int largest_vert_part, int largest_ele_part, int largest_num_inside_mem, int full_num_ele,
                    Vector_d& vert_after_permute_d, IdxVector_d& vert_offsets_d,
                    IdxVector_d& ele_after_permute_d, IdxVector_d& ele_offsets_d, Vector_d& ele_local_coords_d, IdxVector_d& mem_location_offsets, IdxVector_d& mem_locations,
@@ -45,9 +44,6 @@ public:
     int nn = mesh->vertices.size();
     m_DT_d = Vector_d(nn);
     m_active_block_list_d = IdxVector_d(nparts + 1);
-    //    m_largest_num_inside_mem = largest_num_inside_mem;
-    //    m_block_xadj_h = block_xadj;
-    //    m_block_adjncy_h = block_adjncy;
     m_Tsign_d = CharVector_d(nn);
     m_Label_d = IdxVector_d(nn);
     h_ActiveListNew.reserve(nparts);
@@ -68,34 +64,13 @@ public:
   {
   };
 
-  //  TetMesh* m_meshPtr;
   int NumComputation;
   list<index> m_ActivePoints;
   vector<index> m_SeedPoints;
   vector<LabelType> m_Label;
   IdxVector_d m_Label_d;
-  //  vector<int> m_Tsign;
-  LevelsetValueType m_StopDistance;
-  //  int m_nparts;
-  //  int m_largest_vert_part;
-  //  int m_largest_ele_part;
-  //  int m_full_num_ele;
-  //  int m_largest_num_inside_mem;
-  //  Vector_d m_vertT_after_permute_d;
-  //  Vector_d m_vert_after_permute_d;
-  //  IdxVector_d m_vert_offsets_d;
-  //  IdxVector_d m_ele_after_permute_d;
-  //  IdxVector_d m_ele_offsets_d;
-  //  IdxVector_d m_mem_location_offsets;
-  //  IdxVector_d m_mem_locations;
-  //  Vector_d m_ele_local_coords_d;
-  //  IdxVector_d m_part_label_d;
   IdxVector_d m_active_block_list_d;
-  //  IdxVector_d m_block_xadj_d;
-  //  IdxVector_d m_block_adjncy_d;
   Vector_d m_DT_d;
-  //  IdxVector_h m_block_xadj_h;
-  //  IdxVector_h m_block_adjncy_h;
   CharVector_d m_Tsign_d;
   vector<int> h_ActiveListNew;
   IdxVector_d tmp_new_narrowband;

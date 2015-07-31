@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
       exit(0);
     }
   if (filename.empty())
-    filename = "../example_data/aorta";
+    filename = "../example_data/cube_unstruc_size256_s2";
 
   int deviceCount;
   cudaGetDeviceCount(&deviceCount);
@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
 
   TetMesh themesh;
   tetgenio in, addin, bgmin, out;
-  if(!in.load_tetmesh((char*)filename.c_str()))
+  if(!in.load_tetmesh((char*)filename.c_str(),verbose))
   {
     printf("File open failed!!\n");
     exit(0);
@@ -118,12 +118,12 @@ int main(int argc, char *argv[])
   clock_t starttime, endtime;
   starttime = clock();
 
-  themesh.init(in.pointlist, in.numberofpoints, in.trifacelist, in.numberoffacets, in.tetrahedronlist, in.numberoftetrahedra, in.numberoftetrahedronattributes, in.tetrahedronattributelist);
+  themesh.init(in.pointlist, in.numberofpoints, in.trifacelist, in.numberoffacets, in.tetrahedronlist, in.numberoftetrahedra, in.numberoftetrahedronattributes, in.tetrahedronattributelist, verbose);
   themesh.reorient();
-  themesh.need_neighbors();
-  themesh.need_adjacenttets();
+  themesh.need_neighbors(verbose);
+  themesh.need_adjacenttets(verbose);
   meshFIM* FIMPtr = new meshFIM(&themesh);
-  FIMPtr->GenerateData((char*)filename.c_str(), nsteps, timestep, inside_niter, nside, block_size, bandwidth, part_type, metis_size);
+  FIMPtr->GenerateData((char*)filename.c_str(), nsteps, timestep, inside_niter, nside, block_size, bandwidth, part_type, metis_size, verbose);
 
   endtime = clock();
   double duration = (double)(endtime - starttime) * 1000/ CLOCKS_PER_SEC;

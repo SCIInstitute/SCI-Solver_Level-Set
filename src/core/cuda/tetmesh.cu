@@ -8,22 +8,24 @@
 using namespace std;
 
 #define MAX(a,b) \
-   ({ __typeof__ (a) _a = (a); \
-       __typeof__ (b) _b = (b); \
-     _a > _b ? _a : _b; })
+  ({ __typeof__ (a) _a = (a); \
+   __typeof__ (b) _b = (b); \
+   _a > _b ? _a : _b; })
 
 #define MIN(a,b) \
-   ({ __typeof__ (a) _a = (a); \
-       __typeof__ (b) _b = (b); \
-     _a < _b ? _a : _b; })
+  ({ __typeof__ (a) _a = (a); \
+   __typeof__ (b) _b = (b); \
+   _a < _b ? _a : _b; })
 
-void TetMesh::init(LevelsetValueType* pointlist, int numpoint, int*trilist, int numtri, int* tetlist, int numtet, int numattr, LevelsetValueType* attrlist)
+void TetMesh::init(LevelsetValueType* pointlist, int numpoint, int*trilist, int numtri, int* tetlist, int numtet, int numattr, LevelsetValueType* attrlist, bool verbose)
 {
 
   vertices.resize(numpoint);
   tets.resize(numtet);
-  printf("number of verts is: %d\n", numpoint);
-  printf("number of tets is:  %d\n", numtet);
+  if (verbose)
+    printf("number of verts is: %d\n", numpoint);
+  if (verbose)
+    printf("number of tets is:  %d\n", numtet);
   for(int i = 0; i < numpoint; i++)
   {
     vertices[i][0] = pointlist[3 * i + 0];
@@ -72,15 +74,15 @@ void TetMesh::init(LevelsetValueType* pointlist, int numpoint, int*trilist, int 
       int mat = (int)attrlist[i];
       switch(mat)
       {
-        case 1:
-          tets[i].speedInv = 1.0;
-          break;
-        case 2:
-          tets[i].speedInv = 1.52; // refractive index of glass 1.52
-          break;
-        case 3:
-          tets[i].speedInv = 1.0;
-          break;
+      case 1:
+        tets[i].speedInv = 1.0;
+        break;
+      case 2:
+        tets[i].speedInv = 1.52; // refractive index of glass 1.52
+        break;
+      case 3:
+        tets[i].speedInv = 1.0;
+        break;
       }
     }
   }
@@ -92,17 +94,18 @@ void TetMesh::init(LevelsetValueType* pointlist, int numpoint, int*trilist, int 
 }
 // Find the direct neighbors of each vertex
 
-void TetMesh::need_neighbors()
+void TetMesh::need_neighbors(bool verbose)
 {
   if(!neighbors.empty())
     return;
 
-  cout << "Finding vertex neighbors... " << endl;
+  if (verbose)
+    cout << "Finding vertex neighbors... " << endl;
   int nv = vertices.size(), nt = tets.size();
 
   neighbors.resize(nv);
   //for (int i = 0; i < nv; i++)
-  //	neighbors[i].reserve(numneighbors[i]+2); // Slop for boundaries
+  //  neighbors[i].reserve(numneighbors[i]+2); // Slop for boundaries
 
   for(int i = 0; i < nt; i++)
   {
@@ -121,17 +124,19 @@ void TetMesh::need_neighbors()
     }
   }
 
-  cout << "Done.\n" << endl;
+  if (verbose)
+    cout << "Done.\n" << endl;
 }
 
 // Find the tets touching each vertex
 
-void TetMesh::need_adjacenttets()
+void TetMesh::need_adjacenttets(bool verbose)
 {
   if(!adjacenttets.empty())
     return;
 
-  std::cout << "Finding adjacenttets... " << std::endl;
+  if (verbose)
+    std::cout << "Finding adjacenttets... " << std::endl;
   int nv = vertices.size(), nt = tets.size();
 
   adjacenttets.resize(vertices.size());
@@ -149,9 +154,11 @@ void TetMesh::need_adjacenttets()
 
   }
 
-  printf("Max number of adjacent tet is: %d\n", maxNumAjTets);
+  if (verbose)
+    printf("Max number of adjacent tet is: %d\n", maxNumAjTets);
 
-  std::cout << "Done.\n" << std::endl;
+  if (verbose)
+    std::cout << "Done.\n" << std::endl;
 }
 
 bool TetMesh::IsNonObtuse(int v, Tet t)
@@ -188,12 +195,12 @@ void TetMesh::SplitFace(vector<Tet> &acTets, int v, Tet ct, int nfAdj)
 {
   // get all the four vertices in order
   /* v1         v4
-  +-------+
-  \     . \
-  \   .   \
-  \ .     \
-  +-------+
-  v2         v3 */
+     +-------+
+     \     . \
+     \   .   \
+     \ .     \
+     +-------+
+     v2         v3 */
 
   need_neighbors();
   int iV = ct.indexof(v); // get index of v in terms of cf
@@ -384,7 +391,7 @@ void TetMesh::reorient()
   int ne = tets.size();
   for(int i = 0; i < ne; i++)
   {
-		Tet& t = tets[i];
+    Tet& t = tets[i];
     point A = vertices[t[0]];
     point B = vertices[t[1]];
     point C = vertices[t[2]];
@@ -396,9 +403,9 @@ void TetMesh::reorient()
     LevelsetValueType tmp = ((AB)CROSS(AC)) DOT(AD);
     if(tmp < 0)
     {
-			int tmpidx = t[1];
-			t[1] = t[2];
-			t[2] = tmpidx;
+      int tmpidx = t[1];
+      t[1] = t[2];
+      t[2] = tmpidx;
     }
   }
 }

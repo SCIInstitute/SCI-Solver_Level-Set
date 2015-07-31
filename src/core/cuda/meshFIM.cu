@@ -269,7 +269,7 @@ void meshFIM::updateT_single_stage(LevelsetValueType timestep, int nside, int ni
   }
 }
 
-void meshFIM::GraphPartition_Square(int squareLength, int squareWidth, int squareHeight, int blockLength, int blockWidth, int blockHeight)
+void meshFIM::GraphPartition_Square(int squareLength, int squareWidth, int squareHeight, int blockLength, int blockWidth, int blockHeight, bool verbose)
 {
   int nn = m_meshPtr->vertices.size();
   int numBlockLength = ceil((LevelsetValueType)squareLength / blockLength);
@@ -291,7 +291,8 @@ void meshFIM::GraphPartition_Square(int squareLength, int squareWidth, int squar
     if(m_meshPtr->adjacenttets[i].size() > m_largest_num_inside_mem)
       m_largest_num_inside_mem = m_meshPtr->adjacenttets[i].size();
   }
-  printf("m_largest_num_inside_mem = %d\n", m_largest_num_inside_mem);
+  if (verbose)
+    printf("m_largest_num_inside_mem = %d\n", m_largest_num_inside_mem);
 
   //Allocating storage for array values of adjacency
   int* xadj = new int[nn + 1];
@@ -312,7 +313,6 @@ void meshFIM::GraphPartition_Square(int squareLength, int squareWidth, int squar
     }
   }
 
-  std::cout << "check 1" << std::endl;
   m_neighbor_sizes_d = neighbor_sizes;
 
   for(int k = 0; k < squareHeight; k++)
@@ -327,32 +327,33 @@ void meshFIM::GraphPartition_Square(int squareLength, int squareWidth, int squar
           numBlockWidth + (i2 / blockWidth) * numBlockLength + (j2 / blockLength);
       }
 
-  std::cout << "check 2" << std::endl;
-  //  cusp::print(npart_h);
   m_xadj_d = IdxVector_d(&xadj[0], &xadj[nn + 1]);
   m_adjncy_d = IdxVector_d(&adjncy[0], &adjncy[edgeCount]);
 
   IdxVector_h part_sizes(nparts, 0);
-  std::cout << npart_h.size() << std::endl;
-  std::cout << part_sizes.size() << std::endl;
-  std::cout << nn << std::endl;
+  if (verbose) {
+    std::cout << npart_h.size() << std::endl;
+    std::cout << part_sizes.size() << std::endl;
+    std::cout << nn << std::endl;
+  }
   for(int i = 0; i < nn; i++)
   {
     part_sizes[npart_h[i]]++;
   }
-  std::cout << "check 3" << std::endl;
   int min_part_size = thrust::reduce(part_sizes.begin(), part_sizes.end(),
       100000000, thrust::minimum<int>());
   largest_vert_part = thrust::reduce(part_sizes.begin(), part_sizes.end(),
       -1, thrust::maximum<int>());
-  printf("Largest vertex partition size is: %d\n", largest_vert_part);
-  if(min_part_size == 0) printf("Min partition size is 0!!\n");
+  if(verbose)
+    printf("Largest vertex partition size is: %d\n", largest_vert_part);
+  if(min_part_size == 0)
+    if(verbose)
+      printf("Min partition size is 0!!\n");
   delete[] xadj;
   delete[] adjncy;
-  std::cout << "check 4" << std::endl;
 }
 
-void meshFIM::Partition_METIS(int metissize)
+void meshFIM::Partition_METIS(int metissize, bool verbose)
 {
   int options[10], pnumflag = 0, wgtflag = 0;
   options[0] = 0;
@@ -369,13 +370,13 @@ void meshFIM::Partition_METIS(int metissize)
   }
 
   m_largest_num_inside_mem = 0;
-  //  for (int bidx = 0; bidx < nparts; bidx++)
   for(int i = 0; i < nn; i++)
   {
     if(m_meshPtr->adjacenttets[i].size() > m_largest_num_inside_mem)
       m_largest_num_inside_mem = m_meshPtr->adjacenttets[i].size();
   }
-  printf("m_largest_num_inside_mem = %d\n", m_largest_num_inside_mem);
+  if (verbose)
+    printf("m_largest_num_inside_mem = %d\n", m_largest_num_inside_mem);
 
 
   //Allocating storage for array values of adjacency
@@ -411,13 +412,16 @@ void meshFIM::Partition_METIS(int metissize)
   }
   int min_part_size = thrust::reduce(part_sizes.begin(), part_sizes.end(), 100000000, thrust::minimum<int>());
   largest_vert_part = thrust::reduce(part_sizes.begin(), part_sizes.end(), -1, thrust::maximum<int>());
-  printf("Largest vertex partition size is: %d\n", largest_vert_part);
-  if(min_part_size == 0) printf("Min partition size is 0!!\n");
+  if (verbose)
+    printf("Largest vertex partition size is: %d\n", largest_vert_part);
+  if(min_part_size == 0)
+    if (verbose)
+      printf("Min partition size is 0!!\n");
   delete [] xadj;
   delete [] adjncy;
 }
 
-void meshFIM::InitPatches()
+void meshFIM::InitPatches(bool verbose)
 {
   int ne = m_meshPtr->tets.size();
   int nn = m_meshPtr->vertices.size();
@@ -426,7 +430,6 @@ void meshFIM::InitPatches()
   vert_d = Vector_d(3 * nn);
   m_vert_after_permute_d = Vector_d(3 * nn);
   Vector_h vert_h(3 * nn);
-  //  thrust::fill(ele_label_d.begin(), ele_label_d.end(), 0);
   for(int eidx = 0; eidx < ne; eidx++)
   {
     for(int i = 0; i < 4; i++)
@@ -447,7 +450,8 @@ void meshFIM::InitPatches()
 
 
   full_num_ele = thrust::reduce(ele_label_d.begin(), ele_label_d.end());
-  printf("full_num_ele = %d\n", full_num_ele);
+  if(verbose)
+    printf("full_num_ele = %d\n", full_num_ele);
   ele_offsets_d[0] = 0;
   thrust::inclusive_scan(ele_label_d.begin(), ele_label_d.end(), ele_offsets_d.begin() + 1);
   ele_full_label = IdxVector_d(full_num_ele);
@@ -464,16 +468,18 @@ void meshFIM::InitPatches()
   cudaThreadSynchronize();
   endtime = clock();
   duration = (double)(endtime - starttime) / (double)CLOCKS_PER_SEC;
-  printf("Sorting time : %.10lf s\n", duration);
+  if(verbose)
+    printf("Sorting time : %.10lf s\n", duration);
   m_ele_offsets_d = IdxVector_d(nparts + 1);
   ones = IdxVector_d(full_num_ele, 1);
   tmp = IdxVector_d(full_num_ele);
   reduce_output = IdxVector_d(full_num_ele);
-  thrust::reduce_by_key(ele_full_label.begin(), 
-    ele_full_label.end(), ones.begin(), tmp.begin(), reduce_output.begin());
-  largest_ele_part = thrust::reduce(reduce_output.begin(), 
-  reduce_output.begin() + nparts, -1, thrust::maximum<int>());
-  printf("Largest element partition size is: %d\n", largest_ele_part);
+  thrust::reduce_by_key(ele_full_label.begin(),
+      ele_full_label.end(), ones.begin(), tmp.begin(), reduce_output.begin());
+  largest_ele_part = thrust::reduce(reduce_output.begin(),
+      reduce_output.begin() + nparts, -1, thrust::maximum<int>());
+  if(verbose)
+    printf("Largest element partition size is: %d\n", largest_ele_part);
   if(largest_ele_part > 1024)
   {
     printf("Error: largest_ele_part > 1024 !!\n");
@@ -558,9 +564,10 @@ void meshFIM::GenerateBlockNeighbors()
   thrust::copy(blockMappedAdjacency.begin() + 1, blockMappedAdjacency.end(), m_block_adjncy_d.begin());
 }
 
-void meshFIM::GenerateData(char* filename, int nsteps, LevelsetValueType timestep, int inside_niter, int nside, int block_size, LevelsetValueType bandwidth, int part_type, int metis_size)
+void meshFIM::GenerateData(char* filename, int nsteps, LevelsetValueType timestep, int inside_niter, int nside, int block_size, LevelsetValueType bandwidth, int part_type, int metis_size, bool verbose)
 {
-  printf("Starting meshFIM::GenerateData\n");
+  if (verbose)
+    printf("Starting meshFIM::GenerateData\n");
   int nv = m_meshPtr->vertices.size();
   int nt = m_meshPtr->tets.size();
   int domain_size = 63.0;
@@ -576,10 +583,10 @@ void meshFIM::GenerateData(char* filename, int nsteps, LevelsetValueType timeste
   LevelsetValueType duration, duration1 = 0.0, duration2 = 0.0;
 
   if(part_type == 1)
-    GraphPartition_Square(squareLength, squareWidth, squareDepth, squareBlockLength, squareBlockWidth, squareBlockDepth);
+    GraphPartition_Square(squareLength, squareWidth, squareDepth, squareBlockLength, squareBlockWidth, squareBlockDepth, verbose);
   else //partition with METIS
   {
-    Partition_METIS(metis_size);
+    Partition_METIS(metis_size, verbose);
   }
   //Initialize the values
   vec3 origin1 = vec3(domain_size / 2.0, domain_size / 2.0, domain_size / 2.0);
@@ -599,7 +606,7 @@ void meshFIM::GenerateData(char* filename, int nsteps, LevelsetValueType timeste
 
   starttime = clock();
   //Init patches
-  InitPatches();
+  InitPatches(verbose);
   Vector_h cadv_h(3 * full_num_ele);
   for(int i = 0; i < full_num_ele; i++)
   {
@@ -610,10 +617,12 @@ void meshFIM::GenerateData(char* filename, int nsteps, LevelsetValueType timeste
   m_cadv_global_d = Vector_d(cadv_h);
   InitPatches2();
   GenerateBlockNeighbors();
-  printf("After  preprocessing\n");
+  if (verbose)
+    printf("After  preprocessing\n");
   endtime = clock();
   duration = (LevelsetValueType)(endtime - starttime) / CLOCKS_PER_SEC;
-  printf("pre processing time : %.10lf s\n", duration);
+  if (verbose)
+    printf("pre processing time : %.10lf s\n", duration);
 
   //Inite redistance
   m_redist = new redistance(m_meshPtr, nparts, m_block_xadj_d, m_block_adjncy_d);
@@ -635,7 +644,7 @@ void meshFIM::GenerateData(char* filename, int nsteps, LevelsetValueType timeste
     starttime1 = clock();
     m_redist->GenerateData(narrowband_d, num_narrowband, bandwidth, stepcount, m_meshPtr, m_vertT_after_permute_d, nparts, largest_vert_part, largest_ele_part, m_largest_num_inside_mem, full_num_ele,
         m_vert_after_permute_d, m_vert_offsets_d, m_ele_after_permute_d, m_ele_offsets_d, m_ele_local_coords_d, m_mem_location_offsets, m_mem_locations,
-        m_part_label_d, m_block_xadj_d, m_block_adjncy_d);
+        m_part_label_d, m_block_xadj_d, m_block_adjncy_d, verbose);
     cudaThreadSynchronize();
     endtime1 = clock();
     duration1 += endtime1 - starttime1;
@@ -650,10 +659,13 @@ void meshFIM::GenerateData(char* filename, int nsteps, LevelsetValueType timeste
 
   cudaThreadSynchronize();
   endtime = clock();
-  printf("redistance time : %.10lf s\n", (LevelsetValueType)duration1 / CLOCKS_PER_SEC);
-  printf("levelset update time : %.10lf s\n", (LevelsetValueType)duration2 / CLOCKS_PER_SEC);
+  if (verbose)
+    printf("redistance time : %.10lf s\n", (LevelsetValueType)duration1 / CLOCKS_PER_SEC);
+  if (verbose)
+    printf("levelset update time : %.10lf s\n", (LevelsetValueType)duration2 / CLOCKS_PER_SEC);
   duration = (double)(endtime - starttime) / (double)CLOCKS_PER_SEC;
-  printf("Processing time : %.10lf s\n", duration);
+  if (verbose)
+    printf("Processing time : %.10lf s\n", duration);
   //  ////////////////////////done updating/////////////////////////////////////////////////
   int nthreads = 256;
   int nblocks = min((int)ceil((LevelsetValueType)nv / nthreads), 655535);
@@ -665,43 +677,43 @@ void meshFIM::GenerateData(char* filename, int nsteps, LevelsetValueType timeste
   }
   writeVTK();
   writeFLD();
-  }
+}
 
-  void meshFIM::getPartIndicesNegStart(IdxVector_d& sortedPartition, IdxVector_d& partIndices)
-  {
-    // Sizing the array:
-    int maxPart = sortedPartition[sortedPartition.size() - 1];
-    partIndices.resize(maxPart + 2, 0);
+void meshFIM::getPartIndicesNegStart(IdxVector_d& sortedPartition, IdxVector_d& partIndices)
+{
+  // Sizing the array:
+  int maxPart = sortedPartition[sortedPartition.size() - 1];
+  partIndices.resize(maxPart + 2, 0);
 
-    // Figuring out block sizes for kernel call:
-    int size = sortedPartition.size();
-    int blockSize = 256;
-    int nBlocks = size / blockSize + (size % blockSize == 0 ? 0 : 1);
+  // Figuring out block sizes for kernel call:
+  int size = sortedPartition.size();
+  int blockSize = 256;
+  int nBlocks = size / blockSize + (size % blockSize == 0 ? 0 : 1);
 
-    // Getting pointers
-    int *sortedPartition_d = thrust::raw_pointer_cast(&sortedPartition[0]);
-    int *partIndices_d = thrust::raw_pointer_cast(&partIndices[0]);
+  // Getting pointers
+  int *sortedPartition_d = thrust::raw_pointer_cast(&sortedPartition[0]);
+  int *partIndices_d = thrust::raw_pointer_cast(&partIndices[0]);
 
-    // Calling kernel to find indices for each part:
-    findPartIndicesNegStartKernel << < nBlocks, blockSize >> > (size, sortedPartition_d, partIndices_d);
-    partIndices[partIndices.size() - 1] = size - 1;
-  }
+  // Calling kernel to find indices for each part:
+  findPartIndicesNegStartKernel << < nBlocks, blockSize >> > (size, sortedPartition_d, partIndices_d);
+  partIndices[partIndices.size() - 1] = size - 1;
+}
 
-  void meshFIM::mapAdjacencyToBlock(IdxVector_d &adjIndexes, IdxVector_d &adjacency, IdxVector_d &adjacencyBlockLabel, IdxVector_d &blockMappedAdjacency, IdxVector_d &fineAggregate)
-  {
-    int size = adjIndexes.size() - 1;
-    // Get pointers:adjacencyIn
-    int *adjIndexes_d = thrust::raw_pointer_cast(&adjIndexes[0]);
-    int *adjacency_d = thrust::raw_pointer_cast(&adjacency[0]);
-    int *adjacencyBlockLabel_d = thrust::raw_pointer_cast(&adjacencyBlockLabel[0]);
-    int *blockMappedAdjacency_d = thrust::raw_pointer_cast(&blockMappedAdjacency[0]);
-    int *fineAggregate_d = thrust::raw_pointer_cast(&fineAggregate[0]);
+void meshFIM::mapAdjacencyToBlock(IdxVector_d &adjIndexes, IdxVector_d &adjacency, IdxVector_d &adjacencyBlockLabel, IdxVector_d &blockMappedAdjacency, IdxVector_d &fineAggregate)
+{
+  int size = adjIndexes.size() - 1;
+  // Get pointers:adjacencyIn
+  int *adjIndexes_d = thrust::raw_pointer_cast(&adjIndexes[0]);
+  int *adjacency_d = thrust::raw_pointer_cast(&adjacency[0]);
+  int *adjacencyBlockLabel_d = thrust::raw_pointer_cast(&adjacencyBlockLabel[0]);
+  int *blockMappedAdjacency_d = thrust::raw_pointer_cast(&blockMappedAdjacency[0]);
+  int *fineAggregate_d = thrust::raw_pointer_cast(&fineAggregate[0]);
 
-    // Figuring out block sizes for kernel call:
-    int blockSize = 256;
-    int nBlocks = size / blockSize + (size % blockSize == 0 ? 0 : 1);
+  // Figuring out block sizes for kernel call:
+  int blockSize = 256;
+  int nBlocks = size / blockSize + (size % blockSize == 0 ? 0 : 1);
 
-    // Calling kernel:
-    mapAdjacencyToBlockKernel << < nBlocks, blockSize >> > (size, adjIndexes_d, adjacency_d, adjacencyBlockLabel_d, blockMappedAdjacency_d, fineAggregate_d);
-  }
+  // Calling kernel:
+  mapAdjacencyToBlockKernel << < nBlocks, blockSize >> > (size, adjIndexes_d, adjacency_d, adjacencyBlockLabel_d, blockMappedAdjacency_d, fineAggregate_d);
+}
 

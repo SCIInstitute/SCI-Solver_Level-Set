@@ -14,7 +14,7 @@
 #include <time.h>
 
 #ifndef _EPS
-#define _EPS 1e-12
+#define _EPS 1e-5
 #endif
 
 class meshFIM

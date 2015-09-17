@@ -17,7 +17,7 @@ namespace LevelSet {
   /** The class that represents all of the available options for LevelSet */
   class LevelSet {
     public:
-      LevelSet(std::string fname = "../src/test/test_data/sphere344",
+      LevelSet(std::string fname = "../src/test/test_data/sphere334",
           bool verbose = false) :
         verbose_(verbose),
         filename_(fname),

@@ -2,6 +2,7 @@
 
 #ifdef WIN32
 inline void printStackTrace() {}
+#define FatalError(s)                                              
 #else
 #include <execinfo.h>
 #include <dlfcn.h>
@@ -44,7 +45,6 @@ inline void printStackTrace() {
       printf("    %d: %p\n",i-1,(char*)addresses[i]);
   }
 }
-#endif
 /********************************************************
  * Prints the error message, the stack trace, and exits
  * ******************************************************/
@@ -52,4 +52,5 @@ inline void printStackTrace() {
   printf("Fatal error '%s' at %s:%d\n",s,__FILE__,__LINE__);        \
   printStackTrace();                                                \
   exit(1);
+#endif
 

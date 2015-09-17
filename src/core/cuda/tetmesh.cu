@@ -7,15 +7,9 @@
 
 using namespace std;
 
-#define MAX(a,b) \
-  ({ __typeof__ (a) _a = (a); \
-   __typeof__ (b) _b = (b); \
-   _a > _b ? _a : _b; })
+#define MAX(a,b) std::max(a,b)
 
-#define MIN(a,b) \
-  ({ __typeof__ (a) _a = (a); \
-   __typeof__ (b) _b = (b); \
-   _a < _b ? _a : _b; })
+#define MIN(a,b) std::min(a,b)
 
 void TetMesh::init(LevelsetValueType* pointlist, int numpoint, int*trilist, int numtri, int* tetlist, int numtet, int numattr, LevelsetValueType* attrlist, bool verbose)
 {
@@ -150,7 +144,7 @@ void TetMesh::need_adjacenttets(bool verbose)
   int maxNumAjTets = 0;
   for(int i = 0; i < nv; i++)
   {
-    maxNumAjTets = MAX(maxNumAjTets, adjacenttets[i].size());
+    maxNumAjTets = MAX(maxNumAjTets, static_cast<int>(adjacenttets[i].size()));
 
   }
 

@@ -564,13 +564,12 @@ void meshFIM::GenerateBlockNeighbors()
   thrust::copy(blockMappedAdjacency.begin() + 1, blockMappedAdjacency.end(), m_block_adjncy_d.begin());
 }
 
-void meshFIM::GenerateData(char* filename, int nsteps, LevelsetValueType timestep, int inside_niter, int nside, int block_size, LevelsetValueType bandwidth, int part_type, int metis_size, bool verbose)
+void meshFIM::GenerateData(char* filename, int nsteps, LevelsetValueType timestep, int inside_niter, int nside, int block_size, LevelsetValueType bandwidth, int part_type, int metis_size, double domain, bool verbose)
 {
   if (verbose)
     printf("Starting meshFIM::GenerateData\n");
   int nv = m_meshPtr->vertices.size();
   int nt = m_meshPtr->tets.size();
-  int domain_size = 63.0;
 
   int squareLength = nside;
   int squareWidth = nside;
@@ -589,8 +588,6 @@ void meshFIM::GenerateData(char* filename, int nsteps, LevelsetValueType timeste
     Partition_METIS(metis_size, verbose);
   }
   //Initialize the values
-  vec3 origin1 = vec3(domain_size / 2.0, domain_size / 2.0, domain_size / 2.0);
-
   if(m_meshPtr->vertT.size() == 0)
     m_meshPtr->vertT.resize(nv);
 
@@ -598,8 +595,7 @@ void meshFIM::GenerateData(char* filename, int nsteps, LevelsetValueType timeste
   for(int i = 0; i < nv; i++)
   {
     vec3 v1 = (vec3)m_meshPtr->vertices[i];
-    vec3 v1o1 = v1 - origin1;
-    m_meshPtr->vertT[i] = v1[0] - 7.7;
+    m_meshPtr->vertT[i] = v1[0] - domain;
     h_vertT[i] = m_meshPtr->vertT[i];
   }
   m_vertT_d = h_vertT;
@@ -648,6 +644,7 @@ void meshFIM::GenerateData(char* filename, int nsteps, LevelsetValueType timeste
     cudaThreadSynchronize();
     endtime1 = clock();
     duration1 += endtime1 - starttime1;
+    if (num_narrowband == 0) break;
     starttime1 = clock();
     for(int niter = 0; niter < inside_niter; niter++)
       updateT_single_stage_d(timestep, stepcount, narrowband_d, num_narrowband);

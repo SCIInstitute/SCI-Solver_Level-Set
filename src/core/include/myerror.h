@@ -1,5 +1,8 @@
 #pragma once
 
+#ifdef WIN32
+inline void printStackTrace() {}
+#else
 #include <execinfo.h>
 #include <dlfcn.h>
 #include <cxxabi.h>
@@ -41,7 +44,7 @@ inline void printStackTrace() {
       printf("    %d: %p\n",i-1,(char*)addresses[i]);
   }
 }
-
+#endif
 /********************************************************
  * Prints the error message, the stack trace, and exits
  * ******************************************************/

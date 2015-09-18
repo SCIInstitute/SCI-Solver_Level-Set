@@ -16,6 +16,10 @@ int main(int argc, char *argv[])
       if (data.filename_.substr(data.filename_.size()-4,4) == ".ele")
         data.filename_ = data.filename_.substr(0,data.filename_.size() - 4);
       i++;
+    } else if (strcmp(argv[i],"-a") == 0) {
+      if (i+1 >= argc) break;
+      data.axis_ = atoi(argv[i+1]);
+      i++;
     } else if (strcmp(argv[i],"-n") == 0) {
       if (i+1 >= argc) break;
       data.numSteps_ = atoi(argv[i+1]);
@@ -70,6 +74,7 @@ int main(int argc, char *argv[])
       exit(0);
     }
   LevelSet::solveLevelSet(data);
+  LevelSet::writeVTK();
   return 0;
 }
 

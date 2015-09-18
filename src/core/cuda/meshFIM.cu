@@ -105,7 +105,7 @@ void meshFIM::updateT_single_stage_d(LevelsetValueType timestep, int niter, IdxV
 
 void meshFIM::updateT_single_stage(LevelsetValueType timestep, int nside, int niter, vector<int>& narrowband)
 {
-  vec3 sigma(1.0, 1.0, 1.0);
+  vec3 sigma(1.0, 0.0, 1.0);
   LevelsetValueType epsilon = 1.0;
   int nv = m_meshPtr->vertices.size();
   int nt = m_meshPtr->tets.size();
@@ -563,7 +563,10 @@ void meshFIM::GenerateBlockNeighbors()
   thrust::copy(blockMappedAdjacency.begin() + 1, blockMappedAdjacency.end(), m_block_adjncy_d.begin());
 }
 
-void meshFIM::GenerateData(char* filename, int nsteps, LevelsetValueType timestep, int inside_niter, int nside, int block_size, LevelsetValueType bandwidth, int part_type, int metis_size, double domain, int axis, bool verbose)
+std::vector <std::vector <LevelsetValueType> > meshFIM::GenerateData(
+    char* filename, int nsteps, LevelsetValueType timestep, int inside_niter,
+    int nside, int block_size, LevelsetValueType bandwidth, int part_type,
+    int metis_size, double domain, int axis, bool verbose)
 {
   if (verbose)
     printf("Starting meshFIM::GenerateData\n");
@@ -605,9 +608,9 @@ void meshFIM::GenerateData(char* filename, int nsteps, LevelsetValueType timeste
   Vector_h cadv_h(3 * full_num_ele);
   for(int i = 0; i < full_num_ele; i++)
   {
-    cadv_h[0 * full_num_ele + i] = 1.0;
-    cadv_h[1 * full_num_ele + i] = 0.0;
-    cadv_h[2 * full_num_ele + i] = 0.0;
+    cadv_h[0 * full_num_ele + i] = axis==0?1.0:0.0;
+    cadv_h[1 * full_num_ele + i] = axis==1?1.0:0.0;
+    cadv_h[2 * full_num_ele + i] = axis==2?1.0:0.0;
   }
   m_cadv_global_d = Vector_d(cadv_h);
   InitPatches2();
@@ -625,6 +628,8 @@ void meshFIM::GenerateData(char* filename, int nsteps, LevelsetValueType timeste
   //////////////////////////update values///////////////////////////////////////////
   IdxVector_d narrowband_d(nparts);
   int num_narrowband = 0;
+
+  std::vector <std::vector <LevelsetValueType> >  ans;
 
   starttime = clock();
   for(int stepcount = 0; stepcount < nsteps; stepcount++)
@@ -655,6 +660,16 @@ void meshFIM::GenerateData(char* filename, int nsteps, LevelsetValueType timeste
     cudaThreadSynchronize();
     endtime1 = clock();
     duration2 += endtime1 - starttime1;
+    ///////////////////done updating/////////////////////////////////////////////////
+    int nthreads = 256;
+    int nblocks = min((int)ceil((LevelsetValueType)nv / nthreads), 655535);
+    cudaSafeCall((kernel_compute_vertT_before_permute << <nblocks, nthreads >> >(nv, CAST(m_vert_permute_d), CAST(m_vertT_after_permute_d), CAST(tmp_vertT_before_permute_d))));
+    Vector_h vertT_before_permute_h = tmp_vertT_before_permute_d;
+    for(int i = 0; i < nv; i++)
+    {
+      m_meshPtr->vertT[i] = vertT_before_permute_h[i];
+    }
+    ans.push_back(m_meshPtr->vertT);
   }
 
   cudaThreadSynchronize();
@@ -666,17 +681,7 @@ void meshFIM::GenerateData(char* filename, int nsteps, LevelsetValueType timeste
   duration = (double)(endtime - starttime) / (double)CLOCKS_PER_SEC;
   if (verbose)
     printf("Processing time : %.10lf s\n", duration);
-  //  ////////////////////////done updating/////////////////////////////////////////////////
-  int nthreads = 256;
-  int nblocks = min((int)ceil((LevelsetValueType)nv / nthreads), 655535);
-  cudaSafeCall((kernel_compute_vertT_before_permute << <nblocks, nthreads >> >(nv, CAST(m_vert_permute_d), CAST(m_vertT_after_permute_d), CAST(tmp_vertT_before_permute_d))));
-  Vector_h vertT_before_permute_h = tmp_vertT_before_permute_d;
-  for(int i = 0; i < nv; i++)
-  {
-    m_meshPtr->vertT[i] = vertT_before_permute_h[i];
-  }
-  writeVTK();
-  writeFLD();
+  return ans;
 }
 
 void meshFIM::getPartIndicesNegStart(IdxVector_d& sortedPartition, IdxVector_d& partIndices)

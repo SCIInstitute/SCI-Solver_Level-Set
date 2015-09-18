@@ -16,11 +16,11 @@ Table of Contents
 - [Running Examples](#running-examples)
 - [Using the Library](#using-the-library)
 - [Testing](#testing)<br/>
-<br/><br/><br/><br/><br/>
+<br/><br/><br/><br/><br/><br/><br/>
 <h4>LevelSet Aknowledgements</h4>
 **<a href ="http://onlinelibrary.wiley.com/doi/10.1002/cpe.3320/full">Fast Parallel Solver for the 
 Levelset Equations on Unstructured Meshes</a>**<br/>
-<img src="https://raw.githubusercontent.com/SCIInstitute/SCI-Solver_Level-Set/master/src/Resources/cropped.png"  align="left" hspace="20" width=450>
+<img src="https://raw.githubusercontent.com/SCIInstitute/SCI-Solver_Level-Set/master/src/Resources/cropped.png"  align="right" hspace="20" width=460>
 
 **AUTHORS:**
 <br/>Zhisong Fu(*a*) <br/>

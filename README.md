@@ -16,7 +16,7 @@ Table of Contents
 - [Running Examples](#running-examples)
 - [Using the Library](#using-the-library)
 - [Testing](#testing)<br/>
-<br/><br/><br/><br/><br/><br/><br/>
+<br/><br/><br/><br/><br/><br/><br/><br/>
 <h4>LevelSet Aknowledgements</h4>
 **<a href ="http://onlinelibrary.wiley.com/doi/10.1002/cpe.3320/full">Fast Parallel Solver for the 
 Levelset Equations on Unstructured Meshes</a>**<br/>
@@ -33,7 +33,7 @@ are supported, and are read by the <a href="http://wias-berlin.de/software/tetge
 The <a href="http://glaros.dtc.umn.edu/gkhome/metis/metis/download">METIS library</a> is used to partition unstructured 
 meshes. <a href="https://code.google.com/p/googletest/">
 Google Test</a> is used for testing.
-<br/><br/><br/><br/>
+<br/><br/>
 Requirements
 ==============
 

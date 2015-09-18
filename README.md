@@ -118,7 +118,7 @@ Then a program would setup the LevelSet parameters using the
 <code>LevelSet::solveLevelSet()</code> to generate
 the array of vertex values per iteration.
 
-Here is a minimal usage example for 3D, which is nearly identical to 2D.<br/>
+Here is a minimal usage example.<br/>
 ```c++
 #include <LevelSet.h>
 #include <iostream>
@@ -150,7 +150,7 @@ std::vector < std::vector < LevelsetValueType > > LevelSet::time_values_;
 <h3>LevelSet Options</h3>
 
 ```C++
-  class Eikonal3D {
+  class LevelSet {
       bool verbose_;                    //option to set for runtime verbosity [Default false]
       std::string filename_;            //the input tet mesh filename         [Default ../src/test/test_data/sphere339
       int partitionType_;               //0 for unstructured, 1 for square    [Default 0]

@@ -66,6 +66,7 @@ int main(int argc, char *argv[])
       std::cout << "   -m METIS_SIZE      The size for METIS partiation type." << std::endl;
       std::cout << "   -w BANDWIDTH       The Bandwidth for the algorithm." << std::endl;
       std::cout << "   -x XDOMAIN         The starting X domain to begin levelset" << std::endl;
+      std::cout << "   -a AXIS            The axis for value update" << std::endl;
       exit(0);
     }
   LevelSet::solveLevelSet(data);

@@ -30,7 +30,7 @@ public:
   {
     m_meshPtr = mesh;
   }
-  void GenerateData(char* filename, int nsteps, LevelsetValueType timestep, int inside_niter, int nside, int block_size, LevelsetValueType bandwidth, int part_type, int metis_size, double domain, bool verbose = false);
+  void GenerateData(char* filename, int nsteps, LevelsetValueType timestep, int inside_niter, int nside, int block_size, LevelsetValueType bandwidth, int part_type, int metis_size, double domain, int axis = 0, bool verbose = false);
   void Partition_METIS(int metissize, bool verbose = false);
   void GraphPartition_Square(int squareLength, int squareWidth, int squareHeight, int blockLength, int blockWidth, int blockHeight, bool verbose = false);
   void InitPatches(bool verbose = false);

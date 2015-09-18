@@ -10,7 +10,6 @@
 #include <cusp/detail/format_utils.h>
 #include <cusp/print.h>
 #include <thrust/functional.h>
-//#include "mytimer.h"
 
 extern "C"
 {
@@ -106,7 +105,7 @@ void meshFIM::updateT_single_stage_d(LevelsetValueType timestep, int niter, IdxV
 
 void meshFIM::updateT_single_stage(LevelsetValueType timestep, int nside, int niter, vector<int>& narrowband)
 {
-  vec3 sigma(1.0, 0.0, 1.0);
+  vec3 sigma(1.0, 1.0, 1.0);
   LevelsetValueType epsilon = 1.0;
   int nv = m_meshPtr->vertices.size();
   int nt = m_meshPtr->tets.size();
@@ -564,7 +563,7 @@ void meshFIM::GenerateBlockNeighbors()
   thrust::copy(blockMappedAdjacency.begin() + 1, blockMappedAdjacency.end(), m_block_adjncy_d.begin());
 }
 
-void meshFIM::GenerateData(char* filename, int nsteps, LevelsetValueType timestep, int inside_niter, int nside, int block_size, LevelsetValueType bandwidth, int part_type, int metis_size, double domain, bool verbose)
+void meshFIM::GenerateData(char* filename, int nsteps, LevelsetValueType timestep, int inside_niter, int nside, int block_size, LevelsetValueType bandwidth, int part_type, int metis_size, double domain, int axis, bool verbose)
 {
   if (verbose)
     printf("Starting meshFIM::GenerateData\n");
@@ -595,7 +594,7 @@ void meshFIM::GenerateData(char* filename, int nsteps, LevelsetValueType timeste
   for(int i = 0; i < nv; i++)
   {
     vec3 v1 = (vec3)m_meshPtr->vertices[i];
-    m_meshPtr->vertT[i] = v1[0] - domain;
+    m_meshPtr->vertT[i] = v1[axis] - domain;
     h_vertT[i] = m_meshPtr->vertT[i];
   }
   m_vertT_d = h_vertT;
@@ -644,7 +643,11 @@ void meshFIM::GenerateData(char* filename, int nsteps, LevelsetValueType timeste
     cudaThreadSynchronize();
     endtime1 = clock();
     duration1 += endtime1 - starttime1;
-    if (num_narrowband == 0) break;
+    if (num_narrowband == 0) {
+      std::cout << "NOTE: Ending at timestep " << stepcount <<
+        " due to zero narrow band." << std::endl;
+      break;
+    }
     starttime1 = clock();
     for(int niter = 0; niter < inside_niter; niter++)
       updateT_single_stage_d(timestep, stepcount, narrowband_d, num_narrowband);

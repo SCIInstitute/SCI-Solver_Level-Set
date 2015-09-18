@@ -30,22 +30,6 @@ void redistance::FindSeedPoint(const IdxVector_d& old_narrowband, const int num_
   int nnb = num_old_narrowband;
   thrust::fill(m_DT_d.begin(), m_DT_d.end(), LARGENUM);
   m_active_block_list_d[0] = 0;
-  /*std::cout << "A -- ne: " << ne << ", nn: " << nn << ", nnb: " << nnb <<
-    ", m_active_block_list_d[0]: " << m_active_block_list_d[0] << std::endl;
-    std::cout << "full num ele: " << full_num_ele << std::endl;
-    std::cout << "largest part elee: " << largest_ele_part << std::endl;
-    std::cout << "nparts: " << nparts<< std::endl;
-    std::cout << "###############################################" << std::endl;
-    Vector_h vertT_after_permute_h(vertT_after_permute_d);
-    for (size_t i = 0; i < vertT_after_permute_h.size(); i++) {
-    std::cout << vertT_after_permute_h[i] << std::endl;
-    }
-    std::cout << "###############################################" << std::endl;
-    IdxVector_h ele_offsets_h(ele_offsets_d);
-    for (size_t i = 0; i < ele_offsets_h.size(); i++) {
-    std::cout << ele_offsets_h[i] << std::endl;
-    }
-    std::cout << "###############################################" << std::endl;*/
   if (nnb == 0)
   {
     thrust::fill(m_Label_d.begin(), m_Label_d.end(), FarPoint);
@@ -78,8 +62,6 @@ void redistance::FindSeedPoint(const IdxVector_d& old_narrowband, const int num_
             CAST(m_active_block_list_d))));
 
   }
-  /*std::cout << "B -- ne: " << ne << ", nn: " << nn << ", nnb: " << nnb <<
-    ", m_active_block_list_d[0]: " << m_active_block_list_d[0] << std::endl;*/
 }
 
 void redistance::GenerateData(IdxVector_d& new_narrowband, int& new_num_narrowband, LevelsetValueType bandwidth, int stepcount, TetMesh* mesh, Vector_d& vertT_after_permute_d,

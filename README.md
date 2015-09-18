@@ -16,7 +16,9 @@ Table of Contents
 - [Running Examples](#running-examples)
 - [Using the Library](#using-the-library)
 - [Testing](#testing)<br/>
+
 <br/><br/><br/><br/><br/><br/><br/><br/>
+
 <h4>LevelSet Aknowledgements</h4>
 **<a href ="http://onlinelibrary.wiley.com/doi/10.1002/cpe.3320/full">Fast Parallel Solver for the 
 Levelset Equations on Unstructured Meshes</a>**<br/>

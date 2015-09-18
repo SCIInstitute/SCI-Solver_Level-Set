@@ -1,46 +1,63 @@
 SCI-Solver_Level-Set
 ====================
 
-**Currently in pre-alpha stage, estimated stable release: October 2015**
-
 SCI-Solver_Level-Set is a C++/CUDA library written to solve a system of level set equations on unstructured meshes. It is designed to solve the equations quickly by using GPU hardware.
 
-The code was written by Zhisong Fu. The theory behind this code is published in the paper: "Fast Parallel Solver for the Levelset Equations on Unstructured Meshes"
+The code was written by Zhisong Fu at the Scientific Computing and Imaging Institute, 
+University of Utah, Salt Lake City, USA. The theory behind this code is published in the papers linked below. 
+Table of Contents
+========
+- [LevelSet Aknowledgements](#levelset-aknowledgements)
+- [Requirements](#requirements)
+- [Building](#building)<br/>
+		- [Linux / OSX](#linux-and-osx)<br/>
+		- [Windows](#windows)<br/>
+- [Running Examples](#running-examples)
+- [Using the Library](#using-the-library)
+- [Testing](#testing)<br/>
 
-**AUTHORS:** Zhisong Fu(*a*,*b*), Sergey Yakovlev(*b*), Robert M. Kirby(*a*,*b*), Ross T. Whitaker(*a*,*b*)
+<h4>LevelSet Aknowledgements</h4>
+**<a href ="http://onlinelibrary.wiley.com/doi/10.1002/cpe.3320/full">Fast Parallel Solver for the 
+Levelset Equations on Unstructured Meshes</a>**<br/>
+<img src="https://raw.githubusercontent.com/SCIInstitute/SCI-Solver_Level-Set/master/src/Resources/levelset.gif"  align="right" hspace="20" width=450>
 
-- School of Computing, University of Utah, Salt Lake City, UT, USA
+**AUTHORS:**
+<br/>Zhisong Fu(*a*) <br/>
+Sergey Yakovlev(*b*) <br/>
+Robert M. Kirby(*a*) <br/>
+Ross T. Whitaker(*a*) <br/>
 
-- Scientific Computing and Imaging Institute, University of Utah, Salt Lake City, USA
-
-**ABSTRACT:**
-Levelset method is a numerical technique for tracking interfaces and shapes. It is actively used within various areas such as physics, chemistry, fluid mechanics, computer vision and microchip fabrication to name a few. Applying the levelset method entails solving the levelset partial differential equation. This paper presents a parallel algorithm for solving the levelset equation on fully unstructured 2D or 3D meshes or manifolds. By taking into account constraints and capabilities of two different computing platforms, the method is suitable for both the coarse-grained parallelism found on CPU-based systems and the fine-grained parallelism of modern massively-SIMD architectures such as graphics processors. In order to solve levelset equation efficiently, we combine the narrowband scheme with domain decomposition: the narrowband fast iterative method (nbFIM) to compute the distance transform by solving an eikonal equation and the patched narrowband (patchNB) scheme to evolve the embedding are proposed in this paper. We also introduce the Hybrid Gathering parallelism strategy to enable regular and lock-free computations in both the nbFIM and patchNB. Finally, we provide the detailed description of the implementation and data structures for the proposed strategies, as well as the performance data for both CPU and GPU implementations.
-
+This library solves for the LevelSet values on vertices located on a tetrahedral mesh. Several mesh formats
+are supported, and are read by the <a href="http://wias-berlin.de/software/tetgen/">TetGen Library</a>. 
+The <a href="http://glaros.dtc.umn.edu/gkhome/metis/metis/download">METIS library</a> is used to partition unstructured 
+meshes. <a href="https://code.google.com/p/googletest/">
+Google Test</a> is used for testing.
+<br/><br/><br/><br/>
 Requirements
 ==============
 
-* Git, CMake (3.0+ recommended), and the standard system build environment tools.
-* You will need a CUDA Compatible Graphics card. See <a href="https://developer.nvidia.com/cuda-gpus">here</a> You will also need to be sure your card has CUDA compute capability of at least 2.0.
-* SCI-Solver_Eikonal is compatible with the latest CUDA toolkit (7.0). Download <a href="https://developer.nvidia.com/cuda-downloads">here</a>.
-* This project has been tested on OpenSuse 13.1 (Bottle) on NVidia GeForce GTX 570 HD, Windows 7 on NVidia GeForce GTX 775M, and OSX 10.10 on NVidia GeForce GTX 775M.
-* If you have a CUDA compatible card with the above operating systems, and are experiencing issues, please contact the repository owners.
-* Windows: You will need Microsoft Visual Studio 2010+ build tools. This document describes the "NMake" process.
-* OSX: Please be sure to follow setup for CUDA <a href="http://docs.nvidia.com/cuda/cuda-getting-started-guide-for-mac-os-x/#axzz3W4nXNNin">here</a>. There are several compatability requirements for different MAC machines, including using a different version of CUDA (ie. 5.5).
+ * Git, CMake (3.0+ recommended), and the standard system build environment tools.
+ * You will need a CUDA Compatible Graphics card. See <a href="https://developer.nvidia.com/cuda-gpus">here</a> You will also need to be sure your card has CUDA compute capability of at least 2.0.
+ * SCI-Solver_Level-Set is compatible with the latest CUDA toolkit (7.0). Download <a href="https://developer.nvidia.com/cuda-downloads">here</a>.
+ * This project has been tested on OpenSuse 13.1 (Bottle) on NVidia GeForce GTX 680 HD, Windows 7 on NVidia GeForce GTX 775M, and OSX 10.10 on NVidia GeForce GTX 775M. 
+ * If you have a CUDA graphics card equal to or greater than our test machines and are experiencing issues, please contact the repository owners.
+ * Windows: You will need Microsoft Visual Studio 2010+ build tools. This document describes the "NMake" process.
+ * OSX: Please be sure to follow setup for CUDA <a href="http://docs.nvidia.com/cuda/cuda-getting-started-guide-for-mac-os-x/#axzz3W4nXNNin">here</a>. There are several compatability requirements for different MAC machines, including using a different version of CUDA (ie. 5.5).
 
 Building
 ==============
 
-<h3>Unix / OSX</h3>
+<h3>Linux and OSX</h3>
 In a terminal:
 ```c++
-mkdir SCI-SOLVER_Level-Set/build
-cd SCI-SOLVER_Level-Set/build
+mkdir SCI-Solver_Level-Set/build
+cd SCI-Solver_Level-Set/build
 cmake ../src
 make
 ```
 
 <h3>Windows</h3>
-Open a Visual Studio (32 or 64 bit) Native Tools Command Prompt.
+Open a Visual Studio (32 or 64 bit) Native Tools Command Prompt. 
 Follow these commands:
 ```c++
 mkdir C:\Path\To\SCI-Solver_Level-Set\build
@@ -55,18 +72,17 @@ cmake -DCUDA_TOOLKIT_ROOT_DIR="~/NVIDIA/CUDA-7.0" ../src
 ```
 (Assuming this is the location).
 
-**Note:** If you have compile errors such as <code>undefined reference: atomicAdd</code>, it is likely you need to set your compute capability manually. CMake outputs whether compute capability was determined automatically, or if you need to set it manually. The default (and known working) minimum compute capability is 2.0.
+**Note:** If you have compile errors such as <code>undefined reference: atomicAdd</code>, it is likely you need to set your compute capability manually. CMake outputs whether compute capability was determined automatically, or if you need to set it manually. The default minimum compute capability is 2.0.
 
 ```c++
 cmake -DCUDA_COMPUTE_CAPABILITY=20 ../src
 make
 ```
-
-
+<img src="https://raw.githubusercontent.com/SCIInstitute/SCI-Solver_Level-Set/master/src/Resources/cropped.png"  align="left" hspace="20" width=450>
 Running Examples
 ==============
 
-You will need to enable examples in your build to compile and run them
+You will need to enable examples in your build to compile and run them.
 
 ```c++
 cmake -DBUILD_EXAMPLES=ON ../src
@@ -75,41 +91,92 @@ make
 
 You will find the example binaries built in the <code>build/examples</code> directory.
 
-Run the examples in the build directory:
+Run the example in the build directory:
 
 ```c++
-examples/Example1
-examples/Example2
-...
+examples/Example1 
 ```
+Each example has a <code>-h</code> flag that prints options for that example. <br/>
 
 Follow the example source code in <code>src/examples</code> to learn how to use the library.
 
 Using the Library
 ==============
 
-A basic usage of the library links to the <code>libLEVELSET_CORE</code> library during build and includes the headers needed, which are usually no more than:
+A basic usage of the library links to the <code>LEVELSET_CORE</code>
+library during build and includes the headers needed, which are usually no more than:
 
 ```c++
-#include "meshFIM.h"
+#include <LevelSet.h>
 ```
-TODO?:
 
-Then a program would setup the FEM parameters using the
-<code>AMG_Config</code> object and call <code>setup_solver()</code> to generate
-the answer matrices.
+Then a program would setup the LevelSet parameters using the 
+<code>LevelSet::LevelSet</code> object and call 
+<code>LevelSet::solveLevelSet()</code> to generate
+the array of vertex values per iteration.
 
-You will need to make sure your CMake/Makfile/Build setup knows where to point for the library and header files. See the examples and their CMakeLists.txt.
+Here is a minimal usage example for 3D, which is nearly identical to 2D.<br/>
+```c++
+#include <LevelSet.h>
+#include <iostream>
+int main(int argc, char *argv[])
+{
+  LevelSet::LevelSet data;
+  //the below means ~/my_tet_mesh.node & ~/my_tet_mesh.ele
+  data.filename_ = "~/my_tet_mesh"; 
+  //Run the solver
+  LevelSet::solveLevelSet(data);
+  //now use the result
+  LevelSet::writeVTK();
+  return 0;
+}
+```
+
+The following accessor functions are available after running the solver:
+```c++
+std::vector < LevelsetValueType > LevelSet::getResultAtIteration(size_t i);
+size_t LevelSet::numIterations(); 
+```
+You can also access the results and the mesh directly after running the solver:
+```c++
+TetMesh * LevelSet::mesh_;
+// AND
+std::vector < std::vector < LevelsetValueType > > LevelSet::time_values_;
+```
+
+<h3>LevelSet Options</h3>
+
+```C++
+  class Eikonal3D {
+      bool verbose_;                    //option to set for runtime verbosity [Default false]
+      std::string filename_;            //the input tet mesh filename         [Default ../src/test/test_data/sphere339
+      int partitionType_;               //0 for unstructured, 1 for square    [Default 0]
+      int numSteps_;                    //The number of timed steps to take   [Default 10]
+      double timeStep_;                 //The length of time for a time step  [Default 1.0]
+      int insideIterations_;            //The number of inner iterations      [Default 1]
+      int blockSize_  ;                 //If structured, the block size       [Default 16]
+      int sideLengths_;                 //If structured, the cube size        [Default 16]
+      LevelsetValueType bandwidth_;     //The algorithm bandwidth             [Default 16.]
+      int metisSize_;                   //If unstructured, # of METIS patches [Default 1]
+      double domain_;                   //The starting domain value           [Default minimum vert X value]
+  };
+```
+<br/>
+You will need to make sure your CMake/Makfile/Build setup knows where 
+to point for the library and header files. See the examples and their CMakeLists.txt.<br/><br/>
 
 Testing
 ==============
-The repo comes with a set of regression tests to see if recent changes break expected results. To build the tests, you will need to set <code>BUILD_TESTING</code> to "ON" in either <code>ccmake</code> or when calling CMake:
+The repo comes with a set of regression tests to see if recent changes break 
+expected results. To build the tests, you will need to set 
+<code>BUILD_TESTING</code> to "ON" in either <code>ccmake</code> or when calling CMake:
 
 ```c++
 cmake -DBUILD_TESTING=ON ../src
 ```
 <h4>Windows</h4>
-The gtest library included in the repo needs to be built with forced shared libraries on Windows, so use the following:
+The gtest library included in the repo needs to be built with 
+forced shared libraries on Windows, so use the following:
 
 ```c++
 cmake -DBUILD_TESTING=ON -Dgtest_forced_shared_crt=ON ../src

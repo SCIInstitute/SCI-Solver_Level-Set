@@ -29,7 +29,8 @@ namespace LevelSet {
         sideLengths_(1),
         bandwidth_(16.),
         metisSize_(16),
-        domain_(std::numeric_limits<double>::min())
+        domain_(std::numeric_limits<double>::min()),
+        axis_(0)
     {}
       //data
       bool verbose_;
@@ -43,17 +44,26 @@ namespace LevelSet {
       LevelsetValueType bandwidth_;
       int metisSize_;
       double domain_;
+      int axis_;
   };
 
   //The static pointer to the mesh
   static TetMesh * mesh_ = NULL;
   //the answer vector
-  static std::vector < std::vector <float> > time_values_;
+  static std::vector < std::vector <LevelsetValueType> > time_values_;
   //accessor functions to the results.
-  std::vector < float >& getResultAtIteration(size_t i) {
+  std::vector < LevelsetValueType >& getResultAtIteration(size_t i) {
     return time_values_.at(i);
   }
   size_t numIterations() { return time_values_.size(); }
+  void writeVTK() { 
+    meshFIM FIMPtr(mesh_);
+    FIMPtr.writeVTK();
+  }
+  void writeFLD() { 
+    meshFIM FIMPtr(mesh_);
+    FIMPtr.writeFLD();
+  }
 
   /**
    * Creates the mesh, partitions the mesh, and runs the algorithm.
@@ -95,9 +105,9 @@ namespace LevelSet {
     clock_t starttime, endtime;
     starttime = clock();
 
-    mesh_->init(in.pointlist, in.numberofpoints, in.trifacelist, 
-        in.numberoffacets, in.tetrahedronlist, in.numberoftetrahedra, 
-        in.numberoftetrahedronattributes, in.tetrahedronattributelist, 
+    mesh_->init(in.pointlist, in.numberofpoints, in.trifacelist,
+        in.numberoffacets, in.tetrahedronlist, in.numberoftetrahedra,
+        in.numberoftetrahedronattributes, in.tetrahedronattributelist,
         data.verbose_);
     mesh_->reorient();
     mesh_->need_neighbors(data.verbose_);
@@ -111,10 +121,11 @@ namespace LevelSet {
     } else {
       min = data.domain_;
     }
-    FIMPtr.GenerateData((char*)data.filename_.c_str(), data.numSteps_, 
-        data.timeStep_, data.insideIterations_, data.sideLengths_, 
-        data.blockSize_, data.bandwidth_, data.partitionType_, 
-        data.metisSize_, min, data.verbose_);
+    time_values_ =
+      FIMPtr.GenerateData((char*)data.filename_.c_str(), data.numSteps_,
+          data.timeStep_, data.insideIterations_, data.sideLengths_,
+          data.blockSize_, data.bandwidth_, data.partitionType_,
+          data.metisSize_, min, data.axis_, data.verbose_);
 
     endtime = clock();
     double duration = (double)(endtime - starttime) * 1000/ CLOCKS_PER_SEC;
@@ -136,7 +147,7 @@ namespace LevelSet {
     rmsError.resize(numIterations());
     for (size_t i = 0; i < numIterations(); i++) {
       float sum = 0.f;
-      std::vector<float> result = getResultAtIteration(i);
+      std::vector<LevelsetValueType> result = getResultAtIteration(i);
       for (size_t j = 0; j < solution.size(); j++) {
         float err = std::abs(solution[j] - result[j]);
         sum +=  err * err;

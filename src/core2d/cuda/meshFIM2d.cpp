@@ -67,8 +67,8 @@ void meshFIM2d::updateT(double timestep, int nside)
     {
       K[i] = area * (sigma DOT nablaN[i]); // for H(\nabla u) = sigma DOT \nabla u
       Hintegral += K[i] * values[i];
-      Kplus[i] = fmax(K[i], 0.0);
-      Kminus[i] = fmin(K[i], 0.0);
+      Kplus[i] = std::max(K[i], 0.0);
+      Kminus[i] = std::min(K[i], 0.0);
       beta += Kminus[i];
     }
     beta = 1.0 / beta;
@@ -91,13 +91,13 @@ void meshFIM2d::updateT(double timestep, int nside)
       double theta = 0;
       for (int i = 0; i < 3; i++)
       {
-        theta += fmax(0.0, alpha[i]);
+        theta += std::max(0.0, alpha[i]);
       }
 
       vector<double> alphatuda(3);
       for (int i = 0; i < 3; i++)
       {
-        alphatuda[i] = fmax(alpha[i], 0.0) / theta;
+        alphatuda[i] = std::max(alpha[i], 0.0) / theta;
       }
 
       for (int i = 0; i < 3; i++)

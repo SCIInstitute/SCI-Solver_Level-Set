@@ -226,7 +226,6 @@ void TriMesh::need_curvatures()
 	}
 
 	// Compute principal directions and curvatures at each vertex
-#pragma omp parallel for
 	for (int i = 0; i < nv; i++)
 		diagonalize_curv(pdir1[i], pdir2[i],
 				 curv1[i], curv12[i], curv2[i],

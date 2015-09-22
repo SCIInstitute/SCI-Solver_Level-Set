@@ -87,9 +87,9 @@ void TriMesh::need_faceedges()
 	for (int i = 0; i < numFaces; i++)
 	{
 		Face f = faces[i];
-		vec3d edge01 = (vec3d)(vertices[f[1]] - vertices[f[0]]);
-		vec3d edge12 = (vec3d)(vertices[f[2]] - vertices[f[1]]);
-		vec3d edge20 = (vec3d)(vertices[f[0]] - vertices[f[2]]);
+		point edge01 = vertices[f[1]] - vertices[f[0]];
+		point edge12 = vertices[f[2]] - vertices[f[1]];
+		point edge20 = vertices[f[0]] - vertices[f[2]];
 		faces[i].edgeLens[0] =sqrt(edge01[0]*edge01[0] + edge01[1]*edge01[1] + edge01[2]*edge01[2]);
 		faces[i].edgeLens[1] =sqrt(edge12[0]*edge12[0] + edge12[1]*edge12[1] + edge12[2]*edge12[2]);
 		faces[i].edgeLens[2] =sqrt(edge20[0]*edge20[0] + edge20[1]*edge20[1] + edge20[2]*edge20[2]);
@@ -121,18 +121,20 @@ vector<float> rescale(vector<float> scalar, float rangemin, float rangemax )
 	
 	
 }
-void TriMesh::need_noise(int nNoiseIter)
+void TriMesh::need_noise()
 {
 	if (!noiseOnVert.empty())
 		return;
 
 
-	FILE* file = fopen("noise_600k.txt","r");
-	//FILE* file = fopen("noiseSquare.1.txt","r");
+	FILE* file = fopen("noise_1.4m.txt","r");
+	//FILE* file = fopen("noiseSphereR60_16k.txt","r");
 
 	need_neighbors();
 	int nv = vertices.size();
+	int nf = faces.size();
 	noiseOnVert.resize(nv);
+	noiseOnFace.resize(nf);
 	srand( (unsigned)time( NULL ) );
 
 	for (int i = 0;i<nv; i++)
@@ -142,7 +144,23 @@ void TriMesh::need_noise(int nNoiseIter)
 		//noiseOnVert[i] = (float)rand() / (RAND_MAX + 1)*(up - down) + down;  //random number between [donw,up)
 		float wgn; 
 		fscanf(file,"%f",&wgn); 
-		noiseOnVert[i] = wgn-1;
+		noiseOnVert[i] = wgn;
+
+
+	}
+
+	fclose(file);
+
+	file = fopen("noise_1.4m.txt","r");
+
+	for (int i = 0;i<nf; i++)
+	{
+		//float up = 2;
+		//float down = 0;
+		//noiseOnVert[i] = (float)rand() / (RAND_MAX + 1)*(up - down) + down;  //random number between [donw,up)
+		float wgn; 
+		fscanf(file,"%f",&wgn); 
+		noiseOnFace[i] = wgn;
 
 
 	}
@@ -161,11 +179,109 @@ void TriMesh::need_noise(int nNoiseIter)
 
 	//fprintf(diffnoisefile,"%d\n", nv);
 	//fprintf(diffnoisefile,"%d\n", maxIterNum / iterStep + 1 );
+	//for (int maxiternum = 0; maxiternum <= maxIterNum; maxiternum +=iterStep)
+	//{
+
+
+	//	for (int i=0;i<10/*maxiternum*/; i++)
+	//	{
+	//		for (int j=0; j<nf;j++)
+	//		{
+
+	//			//noiseOnVert[j] = 0;
+	//			vector<int> nbs(across_edge[j][0],across_edge[j][1],across_edge[j][2]);
+	//			float upvalue = 0;
+	//			float downvalue = 0;
+
+	//			for (int k=0;k<nbs.size();k++)
+	//			{
+	//				int nb = nbs[k];
+	//				vector<int> nbnbs = neighbors[nb];
+	//				vector<int> samenbs;
+	//				//float areaPoly = 0;
+	//				samenbs.clear();
+
+
+	//				///////////////find the A and B//////////////////
+	//				for (int numnbs =0; numnbs < nbnbs.size(); numnbs++)
+	//				{
+	//					for (int numCnbs = 0; numCnbs < nbs.size(); numCnbs++)
+	//					{
+	//						if (nbnbs[numnbs] == nbs[numCnbs])
+	//						{
+	//							samenbs.push_back(nbnbs[numnbs]);
+	//						}
+
+	//					}
+
+	//				}
+
+	//				//////////////////////////////////////////////////////
+	//				if (samenbs.size() == 1)
+	//				{
+	//					point AC = vertices[j] - vertices[samenbs[0]];
+	//					point AN = vertices[nb] - vertices[samenbs[0]];
+	//					float alpha = acos( (AC DOT AN) / (sqrt(AC DOT AC) * sqrt( AN DOT AN)) );
+	//					alpha = MIN(alpha,(float) 85.0*M_PI/180.0);
+	//					alpha = MAX(alpha, (float)5.0*M_PI/180.0);
+	//					float w = 1.0 / tan(alpha);
+	//					downvalue += w;
+	//					upvalue += w*noiseOnVert[nb];
+	//					// upvalue +=0.5 * w* (noiseOnVert[j] - noiseOnVert[nb]);
+
+	//				}
+	//				else if (samenbs.size()==2)
+	//				{
+	//					point AC = vertices[j] - vertices[samenbs[0]];
+	//					point AN = vertices[nb] - vertices[samenbs[0]];
+	//					point BC = vertices[j] - vertices[samenbs[1]];
+	//					point BN = vertices[nb] - vertices[samenbs[1]];
+	//					float alpha = acos( (AC DOT AN) / (sqrt(AC DOT AC) * sqrt( AN DOT AN)) );
+	//					alpha = MIN(alpha, (float)85.0*M_PI/180.0);
+	//					alpha = MAX(alpha, (float)5.0*M_PI/180.0);
+
+	//					float beta  = acos( (BC  DOT BN) / (sqrt(BC  DOT BC ) * sqrt( BN DOT BN)) );
+
+	//					beta = MIN(beta, (float)85.0*M_PI/180.0);
+	//					beta = MAX(beta,(float) 5.0*M_PI/180.0);
+	//					float w = 1.0 / tan(alpha) + 1.0 / tan(beta);
+	//					downvalue += w;
+	//					upvalue += w*noiseOnVert[nb];
+	//					//upvalue +=0.5 * w* (noiseOnVert[j] - noiseOnVert[nb]);
+
+	//				}
+	//				else
+	//					printf("same nbs ERROR : not 1 or 2!!\n");
+
+
+
+	//				//noiseOnVert[j] +=noiseOnVert[neighbors[j][k]];
+
+	//			}
+	//			//noiseOnVert[j] /= nb.size();
+
+
+	//			float delta = noiseOnVert[j] - upvalue / downvalue;
+	//			tmpNoiseOnVert[j] = noiseOnVert[j] - dt * delta;
+	//		}
+
+	//		for (int buzhidao = 0; buzhidao < nv; buzhidao++)
+	//		{
+	//			noiseOnVert[buzhidao] = tmpNoiseOnVert[buzhidao];
+	//		}
+
+
+
+	//	}
+	//}
+
+
+
 	for (int maxiternum = 0; maxiternum <= maxIterNum; maxiternum +=iterStep)
 	{
 
 
-		for (int i=0;i<nNoiseIter/*maxiternum*/; i++)
+		for (int i=0;i<20/*maxiternum*/; i++)
 		{
 			for (int j=0; j<nv;j++)
 			{
@@ -204,8 +320,8 @@ void TriMesh::need_noise(int nNoiseIter)
 						point AC = vertices[j] - vertices[samenbs[0]];
 						point AN = vertices[nb] - vertices[samenbs[0]];
 						float alpha = acos( (AC DOT AN) / (sqrt(AC DOT AC) * sqrt( AN DOT AN)) );
-						alpha = MIN(alpha,(float) 85.0*PI/180.0);
-						alpha = MAX(alpha, (float)5.0*PI/180.0);
+						alpha = MIN(alpha,(float) 85.0*M_PI/180.0);
+						alpha = MAX(alpha, (float)5.0*M_PI/180.0);
 						float w = 1.0 / tan(alpha);
 						downvalue += w;
 						upvalue += w*noiseOnVert[nb];
@@ -233,9 +349,7 @@ void TriMesh::need_noise(int nNoiseIter)
 
 					}
 					else
-					{
-						//printf("same nbs ERROR : not 1 or 2!!\n");
-					}
+						printf("same nbs ERROR : not 1 or 2!!\n");
 
 
 
@@ -258,30 +372,24 @@ void TriMesh::need_noise(int nNoiseIter)
 
 		}
 
-
-		for (int buzhidao = 0; buzhidao < nv; buzhidao++)
-		{
-			noiseOnVert[buzhidao] = noiseOnVert[buzhidao]+1;
-		}
-
 		//noiseOnVert = rescale(noiseOnVert, 0, 2);
 
-		//fprintf(diffnoisefile,"%d\n", maxiternum);
-		//for (int j=0; j<nv; j++)
-		//{
-		//	fprintf(diffnoisefile,"%f\n",noiseOnVert[j]);
-		//}
+	//	//fprintf(diffnoisefile,"%d\n", maxiternum);
+	//	//for (int j=0; j<nv; j++)
+	//	//{
+	//	//	fprintf(diffnoisefile,"%f\n",noiseOnVert[j]);
+	//	//}
 
-		colors.resize(nv);
-		for (int i =0; i< nv; i++)
-		{
-			colors[i] = Color(noiseOnVert[i]/2.0,noiseOnVert[i]/2.0,noiseOnVert[i]/2.0);
-		}
-		
+	//	colors.resize(nv);
+	//	for (int i =0; i< nv; i++)
+	//	{
+	//		colors[i] = Color(noiseOnVert[i]/2.0,noiseOnVert[i]/2.0,noiseOnVert[i]/2.0);
+	//	}
+	//	
 
-		
-		
-		
+	//	
+	//	
+	//	
 
 	}
 
@@ -298,6 +406,7 @@ void TriMesh::need_speed()
 
 	//FILE* file = fopen("noiseSphereR40.txt","r");
 	//FILE* file = fopen("noiseSquare.1.txt","r");
+	FILE* file = fopen("noise_1.4m.txt","r");
 	
 	for (int i =0; i<nf;i++)
 	{
@@ -318,8 +427,8 @@ void TriMesh::need_speed()
 				faces[i].speedInv =( noiseOnVert[faces[i][0]] + noiseOnVert[faces[i][1]] + noiseOnVert[faces[i][2]] )/ 3;
 				//float wgn; 
 				//fscanf(file,"%f",&wgn); 
-				//faces[i].speedInv =1.0 / wgn;//( noiseOnVert[faces[i][0]] + noiseOnVert[faces[i][1]] + noiseOnVert[faces[i][2]] )/ 3;
-				//
+				//faces[i].speedInv = wgn;//( noiseOnVert[faces[i][0]] + noiseOnVert[faces[i][1]] + noiseOnVert[faces[i][2]] )/ 3;
+				
 				break;
 
 
@@ -432,9 +541,9 @@ void TriMesh::need_across_edge()
 	int nf = faces.size();
 	across_edge.resize(nf, Face(-1,-1,-1));
 
-	for (long long i = 0; i < nf; i++) {
+	for (int i = 0; i < nf; i++) {
 		for (int j = 0; j < 3; j++) {
-			if ( across_edge[i][j] != -1)
+			if (across_edge[i][j] != -1)
 				continue;
 			int v1 = faces[i][(j+1)%3];
 			int v2 = faces[i][(j+2)%3];

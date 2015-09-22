@@ -271,7 +271,7 @@ static inline void eigdc(T A[N][N], T d[N])
 			do {
 				T g = d[l];
 				T p = (d[l+1] - g) / (e[l] + e[l]);
-				T r = T(hypot(p, 1.0));
+				T r = T(hypot(p, (T)1.0));
 				if (p < 0.0)
 					r = -r;
 				d[l] = e[l] / (p + r);

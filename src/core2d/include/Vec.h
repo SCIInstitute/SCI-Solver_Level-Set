@@ -167,6 +167,7 @@ typedef Vec<2,float> vec2;
 typedef Vec<3,float> vec3;
 typedef Vec<2,double> vec2d;
 typedef Vec<3, double> vec3d;
+typedef Vec<4, double> vec4d;
 typedef Vec<4,float> vec4;
 typedef Vec<2,int> ivec2;
 typedef Vec<3,int> ivec3;
@@ -215,7 +216,7 @@ static inline const Vec<3,T> operator % (const Vec<3,T> &v1, const Vec<3,T> &v2)
 			v1[2]*v2[0] - v1[0]*v2[2],
 			v1[0]*v2[1] - v1[1]*v2[0]);
 }
-#define CROSS %
+#define CROSS % 
 
 
 // Component-wise equality and inequality (#include the usual caveats

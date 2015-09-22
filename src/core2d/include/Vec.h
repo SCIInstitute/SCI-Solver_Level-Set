@@ -109,6 +109,10 @@ public:
 		{ return v; }
 	operator T * ()
 		{ return v; }
+        Vec<D,T> operator * (const T& val) {
+          for (int i = 0; i < D; i++) v[i] *= val;
+          return *this;
+        }
 
 	// Member operators
 	Vec<D,T> &operator += (const Vec<D,T> &x)

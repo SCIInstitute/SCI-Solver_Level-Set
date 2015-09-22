@@ -68,7 +68,7 @@ __global__ void kernel_updateT_single_stage(LevelsetValueType timestep, int* nar
 
   extern __shared__ char s_array[];
   LevelsetValueType* s_vertT = (LevelsetValueType*)s_array;
-  LevelsetValueType* s_vert = (LevelsetValueType*)s_array;
+  //LevelsetValueType* s_vert = (LevelsetValueType*)s_array;
   short* s_mem = (short*)&s_vertT[largest_vert_part]; //temperarily hold the inside_mem_locations
   LevelsetValueType* s_alphatuda_Hintegral = (LevelsetValueType*)s_array;
   LevelsetValueType* s_alphatuda_volume = (LevelsetValueType*)s_array;
@@ -465,7 +465,7 @@ __global__ void kernel_updateT_single_stage(LevelsetValueType timestep, int* nar
     if (fabs(down) > 1e-8)
     {
       LevelsetValueType eikonal = up / down;
-      LevelsetValueType curvature = curv_up / sum_nb_volume;
+      //LevelsetValueType curvature = curv_up / sum_nb_volume;
       LevelsetValueType node_eikonal = LENGTH2(node_nabla_phi_up) / sum_nb_volume;
       vertT_out[vert_start + tidx] = oldT - timestep * eikonal;
       //      vertT_out[vert_start + tidx] = oldT - node_eikonal * curvature * timestep;
@@ -727,7 +727,7 @@ __global__ void kernel_fill_ele_label(int ne, int* ele_permute, int* ele_offsets
 
 __global__ void kernel_compute_ele_npart(int ne, int* npart, int* ele, int* ele_label)
 {
-  int bidx = blockIdx.x;
+  //int bidx = blockIdx.x;
   int tidx = blockIdx.x * blockDim.x + threadIdx.x;
 
   for (int eidx = tidx; eidx < ne; eidx += blockDim.x * gridDim.x)

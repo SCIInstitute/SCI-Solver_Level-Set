@@ -11,7 +11,7 @@ using namespace std;
 
 #define MIN(a,b) std::min(a,b)
 
-void TetMesh::init(LevelsetValueType* pointlist, int numpoint, int*trilist, int numtri, int* tetlist, int numtet, int numattr, LevelsetValueType* attrlist, bool verbose)
+void TetMesh::init(float* pointlist, int numpoint, int*trilist, int numtri, int* tetlist, int numtet, int numattr, float* attrlist, bool verbose)
 {
 
   vertices.resize(numpoint);

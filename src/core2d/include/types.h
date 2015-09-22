@@ -6,7 +6,7 @@
 #define CAST(x) thrust::raw_pointer_cast(&x[0])
 #define SINGLE
 
-typedef float LevelsetValueType;
+typedef double LevelsetValueType;
 
 typedef cusp::csr_matrix<int, LevelsetValueType, cusp::host_memory> Matrix_CSR_h;
 typedef cusp::csr_matrix<int, LevelsetValueType, cusp::device_memory> Matrix_CSR_d;

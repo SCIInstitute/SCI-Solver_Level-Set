@@ -1,5 +1,8 @@
 #pragma once
-
+#ifdef WIN32
+inline void printStackTrace() {}
+#define FatalError(s)
+#else
 #include <execinfo.h>
 #include <dlfcn.h>
 #include <cxxabi.h>
@@ -8,7 +11,7 @@
 
 /******************************************************
  * prints the current stack trace
- *****************************************************/
+*****************************************************/
 inline void printStackTrace() {
   const int MAX_STACK=30;
   size_t n;
@@ -49,4 +52,4 @@ inline void printStackTrace() {
   printf("Fatal error '%s' at %s:%d\n",s,__FILE__,__LINE__);        \
   printStackTrace();                                                \
   exit(1);
-
+#endif

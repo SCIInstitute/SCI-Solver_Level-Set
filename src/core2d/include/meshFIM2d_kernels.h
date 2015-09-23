@@ -239,8 +239,8 @@ __global__ void kernel_updateT_single_stage(LevelsetValueType timestep, int* nar
       //      K[i] = volume * (nablaPhi DOT nablaN[i]) / len(nablaPhi); // for F(x) = 1
       //      K[i] = -volume* (nablaPhi DOT nablaN[i]) / len(nablaPhi); // for F(x) = -1
       Hintegral += K[i] * eleT[i];
-      Kplus[i] = fmax(K[i], 0.0f);
-      Kminus[i] = fmin(K[i], 0.0f);
+      Kplus[i] = fmax(K[i], 0.0);
+      Kminus[i] = fmin(K[i], 0.0);
       beta += Kminus[i];
     }
 
@@ -266,12 +266,12 @@ __global__ void kernel_updateT_single_stage(LevelsetValueType timestep, int* nar
 #pragma unroll
       for (int i = 0; i < 3; i++)
       {
-        theta += fmax(0.0f, alpha[i]);
+        theta += fmax(0.0, alpha[i]);
       }
 #pragma unroll
       for (int i = 0; i < 3; i++)
       {
-        alphatuda[i] = fmax(alpha[i], 0.0f) / theta;
+        alphatuda[i] = fmax(alpha[i], 0.0) / theta;
       }
 
       //      if (tidx == 0 || tidx == 1 || tidx == 2 || tidx == 3 || tidx == 32 || tidx == 34 || tidx == 35)

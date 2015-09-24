@@ -6,7 +6,6 @@
 #include <TriMesh.h>
 #include <cuda_runtime.h>
 #include <mycutil.h>
-#include <mytimer.h>
 using std::string;
 
 void usage(const char *myname)

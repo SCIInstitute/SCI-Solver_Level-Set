@@ -75,12 +75,13 @@ void meshFIM::writeVTK(std::vector < std::vector <LevelsetValueType> > values)
   {
     fprintf(vtkfile, "10\n");
   }
-  for (size_t i = 0; i < values.size(); i++) {
-    fprintf(vtkfile, "POINT_DATA %d\nSCALARS traveltime%d float 1\nLOOKUP_TABLE default\n", nv, i);
-    for (int j = 0; j < values[i].size(); j++)
-    {
-      fprintf(vtkfile, "%.12f\n", values[i][j]);
+  fprintf(vtkfile, "POINT_DATA %d\nSCALARS traveltime float %lu\nLOOKUP_TABLE default\n",
+      nv, values.size());
+  for (int j = 0; j < values[0].size(); j++) {
+    for (size_t i = 0; i < values.size(); i++) {
+      fprintf(vtkfile, "%.12f ", values[i][j]);
     }
+    fprintf(vtkfile,"\n");
   }
   fclose(vtkfile);
 }

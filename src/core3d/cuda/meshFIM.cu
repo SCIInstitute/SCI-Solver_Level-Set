@@ -52,7 +52,7 @@ void meshFIM::writeFLD()
   fclose(fldfile);
 }
 
-void meshFIM::writeVTK()
+void meshFIM::writeVTK(std::vector < std::vector <LevelsetValueType> > values)
 {
   FILE* vtkfile;
   int nv = m_meshPtr->vertices.size();
@@ -75,10 +75,12 @@ void meshFIM::writeVTK()
   {
     fprintf(vtkfile, "10\n");
   }
-  fprintf(vtkfile, "POINT_DATA %d\nSCALARS traveltime float 1\nLOOKUP_TABLE default\n", nv);
-  for(int i = 0; i < nv; i++)
-  {
-    fprintf(vtkfile, "%.12f\n", m_meshPtr->vertT[i]);
+  for (size_t i = 0; i < values.size(); i++) {
+    fprintf(vtkfile, "POINT_DATA %d\nSCALARS traveltime%d float 1\nLOOKUP_TABLE default\n", nv, i);
+    for (int j = 0; j < values[i].size(); j++)
+    {
+      fprintf(vtkfile, "%.12f\n", values[i][j]);
+    }
   }
   fclose(vtkfile);
 }

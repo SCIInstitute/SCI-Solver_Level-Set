@@ -58,7 +58,7 @@ namespace LevelSet {
   size_t numIterations() { return time_values_.size(); }
   void writeVTK() { 
     meshFIM FIMPtr(mesh_);
-    FIMPtr.writeVTK();
+    FIMPtr.writeVTK(time_values_);
   }
   void writeFLD() { 
     meshFIM FIMPtr(mesh_);
@@ -113,19 +113,21 @@ namespace LevelSet {
     mesh_->need_neighbors(data.verbose_);
     mesh_->need_adjacenttets(data.verbose_);
     meshFIM FIMPtr(mesh_);
-    double min = std::numeric_limits<double>::max();
+    double mn = std::numeric_limits<double>::max();
+    double mx = std::numeric_limits<double>::min();
     if (data.domain_ == std::numeric_limits<double>::min()) {
       for (size_t i = 0; i < mesh_->vertices.size(); i++) {
-        min = std::min(min, mesh_->vertices[i][0]);
+        mn = std::min(mn, mesh_->vertices[i][0]);
+        mx = std::max(mx, mesh_->vertices[i][0]);
       }
     } else {
-      min = data.domain_;
+      mn = data.domain_;
     }
     time_values_ =
       FIMPtr.GenerateData((char*)data.filename_.c_str(), data.numSteps_,
-          data.timeStep_, data.insideIterations_, data.sideLengths_,
-          data.blockSize_, data.bandwidth_, data.partitionType_,
-          data.metisSize_, min, data.axis_, data.verbose_);
+      data.timeStep_, data.insideIterations_, data.sideLengths_,
+      data.blockSize_, data.bandwidth_, data.partitionType_,
+      data.metisSize_, (mn + mx) / 2., data.axis_, data.verbose_);
 
     endtime = clock();
     double duration = (double)(endtime - starttime) * 1000/ CLOCKS_PER_SEC;

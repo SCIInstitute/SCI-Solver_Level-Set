@@ -279,9 +279,9 @@ class tetgenio {
     // 'pointmtrlist': An array of metric tensors at points. Each point's
     //   tensor occupies 'numberofpointmtr' REALs.
     // `pointmarkerlist':  An array of point markers; one int per point.
-    REAL *pointlist;
-    REAL *pointattributelist;
-    REAL *pointmtrlist;
+    double *pointlist;
+    double *pointattributelist;
+    double *pointmtrlist;
     int *pointmarkerlist;
     int numberofpoints;
     int numberofpointattributes;
@@ -299,8 +299,8 @@ class tetgenio {
     // `neighborlist':  An array of element neighbors; 3 or 4 ints per
     //   element.  Output only.
     int *tetrahedronlist;
-    REAL *tetrahedronattributelist;
-    REAL *tetrahedronvolumelist;
+    double *tetrahedronattributelist;
+    double *tetrahedronvolumelist;
     int *neighborlist;
     int numberoftetrahedra;
     int numberofcorners;
@@ -315,7 +315,7 @@ class tetgenio {
     // `holelist':  An array of holes.  The first hole's x, y and z
     //   coordinates  are at indices [0], [1] and [2], followed by the
     //   remaining holes. Three REALs per hole. 
-    REAL *holelist;
+    double *holelist;
     int numberofholes;
 
     // `regionlist': An array of regional attributes and volume constraints.
@@ -325,14 +325,14 @@ class tetgenio {
     // Note that each regional attribute is used only if you select the `A'
     //   switch, and each volume constraint is used only if you select the
     //   `a' switch (with no number following).
-    REAL *regionlist;
+    double *regionlist;
     int numberofregions;
 
     // `facetconstraintlist': An array of facet maximal area constraints.
     //   Two REALs per constraint. The first one is the facet marker (cast
     //   it to int), the second is its maximum area bound.
     // Note the 'facetconstraintlist' is used only for the 'q' switch. 
-    REAL *facetconstraintlist;
+    double *facetconstraintlist;
     int numberoffacetconstraints;
 
     // `segmentconstraintlist': An array of segment max. length constraints.
@@ -340,7 +340,7 @@ class tetgenio {
     //   into 'pointlist') of the endpoints of the segment, the third is its
     //   maximum length bound.
     // Note the 'segmentconstraintlist' is used only for the 'q' switch. 
-    REAL *segmentconstraintlist;
+    double *segmentconstraintlist;
     int numberofsegmentconstraints;
 
     // 'pbcgrouplist':  An array of periodic boundary condition groups.
@@ -375,7 +375,7 @@ class tetgenio {
     // 'vcelllist':  An array of Voronoi cells.  Each entry is an array of
     //   indices pointing into 'vfacetlist'. The 0th entry is used to store
     //   the length of this array.
-    REAL *vpointlist;
+    double *vpointlist;
     voroedge *vedgelist;
     vorofacet *vfacetlist;
     int **vcelllist;

@@ -40,7 +40,7 @@ class meshFIM
     void InitPatches(bool verbose = false);
     void InitPatches2();
     void GenerateBlockNeighbors();
-    void writeVTK();
+    void writeVTK(std::vector < std::vector <LevelsetValueType> > values);
     void writeFLD();
 
     meshFIM(TetMesh* mesh)

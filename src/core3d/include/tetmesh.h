@@ -238,7 +238,7 @@ class TetMesh
     static void set_verbose(int);
     static int dprintf(const char *format, ...);
 
-    void init(float* pointlist, int numpoint, int*trilist, int numtri, int* tetlist, int numtet, int numattr, float* attrlist, bool verbose = false);
+    void init(double* pointlist, int numpoint, int*trilist, int numtri, int* tetlist, int numtet, int numattr, double* attrlist, bool verbose = false);
 
     //Constructor
     TetMesh()

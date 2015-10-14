@@ -62,7 +62,7 @@ namespace LevelSet {
   }
   void writeFLD() { 
     meshFIM FIMPtr(mesh_);
-    FIMPtr.writeFLD();
+    FIMPtr.writeFLD(time_values_);
   }
 
   /**

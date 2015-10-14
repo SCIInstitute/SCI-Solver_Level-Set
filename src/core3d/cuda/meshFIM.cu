@@ -16,13 +16,11 @@ extern "C"
 #include <metis.h>
 }
 
-void meshFIM::writeFLD()
+void meshFIM::writeFLD(std::vector < std::vector <LevelsetValueType> > values)
 {
   int nv = m_meshPtr->vertices.size();
   int nt = m_meshPtr->tets.size();
-  FILE* matfile;
   FILE* fldfile;
-  matfile = fopen("result.txt", "w+");
   fldfile = fopen("result.fld", "w+");
   fprintf(fldfile, "SCI\nASC\n2\n{@1 {GenericField<TetVolMesh<TetLinearLgn<Point>>,ConstantBasis<float>,vector<float>> 3 {Field 3 {PropertyManager 2 0 }\n}\n{@2 {TetVolMesh<TetLinearLgn<Point>> 4 {Mesh 2 {PropertyManager 2 0 }\n}\n");
   fprintf(fldfile, "{STLVector 2 %d ", nv);
@@ -42,48 +40,41 @@ void meshFIM::writeFLD()
   {
     fprintf(fldfile, " 0");
   }
-
   fprintf(fldfile, "}\n}\n}");
-  for(int i = 0; i < nv; i++)
-  {
-    fprintf(matfile, "%.12f\n", m_meshPtr->vertT[i]);
-  }
-  fclose(matfile);
   fclose(fldfile);
 }
 
 void meshFIM::writeVTK(std::vector < std::vector <LevelsetValueType> > values)
 {
-  FILE* vtkfile;
   int nv = m_meshPtr->vertices.size();
   int nt = m_meshPtr->tets.size();
-  vtkfile = fopen("result.vtk", "w+");
-  fprintf(vtkfile, "# vtk DataFile Version 3.0\nvtk output\nASCII\nDATASET UNSTRUCTURED_GRID\n");
-  fprintf(vtkfile, "POINTS %d float\n", nv);
-  for(int i = 0; i < nv; i++)
-  {
-    fprintf(vtkfile, "%.12f %.12f %.12f\n", m_meshPtr->vertices[i][0], m_meshPtr->vertices[i][1], m_meshPtr->vertices[i][2]);
-  }
-  fprintf(vtkfile, "CELLS %d %d\n", nt, nt * 5);
-  for(int i = 0; i < nt; i++)
-  {
-    fprintf(vtkfile, "4 %d %d %d %d\n", m_meshPtr->tets[i][0], m_meshPtr->tets[i][1], m_meshPtr->tets[i][2], m_meshPtr->tets[i][3]);
-  }
-
-  fprintf(vtkfile, "CELL_TYPES %d\n", nt);
-  for(int i = 0; i < nt; i++)
-  {
-    fprintf(vtkfile, "10\n");
-  }
-  fprintf(vtkfile, "POINT_DATA %d\nSCALARS traveltime float %lu\nLOOKUP_TABLE default\n",
-      nv, values.size());
-  for (int j = 0; j < values[0].size(); j++) {
-    for (size_t i = 0; i < values.size(); i++) {
-      fprintf(vtkfile, "%.12f ", values[i][j]);
+  for (size_t j = 0; j < values.size(); j++) {
+    FILE* vtkfile;
+    vtkfile = fopen((std::string("result") + std::to_string(i) + std::string(".vtk")).c_str(), "w+");
+    fprintf(vtkfile, "# vtk DataFile Version 3.0\nvtk output\nASCII\nDATASET UNSTRUCTURED_GRID\n");
+    fprintf(vtkfile, "POINTS %d float\n", nv);
+    for (int i = 0; i < nv; i++)
+    {
+      fprintf(vtkfile, "%.12f %.12f %.12f\n", m_meshPtr->vertices[i][0], m_meshPtr->vertices[i][1], m_meshPtr->vertices[i][2]);
     }
-    fprintf(vtkfile,"\n");
+    fprintf(vtkfile, "CELLS %d %d\n", nt, nt * 5);
+    for (int i = 0; i < nt; i++)
+    {
+      fprintf(vtkfile, "4 %d %d %d %d\n", m_meshPtr->tets[i][0], m_meshPtr->tets[i][1], m_meshPtr->tets[i][2], m_meshPtr->tets[i][3]);
+    }
+
+    fprintf(vtkfile, "CELL_TYPES %d\n", nt);
+    for (int i = 0; i < nt; i++)
+    {
+      fprintf(vtkfile, "10\n");
+    }
+    fprintf(vtkfile, "POINT_DATA %d\nSCALARS traveltime float 1\nLOOKUP_TABLE default\n",
+      nv, values.size());
+    for (int i = 0; i < values[j].size(); i++) {
+      fprintf(vtkfile, "%.12f\n ", values[j][i]);
+    }
+    fclose(vtkfile);
   }
-  fclose(vtkfile);
 }
 
 void meshFIM::updateT_single_stage_d(LevelsetValueType timestep, int niter, IdxVector_d& narrowband, int num_narrowband)

@@ -75,6 +75,7 @@ int main(int argc, char *argv[])
     }
   LevelSet::solveLevelSet(data);
   LevelSet::writeVTK();
+  LevelSet::writeFLD();
   return 0;
 }
 

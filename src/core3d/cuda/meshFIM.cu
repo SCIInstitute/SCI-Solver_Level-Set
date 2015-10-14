@@ -50,7 +50,7 @@ void meshFIM::writeVTK(std::vector < std::vector <LevelsetValueType> > values)
   int nt = m_meshPtr->tets.size();
   for (size_t j = 0; j < values.size(); j++) {
     FILE* vtkfile;
-    vtkfile = fopen((std::string("result") + std::to_string(i) + std::string(".vtk")).c_str(), "w+");
+    vtkfile = fopen((std::string("result") + std::to_string(j) + std::string(".vtk")).c_str(), "w+");
     fprintf(vtkfile, "# vtk DataFile Version 3.0\nvtk output\nASCII\nDATASET UNSTRUCTURED_GRID\n");
     fprintf(vtkfile, "POINTS %d float\n", nv);
     for (int i = 0; i < nv; i++)

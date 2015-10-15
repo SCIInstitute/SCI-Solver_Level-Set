@@ -602,22 +602,23 @@ std::vector <std::vector <LevelsetValueType> > meshFIM::GenerateData(
     h_vertT[i] = m_meshPtr->vertT[i];
   }
   m_vertT_d = h_vertT;
-  std::vector<double> list;
-
   starttime = clock();
   //Init patches
   InitPatches(verbose);
   Vector_h cadv_h(3 * full_num_ele);
-  Vector_h ele_label_h(ele_full_label);
-  for (size_t i = 0 ; i < ele_label_h; i++) {
-    list.push_back(ele_label_h[i]);
+  Vector_h ele_offsets_h(ele_offsets_d);
+  for (int i = 0; i < ele_offsets_h.size() - 1; i++) {
+    size_t fullIdx = static_cast<size_t>(ele_offsets_h[i]);
+    cadv_h[0 * full_num_ele + fullIdx] = m_meshPtr->normals[i][0];
+    cadv_h[1 * full_num_ele + fullIdx] = m_meshPtr->normals[i][1];
+    cadv_h[2 * full_num_ele + fullIdx] = m_meshPtr->normals[i][2];
   }
-  for(int i = 0; i < full_num_ele; i++)
-  {
-    cadv_h[0 * full_num_ele + i] = m_meshPtr->normals[ele_label_h[i]][0];
-    cadv_h[1 * full_num_ele + i] = m_meshPtr->normals[ele_label_h[i]][1];
-    cadv_h[2 * full_num_ele + i] = m_meshPtr->normals[ele_label_h[i]][2];
+  ////////////////////////DEBUG
+  std::vector<double> list;
+  for (size_t i = 0; i < cadv_h.size(); i++) {
+    list.push_back(cadv_h[i]);
   }
+  //////////////////////// END DEBUG
   m_cadv_global_d = Vector_d(cadv_h);
   InitPatches2();
   GenerateBlockNeighbors();

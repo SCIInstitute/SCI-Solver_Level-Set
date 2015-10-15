@@ -610,12 +610,12 @@ std::vector <std::vector <LevelsetValueType> > meshFIM::GenerateData(
   //Init patches
   InitPatches(verbose);
   Vector_h cadv_h(3 * full_num_ele);
-  Vector_h ele_offsets_h(ele_offsets_d);
+  Vector_h ele_label_h(ele_full_label);
   for(int i = 0; i < full_num_ele; i++)
   {
-    cadv_h[0 * full_num_ele + i] = advection[ele_offsets_h[i]][0];
-    cadv_h[1 * full_num_ele + i] = advection[ele_offsets_h[i]][1];
-    cadv_h[2 * full_num_ele + i] = advection[ele_offsets_h[i]][2];
+    cadv_h[0 * full_num_ele + i] = advection[ele_label_h[i]][0];
+    cadv_h[1 * full_num_ele + i] = advection[ele_label_h[i]][1];
+    cadv_h[2 * full_num_ele + i] = advection[ele_label_h[i]][2];
   }
   m_cadv_global_d = Vector_d(cadv_h);
   InitPatches2();

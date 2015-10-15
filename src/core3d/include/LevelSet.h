@@ -119,6 +119,17 @@ namespace LevelSet {
     //fill in initial values for the mesh if not given by the user //TODO
     std::vector<point> advection;
     advection.resize(mesh_->tets.size());
+    for (size_t i = 0; i < advection.size(); i++) {
+       point p = mesh_->vertices[mesh_->tets[i][0]] - point(54.,54.,54);
+       double mag = std::sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
+       advection[i] = p / mag;
+    }
+    mesh_->vertT.resize(mesh_->vertices.size());
+    for (size_t i = 0; i < mesh_->vertices.size(); i++) {
+      point p = mesh_->vertices[i] - point(54., 54., 54);
+      double mag = std::sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
+      mesh_->vertT[i] = mag - 10.;
+    }
     if (data.domain_ == std::numeric_limits<double>::min()) {
       for (size_t i = 0; i < mesh_->vertices.size(); i++) {
         mn = std::min(mn, mesh_->vertices[i][0]);

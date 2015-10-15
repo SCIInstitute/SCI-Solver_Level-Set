@@ -35,7 +35,7 @@ class meshFIM
         char* filename, int nsteps, LevelsetValueType timestep,
         int inside_niter, int nside, int block_size,
         LevelsetValueType bandwidth, int part_type, int metis_size,
-        std::vector<point> advection, bool verbose = false);
+        bool verbose = false);
     void Partition_METIS(int metissize, bool verbose = false);
     void GraphPartition_Square(int squareLength, int squareWidth, int squareHeight, 
       int blockLength, int blockWidth, int blockHeight, bool verbose = false);

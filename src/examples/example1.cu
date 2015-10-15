@@ -3,9 +3,10 @@
 int main(int argc, char *argv[])
 {
   LevelSet::LevelSet data;
+  bool fromCenter = false;
   //input filename (minus extension)
   std::string filename;
-  for (int i = 0; i < argc; i++)
+  for (int i = 0; i < argc; i++) {
     if (strcmp(argv[i],"-v") == 0) {
       data.verbose_ = true;
     } else if (strcmp(argv[i],"-i") == 0) {
@@ -15,10 +16,6 @@ int main(int argc, char *argv[])
         data.filename_ = data.filename_.substr(0,data.filename_.size() - 5);
       if (data.filename_.substr(data.filename_.size()-4,4) == ".ele")
         data.filename_ = data.filename_.substr(0,data.filename_.size() - 4);
-      i++;
-    } else if (strcmp(argv[i],"-a") == 0) {
-      if (i+1 >= argc) break;
-      data.axis_ = atoi(argv[i+1]);
       i++;
     } else if (strcmp(argv[i],"-n") == 0) {
       if (i+1 >= argc) break;
@@ -52,10 +49,8 @@ int main(int argc, char *argv[])
       if (i+1 >= argc) break;
       data.bandwidth_ = atof(argv[i+1]);
       i++;
-    } else if (strcmp(argv[i],"-x") == 0) {
-      if (i+1 >= argc) break;
-      data.domain_ = atof(argv[i+1]);
-      i++;
+    } else if (strcmp(argv[i],"-c") == 0) {
+      fromCenter = true;
     } else if (strcmp(argv[i],"-h") == 0) {
       std::cout << "Usage: ./Example1 [OPTIONS]" << std::endl;
       std::cout << "   -h                 Print this help message." << std::endl;
@@ -69,13 +64,32 @@ int main(int argc, char *argv[])
       std::cout << "   -b NUM_BLOCKS      # of blocks for Square partition type." << std::endl;
       std::cout << "   -m METIS_SIZE      The size for METIS partiation type." << std::endl;
       std::cout << "   -w BANDWIDTH       The Bandwidth for the algorithm." << std::endl;
-      std::cout << "   -x XDOMAIN         The starting X domain to begin levelset" << std::endl;
-      std::cout << "   -a AXIS            The axis for value update" << std::endl;
       exit(0);
     }
+  }
+  if (fromCenter) {
+    //initialize values
+    LevelSet::initializeMesh(data);
+    std::vector<double> vals;
+    for (size_t i = 0; i < LevelSet::mesh_->vertices.size(); i++) {
+      point p = LevelSet::mesh_->vertices[i] - point(54.,54.,54.);
+      double mag = std::sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
+      vals.push_back(mag - 10.);
+    }
+    std::vector<point> adv;
+    for (size_t i = 0; i < LevelSet::mesh_->tets.size(); i++) {
+      point p = (LevelSet::mesh_->vertices[LevelSet::mesh_->tets[i][0]] +
+          LevelSet::mesh_->vertices[LevelSet::mesh_->tets[i][1]]  +
+          LevelSet::mesh_->vertices[LevelSet::mesh_->tets[i][2]])
+        / 3. - point(54.,54.,54);
+      double mag = std::sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
+      adv.push_back(p / mag);
+    }
+    LevelSet::initializeVertices(data,vals);
+    LevelSet::initializeAdvection(data,adv);
+  }
   LevelSet::solveLevelSet(data);
   LevelSet::writeVTK();
-  LevelSet::writeFLD();
   return 0;
 }
 

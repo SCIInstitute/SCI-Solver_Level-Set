@@ -571,7 +571,7 @@ void meshFIM::GenerateBlockNeighbors()
 std::vector <std::vector <LevelsetValueType> > meshFIM::GenerateData(
     char* filename, int nsteps, LevelsetValueType timestep, int inside_niter,
     int nside, int block_size, LevelsetValueType bandwidth, int part_type,
-    int metis_size, std::vector<point> advection, bool verbose)
+    int metis_size, bool verbose)
 {
   if (verbose)
     printf("Starting meshFIM::GenerateData\n");
@@ -596,26 +596,27 @@ std::vector <std::vector <LevelsetValueType> > meshFIM::GenerateData(
     Partition_METIS(metis_size, verbose);
   }
   //Initialize the values
-  if(m_meshPtr->vertT.size() == 0)
-    m_meshPtr->vertT.resize(nv);
-
   Vector_h h_vertT(nv);
   for(int i = 0; i < nv; i++)
   {
     h_vertT[i] = m_meshPtr->vertT[i];
   }
   m_vertT_d = h_vertT;
+  std::vector<double> list;
 
   starttime = clock();
   //Init patches
   InitPatches(verbose);
   Vector_h cadv_h(3 * full_num_ele);
   Vector_h ele_label_h(ele_full_label);
+  for (size_t i = 0 ; i < ele_label_h; i++) {
+    list.push_back(ele_label_h[i]);
+  }
   for(int i = 0; i < full_num_ele; i++)
   {
-    cadv_h[0 * full_num_ele + i] = advection[ele_label_h[i]][0];
-    cadv_h[1 * full_num_ele + i] = advection[ele_label_h[i]][1];
-    cadv_h[2 * full_num_ele + i] = advection[ele_label_h[i]][2];
+    cadv_h[0 * full_num_ele + i] = m_meshPtr->normals[ele_label_h[i]][0];
+    cadv_h[1 * full_num_ele + i] = m_meshPtr->normals[ele_label_h[i]][1];
+    cadv_h[2 * full_num_ele + i] = m_meshPtr->normals[ele_label_h[i]][2];
   }
   m_cadv_global_d = Vector_d(cadv_h);
   InitPatches2();
@@ -635,6 +636,7 @@ std::vector <std::vector <LevelsetValueType> > meshFIM::GenerateData(
   int num_narrowband = 0;
 
   std::vector <std::vector <LevelsetValueType> >  ans;
+  ans.push_back(m_meshPtr->vertT);
 
   starttime = clock();
   for(int stepcount = 0; stepcount < nsteps; stepcount++)

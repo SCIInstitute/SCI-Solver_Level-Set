@@ -30,8 +30,10 @@ namespace LevelSet {
         bandwidth_(16.),
         metisSize_(16),
         domain_(std::numeric_limits<double>::min()),
-        axis_(0)
-    {}
+        axis_(0),
+        userSetInitial_(false),
+        userSetAdvection_(false)
+      {}
       //data
       bool verbose_;
       std::string filename_;
@@ -45,6 +47,8 @@ namespace LevelSet {
       int metisSize_;
       double domain_;
       int axis_;
+      bool userSetInitial_;
+      bool userSetAdvection_;
   };
 
   //The static pointer to the mesh
@@ -56,13 +60,67 @@ namespace LevelSet {
     return time_values_.at(i);
   }
   size_t numIterations() { return time_values_.size(); }
-  void writeVTK() { 
+  void writeVTK() {
     meshFIM FIMPtr(mesh_);
     FIMPtr.writeVTK(time_values_);
   }
-  void writeFLD() { 
+  void writeFLD() {
     meshFIM FIMPtr(mesh_);
     FIMPtr.writeFLD(time_values_);
+  }
+  //initialize the vertex values
+  void initializeVertices(LevelSet &data, std::vector<double> values) {
+    if (mesh_ == NULL) {
+      std::cerr << "You must initialize the mesh first!" << std::endl;
+      exit(0);
+    }
+    if (values.size() != mesh_->vertices.size()) {
+      std::cerr << "Initialize values size does not match number of vertices!"
+        << std::endl;
+      exit(0);
+    }
+    mesh_->vertT.resize(mesh_->vertices.size());
+    for (size_t i = 0; i < values.size(); i++) {
+      mesh_->vertT[i] = values[i];
+    }
+    data.userSetInitial_ = true;
+  }
+  //initialize the element advection
+  void initializeAdvection(LevelSet &data, std::vector<point> values) {
+    if (mesh_ == NULL) {
+      std::cerr << "You must initialize the mesh first!" << std::endl;
+      exit(0);
+    }
+    if (values.size() != mesh_->tets.size()) {
+      std::cerr << "Initialize values size does not match number of elements!"
+        << std::endl;
+      exit(0);
+    }
+    mesh_->normals.resize(mesh_->tets.size());
+    for (size_t i = 0; i < values.size(); i++) {
+      mesh_->normals[i] = values[i];
+    }
+    data.userSetAdvection_ = true;
+  }
+
+  void initializeMesh(LevelSet data = LevelSet()) {
+    if (mesh_ == NULL) {
+      mesh_ = new TetMesh();
+      tetgenio in, addin, bgmin, out;
+      if(!in.load_tetmesh((char*)data.filename_.c_str(),data.verbose_))
+      {
+        printf("File open failed!!\n");
+        exit(0);
+      }
+
+      mesh_->init(in.pointlist, in.numberofpoints, in.trifacelist,
+          in.numberoffacets, in.tetrahedronlist, in.numberoftetrahedra,
+          in.numberoftetrahedronattributes, in.tetrahedronattributelist,
+          data.verbose_);
+      mesh_->reorient();
+      mesh_->need_neighbors(data.verbose_);
+      mesh_->need_adjacenttets(data.verbose_);
+    }
   }
 
   /**
@@ -92,57 +150,54 @@ namespace LevelSet {
     }
 
     cudaSafeCall((cudaDeviceSetCacheConfig(cudaFuncCachePreferShared)));
-
-    mesh_ = new TetMesh();
-    tetgenio in, addin, bgmin, out;
-    if(!in.load_tetmesh((char*)data.filename_.c_str(),data.verbose_))
-    {
-      printf("File open failed!!\n");
-      exit(0);
-    }
     if (data.verbose_)
       printf("Narrowband width is %f\n", data.bandwidth_);
     clock_t starttime, endtime;
     starttime = clock();
 
-    mesh_->init(in.pointlist, in.numberofpoints, in.trifacelist,
-        in.numberoffacets, in.tetrahedronlist, in.numberoftetrahedra,
-        in.numberoftetrahedronattributes, in.tetrahedronattributelist,
-        data.verbose_);
-    mesh_->reorient();
-    mesh_->need_neighbors(data.verbose_);
-    mesh_->need_adjacenttets(data.verbose_);
-    meshFIM FIMPtr(mesh_);
-    double mn = std::numeric_limits<double>::max();
-    double mx = std::numeric_limits<double>::min();
-    //populate advection if it's empty //TODO
+    if (mesh_ == NULL) {
+      mesh_ = new TetMesh();
+      tetgenio in, addin, bgmin, out;
+      if(!in.load_tetmesh((char*)data.filename_.c_str(),data.verbose_))
+      {
+        printf("File open failed!!\n");
+        exit(0);
+      }
+
+      mesh_->init(in.pointlist, in.numberofpoints, in.trifacelist,
+          in.numberoffacets, in.tetrahedronlist, in.numberoftetrahedra,
+          in.numberoftetrahedronattributes, in.tetrahedronattributelist,
+          data.verbose_);
+      mesh_->reorient();
+      mesh_->need_neighbors(data.verbose_);
+      mesh_->need_adjacenttets(data.verbose_);
+    }
+    //populate advection if it's empty
+    if (!data.userSetAdvection_) {
+      mesh_->normals.resize(mesh_->tets.size());
+      for (size_t i = 0; i < mesh_->tets.size(); i++) {
+        mesh_->normals[i] =  point(1.,0.,0.);
+      }
+    }
     //fill in initial values for the mesh if not given by the user //TODO
-    std::vector<point> advection;
-    advection.resize(mesh_->tets.size());
-    for (size_t i = 0; i < advection.size(); i++) {
-       point p = mesh_->vertices[mesh_->tets[i][0]] - point(54.,54.,54);
-       double mag = std::sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
-       advection[i] = p / mag;
-    }
-    mesh_->vertT.resize(mesh_->vertices.size());
-    for (size_t i = 0; i < mesh_->vertices.size(); i++) {
-      point p = mesh_->vertices[i] - point(54., 54., 54);
-      double mag = std::sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
-      mesh_->vertT[i] = mag - 10.;
-    }
-    if (data.domain_ == std::numeric_limits<double>::min()) {
+    if (!data.userSetInitial_) {
+      double mn = std::numeric_limits<double>::max();
+      double mx = std::numeric_limits<double>::min();
       for (size_t i = 0; i < mesh_->vertices.size(); i++) {
         mn = std::min(mn, mesh_->vertices[i][0]);
         mx = std::max(mx, mesh_->vertices[i][0]);
       }
-    } else {
-      mn = data.domain_;
+      mesh_->vertT.resize(mesh_->vertices.size());
+      for (size_t i = 0; i < mesh_->vertices.size(); i++) {
+        mesh_->vertT[i] = mesh_->vertices[i][0] - (mn+mx) / 2.;
+      }
     }
+    meshFIM FIMPtr(mesh_);
     time_values_ =
       FIMPtr.GenerateData((char*)data.filename_.c_str(), data.numSteps_,
-      data.timeStep_, data.insideIterations_, data.sideLengths_,
-      data.blockSize_, data.bandwidth_, data.partitionType_,
-      data.metisSize_, advection, data.verbose_);
+          data.timeStep_, data.insideIterations_, data.sideLengths_,
+          data.blockSize_, data.bandwidth_, data.partitionType_,
+          data.metisSize_, data.verbose_);
 
     endtime = clock();
     double duration = (double)(endtime - starttime) * 1000/ CLOCKS_PER_SEC;

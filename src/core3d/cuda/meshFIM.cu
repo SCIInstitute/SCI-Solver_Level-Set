@@ -265,7 +265,8 @@ void meshFIM::updateT_single_stage(LevelsetValueType timestep, int nside, int ni
   }
 }
 
-void meshFIM::GraphPartition_Square(int squareLength, int squareWidth, int squareHeight, int blockLength, int blockWidth, int blockHeight, bool verbose)
+void meshFIM::GraphPartition_Square(int squareLength, int squareWidth, int squareHeight, 
+  int blockLength, int blockWidth, int blockHeight, bool verbose)
 {
   int nn = m_meshPtr->vertices.size();
   int numBlockLength = ceil((LevelsetValueType)squareLength / blockLength);
@@ -396,7 +397,8 @@ void meshFIM::Partition_METIS(int metissize, bool verbose)
 
   m_neighbor_sizes_d = neighbor_sizes;
 
-  METIS_PartGraphKway(&nn, xadj, adjncy, NULL, NULL, &wgtflag, &pnumflag, &nparts, options, &edgecut, thrust::raw_pointer_cast(&npart_h[0]));
+  METIS_PartGraphKway(&nn, xadj, adjncy, NULL, NULL, &wgtflag, &pnumflag, 
+    &nparts, options, &edgecut, thrust::raw_pointer_cast(&npart_h[0]));
 
   m_xadj_d = IdxVector_d(&xadj[0], &xadj[nn + 1]);
   m_adjncy_d = IdxVector_d(&adjncy[0], &adjncy[edgeCount]);
@@ -442,7 +444,9 @@ void meshFIM::InitPatches(bool verbose)
   m_part_label_d = IdxVector_d(m_npart_d.begin(), m_npart_d.end());
   int nthreads = 256;
   int nblocks = min((int)ceil((LevelsetValueType)ne / nthreads), 65535);
-  cudaSafeCall((kernel_compute_ele_npart << <nblocks, nthreads >> >(ne, thrust::raw_pointer_cast(&m_npart_d[0]), thrust::raw_pointer_cast(&ele_d[0]), thrust::raw_pointer_cast(&ele_label_d[0]))));
+  cudaSafeCall((kernel_compute_ele_npart << <nblocks, nthreads >> >(ne,
+    thrust::raw_pointer_cast(&m_npart_d[0]), thrust::raw_pointer_cast(&ele_d[0]), 
+    thrust::raw_pointer_cast(&ele_label_d[0]))));
 
 
   full_num_ele = thrust::reduce(ele_label_d.begin(), ele_label_d.end());
@@ -453,7 +457,8 @@ void meshFIM::InitPatches(bool verbose)
   ele_full_label = IdxVector_d(full_num_ele);
   ele_permute = IdxVector_d(full_num_ele);
 
-  cudaSafeCall((kernel_fill_ele_label << <nblocks, nthreads >> >(ne, thrust::raw_pointer_cast(&ele_permute[0]), thrust::raw_pointer_cast(&ele_offsets_d[0]),
+  cudaSafeCall((kernel_fill_ele_label << <nblocks, nthreads >> >(ne, thrust::raw_pointer_cast(&ele_permute[0]), 
+    thrust::raw_pointer_cast(&ele_offsets_d[0]),
           thrust::raw_pointer_cast(&m_npart_d[0]), thrust::raw_pointer_cast(&ele_d[0]),
           thrust::raw_pointer_cast(&ele_full_label[0]))));
 
@@ -482,7 +487,8 @@ void meshFIM::InitPatches(bool verbose)
     exit(0);
   }
   m_ele_offsets_d[0] = 0;
-  thrust::inclusive_scan(reduce_output.begin(), reduce_output.begin() + nparts, m_ele_offsets_d.begin() + 1);
+  thrust::inclusive_scan(reduce_output.begin(), reduce_output.begin() + nparts, 
+    m_ele_offsets_d.begin() + 1);
 }
 
 void meshFIM::InitPatches2()
@@ -496,7 +502,8 @@ void meshFIM::InitPatches2()
   cudaSafeCall((kernel_fill_sequence << <nblocks, nthreads >> >(nn, CAST(vert_permute))));
   thrust::sort_by_key(m_part_label_d.begin(), m_part_label_d.end(), vert_permute.begin());
   nblocks = min((int)ceil((LevelsetValueType)nn / nthreads), 65535);
-  cudaSafeCall((kernel_compute_vert_ipermute << <nblocks, nthreads >> >(nn, thrust::raw_pointer_cast(&vert_permute[0]), thrust::raw_pointer_cast(&vert_ipermute[0]))));
+  cudaSafeCall((kernel_compute_vert_ipermute << <nblocks, nthreads >> >(nn, 
+    thrust::raw_pointer_cast(&vert_permute[0]), thrust::raw_pointer_cast(&vert_ipermute[0]))));
 
   m_vert_permute_d = IdxVector_d(vert_permute);
   m_vert_offsets_d = IdxVector_d(nparts + 1);
@@ -507,7 +514,8 @@ void meshFIM::InitPatches2()
   m_vertT_after_permute_d = Vector_d(nn);
   nblocks = min((int)ceil((LevelsetValueType)full_num_ele / nthreads), 65535);
   cudaSafeCall((kernel_ele_and_vert << <nblocks, nthreads >> >(full_num_ele, ne,
-          thrust::raw_pointer_cast(&ele_d[0]), thrust::raw_pointer_cast(&m_ele_after_permute_d[0]), thrust::raw_pointer_cast(&ele_permute[0]),
+          thrust::raw_pointer_cast(&ele_d[0]), thrust::raw_pointer_cast(&m_ele_after_permute_d[0]), 
+          thrust::raw_pointer_cast(&ele_permute[0]),
           nn, thrust::raw_pointer_cast(&vert_d[0]), thrust::raw_pointer_cast(&m_vert_after_permute_d[0]),
           thrust::raw_pointer_cast(&m_vertT_d[0]), thrust::raw_pointer_cast(&m_vertT_after_permute_d[0]),
           CAST(vert_permute),
@@ -563,7 +571,7 @@ void meshFIM::GenerateBlockNeighbors()
 std::vector <std::vector <LevelsetValueType> > meshFIM::GenerateData(
     char* filename, int nsteps, LevelsetValueType timestep, int inside_niter,
     int nside, int block_size, LevelsetValueType bandwidth, int part_type,
-    int metis_size, double domain, int axis, bool verbose)
+    int metis_size, std::vector<point> advection, bool verbose)
 {
   if (verbose)
     printf("Starting meshFIM::GenerateData\n");
@@ -593,8 +601,6 @@ std::vector <std::vector <LevelsetValueType> > meshFIM::GenerateData(
   Vector_h h_vertT(nv);
   for(int i = 0; i < nv; i++)
   {
-    vec3 v1 = (vec3)m_meshPtr->vertices[i];
-    m_meshPtr->vertT[i] = v1[axis] - domain;
     h_vertT[i] = m_meshPtr->vertT[i];
   }
   m_vertT_d = h_vertT;
@@ -605,9 +611,9 @@ std::vector <std::vector <LevelsetValueType> > meshFIM::GenerateData(
   Vector_h cadv_h(3 * full_num_ele);
   for(int i = 0; i < full_num_ele; i++)
   {
-    cadv_h[0 * full_num_ele + i] = axis==0?1.0:0.0;
-    cadv_h[1 * full_num_ele + i] = axis==1?1.0:0.0;
-    cadv_h[2 * full_num_ele + i] = axis==2?1.0:0.0;
+    cadv_h[0 * full_num_ele + i] = advection[i][0];
+    cadv_h[1 * full_num_ele + i] = advection[i][1];
+    cadv_h[2 * full_num_ele + i] = advection[i][2];
   }
   m_cadv_global_d = Vector_d(cadv_h);
   InitPatches2();

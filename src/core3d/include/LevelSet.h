@@ -115,6 +115,10 @@ namespace LevelSet {
     meshFIM FIMPtr(mesh_);
     double mn = std::numeric_limits<double>::max();
     double mx = std::numeric_limits<double>::min();
+    //populate advection if it's empty //TODO
+    //fill in initial values for the mesh if not given by the user //TODO
+    std::vector<point> advection;
+    advection.resize(mesh_->tets.size());
     if (data.domain_ == std::numeric_limits<double>::min()) {
       for (size_t i = 0; i < mesh_->vertices.size(); i++) {
         mn = std::min(mn, mesh_->vertices[i][0]);
@@ -127,7 +131,7 @@ namespace LevelSet {
       FIMPtr.GenerateData((char*)data.filename_.c_str(), data.numSteps_,
       data.timeStep_, data.insideIterations_, data.sideLengths_,
       data.blockSize_, data.bandwidth_, data.partitionType_,
-      data.metisSize_, (mn + mx) / 2., data.axis_, data.verbose_);
+      data.metisSize_, advection, data.verbose_);
 
     endtime = clock();
     double duration = (double)(endtime - starttime) * 1000/ CLOCKS_PER_SEC;

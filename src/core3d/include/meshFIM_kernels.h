@@ -447,7 +447,8 @@ __global__ void kernel_ele_and_vert(int full_num_ele, int ne, int* ele, int* ele
   }
 }
 
-__global__ void kernel_compute_local_coords(int full_num_ele, int nn, int* ele, int* ele_offsets, LevelsetValueType* vert, LevelsetValueType* ele_local_coords,
+__global__ void kernel_compute_local_coords(int full_num_ele, int nn, int* ele, int* ele_offsets, 
+  LevelsetValueType* vert, LevelsetValueType* ele_local_coords,
     LevelsetValueType* cadv_global, LevelsetValueType* cadv_local)
 {
   int tidx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -494,7 +495,8 @@ __global__ void kernel_compute_local_coords(int full_num_ele, int nn, int* ele, 
     ele_local_coords[4 * full_num_ele + eidx] = DOT_PRODUCT(AD, Y);
     ele_local_coords[5 * full_num_ele + eidx] = DOT_PRODUCT(AD, Z);
 
-    LevelsetValueType cadv_old[3] = {cadv_global[0 * full_num_ele + eidx], cadv_global[1 * full_num_ele + eidx], cadv_global[2 * full_num_ele + eidx]};
+    LevelsetValueType cadv_old[3] = {cadv_global[0 * full_num_ele + eidx], 
+      cadv_global[1 * full_num_ele + eidx], cadv_global[2 * full_num_ele + eidx]};
     cadv_local[0 * full_num_ele + eidx] = DOT_PRODUCT(cadv_old, X);
     cadv_local[1 * full_num_ele + eidx] = DOT_PRODUCT(cadv_old, Y);
     cadv_local[2 * full_num_ele + eidx] = DOT_PRODUCT(cadv_old, Z);

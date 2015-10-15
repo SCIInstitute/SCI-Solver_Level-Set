@@ -23,7 +23,8 @@ class meshFIM
     void updateT_single_stage(LevelsetValueType, int, int, vector<int>&);
     void updateT_single_stage_d(LevelsetValueType, int, IdxVector_d&, int);
     void getPartIndicesNegStart(IdxVector_d& sortedPartition, IdxVector_d& partIndices);
-    void mapAdjacencyToBlock(IdxVector_d &adjIndexes, IdxVector_d &adjacency, IdxVector_d &adjacencyBlockLabel, IdxVector_d &blockMappedAdjacency, IdxVector_d &fineAggregate);
+    void mapAdjacencyToBlock(IdxVector_d &adjIndexes, IdxVector_d &adjacency,
+      IdxVector_d &adjacencyBlockLabel, IdxVector_d &blockMappedAdjacency, IdxVector_d &fineAggregate);
     void updateT_two_stage(LevelsetValueType, int, int);
 
     void SetMesh(TetMesh* mesh, int nNoiseIter)
@@ -34,9 +35,10 @@ class meshFIM
         char* filename, int nsteps, LevelsetValueType timestep,
         int inside_niter, int nside, int block_size,
         LevelsetValueType bandwidth, int part_type, int metis_size,
-        double domain, int axis = 0, bool verbose = false);
+        std::vector<point> advection, bool verbose = false);
     void Partition_METIS(int metissize, bool verbose = false);
-    void GraphPartition_Square(int squareLength, int squareWidth, int squareHeight, int blockLength, int blockWidth, int blockHeight, bool verbose = false);
+    void GraphPartition_Square(int squareLength, int squareWidth, int squareHeight, 
+      int blockLength, int blockWidth, int blockHeight, bool verbose = false);
     void InitPatches(bool verbose = false);
     void InitPatches2();
     void GenerateBlockNeighbors();

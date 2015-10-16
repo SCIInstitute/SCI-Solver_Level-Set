@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
     for (size_t i = 0; i < LevelSet::mesh_->vertices.size(); i++) {
       point p = LevelSet::mesh_->vertices[i] - point(54.,54.,54.);
       double mag = std::sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
-      vals.push_back(mag - 17.);
+      vals.push_back(mag - 10.);
     }
     std::vector<point> adv;
     for (size_t i = 0; i < LevelSet::mesh_->tets.size(); i++) {
@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
       adv.push_back(p / mag);
     }
     LevelSet::initializeVertices(data,vals);
-    //LevelSet::initializeAdvection(data,adv);
+    LevelSet::initializeAdvection(data,adv);
   }
   LevelSet::solveLevelSet(data);
   LevelSet::writeVTK();

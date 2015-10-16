@@ -56,7 +56,9 @@ __global__ void kernel_updateT_single_stage(LevelsetValueType timestep, int* nar
   int nv = vert_end - vert_start;
   int ne = ele_end - ele_start;
   LevelsetValueType vertices[4][3];
-  LevelsetValueType sigma[3] = {1.0, 0.0, 0.0};
+  LevelsetValueType sigma[3] = {cadv_local[0 * full_ele_num + ele_start],
+    cadv_local[1 * full_ele_num + ele_start],
+    cadv_local[2 * full_ele_num + ele_start]};
   LevelsetValueType alphatuda[4] = {0.0, 0.0, 0.0, 0.0};
   LevelsetValueType volume, Hintegral, oldT;
   LevelsetValueType nablaPhi[3] = {0.0, 0.0, 0.0};

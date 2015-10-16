@@ -617,16 +617,6 @@ std::vector <std::vector <LevelsetValueType> > meshFIM::GenerateData(
 
   m_cadv_global_d = Vector_d(cadv_h);
   InitPatches2(); 
-  ////////////////////////DEBUG
-  std::vector<double> list, list2; 
-  Vector_h cadv_local_h = Vector_h(m_cadv_local_d);
-  for (size_t i = 0; i < cadv_h.size(); i++) {
-    list.push_back(cadv_h[i]);
-  }
-  for (size_t i = 0; i < cadv_local_h.size(); i++) {
-    list2.push_back(cadv_local_h[i]);
-  }
-  //////////////////////// END DEBUG
   GenerateBlockNeighbors();
   if (verbose)
     printf("After  preprocessing\n");

@@ -501,11 +501,9 @@ __global__ void kernel_compute_local_coords(int full_num_ele, int nn, int* ele, 
     ele_local_coords[4 * full_num_ele + eidx] = DOT_PRODUCT(AD, Y);
     ele_local_coords[5 * full_num_ele + eidx] = DOT_PRODUCT(AD, Z);
 
-    LevelsetValueType cadv_old[3] = {cadv_global[0 * full_num_ele + eidx], 
-      cadv_global[1 * full_num_ele + eidx], cadv_global[2 * full_num_ele + eidx]};
-    cadv_local[0 * full_num_ele + eidx] = DOT_PRODUCT(cadv_old, X);
-    cadv_local[1 * full_num_ele + eidx] = DOT_PRODUCT(cadv_old, Y);
-    cadv_local[2 * full_num_ele + eidx] = DOT_PRODUCT(cadv_old, Z);
+    cadv_local[0 * full_num_ele + eidx] = cadv_global[0 * full_num_ele + eidx];
+    cadv_local[1 * full_num_ele + eidx] = cadv_global[1 * full_num_ele + eidx];
+    cadv_local[2 * full_num_ele + eidx] = cadv_global[2 * full_num_ele + eidx];
   }
 }
 

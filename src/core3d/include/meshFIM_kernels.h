@@ -28,7 +28,8 @@ __global__ void kernel_fill_sequence(int nn, int* sequence)
   }
 }
 
-__global__ void CopyOutBack_levelset(int* narrowband_list, int* vert_offsets, LevelsetValueType* vertT, LevelsetValueType* vertT_out)
+__global__ void CopyOutBack_levelset(int* narrowband_list, int* vert_offsets,
+  LevelsetValueType* vertT, LevelsetValueType* vertT_out)
 {
   int bidx = narrowband_list[blockIdx.x];
   int tidx = threadIdx.x;
@@ -41,8 +42,8 @@ __global__ void CopyOutBack_levelset(int* narrowband_list, int* vert_offsets, Le
   }
 }
 
-__global__ void kernel_updateT_single_stage(LevelsetValueType timestep, int* narrowband_list, int largest_ele_part, int largest_vert_part, int full_ele_num, int* ele, int* ele_offsets,
-    LevelsetValueType* cadv_local,
+__global__ void kernel_updateT_single_stage(LevelsetValueType timestep, int* narrowband_list, int largest_ele_part,
+    int largest_vert_part, int full_ele_num, int* ele, int* ele_offsets,LevelsetValueType* cadv_local,
     int nn, int* vert_offsets, LevelsetValueType* vert, LevelsetValueType* vertT, LevelsetValueType* ele_local_coords,
     int largest_num_inside_mem, int* mem_locations, int* mem_location_offsets, LevelsetValueType* vertT_out)
 {
@@ -254,7 +255,8 @@ __global__ void kernel_updateT_single_stage(LevelsetValueType timestep, int* nar
 #pragma unroll
       for (int i = 0; i < 4; i++)
       {
-        delta[i] = Kplus[i] * beta * (Kminus[0] * (eleT[i] - eleT[0]) + Kminus[1] * (eleT[i] - eleT[1]) + Kminus[2] * (eleT[i] - eleT[2]) + Kminus[3] * (eleT[i] - eleT[3]));
+        delta[i] = Kplus[i] * beta * (Kminus[0] * (eleT[i] - eleT[0]) + Kminus[1] *
+          (eleT[i] - eleT[1]) + Kminus[2] * (eleT[i] - eleT[2]) + Kminus[3] * (eleT[i] - eleT[3]));
       }
 
       LevelsetValueType alpha[4];
@@ -421,7 +423,9 @@ __global__ void kernel_compute_vert_ipermute(int nn, int* vert_permute, int* ver
   }
 }
 
-__global__ void kernel_ele_and_vert(int full_num_ele, int ne, int* ele, int* ele_after_permute, int* ele_permute, int nn, LevelsetValueType* vert, LevelsetValueType* vert_after_permute, LevelsetValueType* vertT, LevelsetValueType* vertT_after_permute, int* vert_permute, int* vert_ipermute)
+__global__ void kernel_ele_and_vert(int full_num_ele, int ne, int* ele, int* ele_after_permute,
+  int* ele_permute, int nn, LevelsetValueType* vert, LevelsetValueType* vert_after_permute, 
+  LevelsetValueType* vertT, LevelsetValueType* vertT_after_permute, int* vert_permute, int* vert_ipermute)
 {
   int bidx = blockIdx.x;
   int tidx = bidx * blockDim.x + threadIdx.x;

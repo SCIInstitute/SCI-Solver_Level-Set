@@ -218,7 +218,8 @@ void meshFIM::updateT_single_stage(LevelsetValueType timestep, int nside, int ni
       vector<LevelsetValueType> delta(4);
       for(int i = 0; i < 4; i++)
       {
-        delta[i] = Kplus[i] * beta * (Kminus[0] * (values[i] - values[0]) + Kminus[1] * (values[i] - values[1]) + Kminus[2] * (values[i] - values[2]) + Kminus[3] * (values[i] - values[3]));
+        delta[i] = Kplus[i] * beta * (Kminus[0] * (values[i] - values[0]) + Kminus[1] * 
+          (values[i] - values[1]) + Kminus[2] * (values[i] - values[2]) + Kminus[3] * (values[i] - values[3]));
       }
 
       vector<LevelsetValueType> alpha(4);
@@ -605,14 +606,15 @@ std::vector <std::vector <LevelsetValueType> > meshFIM::GenerateData(
   starttime = clock();
   //Init patches
   InitPatches(verbose);
-  Vector_h cadv_h(3 * full_num_ele);
+  Vector_h cadv_h(3 * full_num_ele,0);
   Vector_h ele_offsets_h(ele_offsets_d);
-  for (int i = 0; i < ele_offsets_h.size() - 1; i++) {
-    size_t fullIdx = static_cast<size_t>(ele_offsets_h[i]);
-    cadv_h[0 * full_num_ele + fullIdx] = m_meshPtr->normals[i][0];
-    cadv_h[1 * full_num_ele + fullIdx] = m_meshPtr->normals[i][1];
-    cadv_h[2 * full_num_ele + fullIdx] = m_meshPtr->normals[i][2];
+  for (int i = 0; i < full_num_ele; i++) {
+    //size_t fullIdx = static_cast<size_t>(ele_offsets_h[i]);
+    cadv_h[0 * full_num_ele + i] = 0;//m_meshPtr->normals[i][0];
+    cadv_h[1 * full_num_ele + i] = 1;//m_meshPtr->normals[i][1];
+    cadv_h[2 * full_num_ele + i] = 0;//m_meshPtr->normals[i][2];
   }
+
   ////////////////////////DEBUG
   std::vector<double> list;
   for (size_t i = 0; i < cadv_h.size(); i++) {

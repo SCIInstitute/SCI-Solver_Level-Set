@@ -607,22 +607,26 @@ std::vector <std::vector <LevelsetValueType> > meshFIM::GenerateData(
   //Init patches
   InitPatches(verbose);
   Vector_h cadv_h(3 * full_num_ele,0);
-  Vector_h ele_offsets_h(ele_offsets_d);
-  for (int i = 0; i < ele_offsets_h.size() - 1; i++) {
-    size_t fullIdx = static_cast<size_t>(ele_offsets_h[i]);
-    cadv_h[0 * full_num_ele + i] = m_meshPtr->normals[i][0];
-    cadv_h[1 * full_num_ele + i] = m_meshPtr->normals[i][1];
-    cadv_h[2 * full_num_ele + i] = m_meshPtr->normals[i][2];
+  IdxVector_h ele_permute_h = IdxVector_h(ele_permute);
+  for (int i = 0; i < full_num_ele; i++) {
+    size_t tetIdx = static_cast<size_t>(ele_permute_h[i]);
+    cadv_h[0 * full_num_ele + i] = m_meshPtr->normals[tetIdx][0];
+    cadv_h[1 * full_num_ele + i] = m_meshPtr->normals[tetIdx][1];
+    cadv_h[2 * full_num_ele + i] = m_meshPtr->normals[tetIdx][2];
   }
 
+  m_cadv_global_d = Vector_d(cadv_h);
+  InitPatches2(); 
   ////////////////////////DEBUG
-  std::vector<double> list;
+  std::vector<double> list, list2; 
+  Vector_h cadv_local_h = Vector_h(m_cadv_local_d);
   for (size_t i = 0; i < cadv_h.size(); i++) {
     list.push_back(cadv_h[i]);
   }
+  for (size_t i = 0; i < cadv_local_h.size(); i++) {
+    list2.push_back(cadv_local_h[i]);
+  }
   //////////////////////// END DEBUG
-  m_cadv_global_d = Vector_d(cadv_h);
-  InitPatches2();
   GenerateBlockNeighbors();
   if (verbose)
     printf("After  preprocessing\n");

@@ -1,5 +1,5 @@
-#ifndef __LEVELSET_H__
-#define __LEVELSET_H__
+#ifndef __LEVELSET3D_H__
+#define __LEVELSET3D_H__
 
 #include <cstdio>
 #include <cstdlib>
@@ -13,11 +13,11 @@
 #include <cstring>
 #include <limits>
 
-namespace LevelSet {
+namespace LevelSet3d {
   /** The class that represents all of the available options for LevelSet */
-  class LevelSet {
+  class LevelSet3d {
     public:
-      LevelSet(std::string fname = "../src/test/test_data/sphere334",
+      LevelSet3d(std::string fname = "../src/test/test_data/sphere334",
           bool verbose = false) :
         verbose_(verbose),
         filename_(fname),
@@ -29,8 +29,6 @@ namespace LevelSet {
         sideLengths_(1),
         bandwidth_(16.),
         metisSize_(16),
-        domain_(std::numeric_limits<double>::min()),
-        axis_(0),
         userSetInitial_(false),
         userSetAdvection_(false)
       {}
@@ -45,8 +43,6 @@ namespace LevelSet {
       int sideLengths_;
       LevelsetValueType bandwidth_;
       int metisSize_;
-      double domain_;
-      int axis_;
       bool userSetInitial_;
       bool userSetAdvection_;
   };
@@ -66,10 +62,10 @@ namespace LevelSet {
   }
   void writeFLD() {
     meshFIM FIMPtr(mesh_);
-    FIMPtr.writeFLD(time_values_);
+    FIMPtr.writeFLD();
   }
   //initialize the vertex values
-  void initializeVertices(LevelSet &data, std::vector<double> values) {
+  void initializeVertices(LevelSet3d &data, std::vector<double> values) {
     if (mesh_ == NULL) {
       std::cerr << "You must initialize the mesh first!" << std::endl;
       exit(0);
@@ -86,7 +82,7 @@ namespace LevelSet {
     data.userSetInitial_ = true;
   }
   //initialize the element advection
-  void initializeAdvection(LevelSet &data, std::vector<point> values) {
+  void initializeAdvection(LevelSet3d &data, std::vector<point> values) {
     if (mesh_ == NULL) {
       std::cerr << "You must initialize the mesh first!" << std::endl;
       exit(0);
@@ -103,7 +99,7 @@ namespace LevelSet {
     data.userSetAdvection_ = true;
   }
 
-  void initializeMesh(LevelSet data = LevelSet()) {
+  void initializeMesh(LevelSet3d data = LevelSet3d()) {
     if (mesh_ == NULL) {
       mesh_ = new TetMesh();
       tetgenio in, addin, bgmin, out;
@@ -129,7 +125,7 @@ namespace LevelSet {
    * @data The set of options for the LevelSet algorithm.
    *       The defaults are used if nothing is provided.
    */
-  void solveLevelSet(LevelSet data = LevelSet()) {
+  void solveLevelSet(LevelSet3d data = LevelSet3d()) {
     int deviceCount;
     cudaGetDeviceCount(&deviceCount);
     int device;
@@ -156,21 +152,7 @@ namespace LevelSet {
     starttime = clock();
 
     if (mesh_ == NULL) {
-      mesh_ = new TetMesh();
-      tetgenio in, addin, bgmin, out;
-      if(!in.load_tetmesh((char*)data.filename_.c_str(),data.verbose_))
-      {
-        printf("File open failed!!\n");
-        exit(0);
-      }
-
-      mesh_->init(in.pointlist, in.numberofpoints, in.trifacelist,
-          in.numberoffacets, in.tetrahedronlist, in.numberoftetrahedra,
-          in.numberoftetrahedronattributes, in.tetrahedronattributelist,
-          data.verbose_);
-      mesh_->reorient();
-      mesh_->need_neighbors(data.verbose_);
-      mesh_->need_adjacenttets(data.verbose_);
+      initializeMesh(data);
     }
     //populate advection if it's empty
     if (!data.userSetAdvection_) {

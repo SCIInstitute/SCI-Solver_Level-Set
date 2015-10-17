@@ -1,8 +1,8 @@
-#include <LevelSet.h>
+#include <LevelSet3d.h>
 
 int main(int argc, char *argv[])
 {
-  LevelSet::LevelSet data;
+  LevelSet3d::LevelSet3d data;
   bool fromCenter = false;
   //input filename (minus extension)
   std::string filename;
@@ -64,32 +64,46 @@ int main(int argc, char *argv[])
       std::cout << "   -b NUM_BLOCKS      # of blocks for Square partition type." << std::endl;
       std::cout << "   -m METIS_SIZE      The size for METIS partiation type." << std::endl;
       std::cout << "   -w BANDWIDTH       The Bandwidth for the algorithm." << std::endl;
+      std::cout << "   -c                 Initialize data to move away from center." << std::endl;
       exit(0);
     }
   }
   if (fromCenter) {
-    //initialize values
-    LevelSet::initializeMesh(data);
-    std::vector<double> vals;
-    for (size_t i = 0; i < LevelSet::mesh_->vertices.size(); i++) {
-      point p = LevelSet::mesh_->vertices[i] - point(54.,54.,54.);
-      double mag = std::sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
-      vals.push_back(mag - 10.);
+    //find the center, max from center
+    LevelSet3d::initializeMesh(data);
+    point center(0, 0, 0);
+    for (size_t i = 0; i < LevelSet3d::mesh_->vertices.size(); i++) {
+      center = center + LevelSet3d::mesh_->vertices[i];
     }
+    center = center / static_cast<double>(LevelSet3d::mesh_->vertices.size());
+    double max = 0.;
+    for (size_t i = 0; i < LevelSet3d::mesh_->vertices.size(); i++) {
+      point p = LevelSet3d::mesh_->vertices[i] - center;
+      double mag = std::sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
+      max = std::max(max, mag);
+    }
+    //initialize values of verts
+    std::vector<double> vals;
+    for (size_t i = 0; i < LevelSet3d::mesh_->vertices.size(); i++) {
+      point p = LevelSet3d::mesh_->vertices[i] - center;
+      double mag = std::sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
+      vals.push_back(mag - max / 2.);
+    }
+    //initialize advection to be away from the center.
     std::vector<point> adv;
-    for (size_t i = 0; i < LevelSet::mesh_->tets.size(); i++) {
-      point p = (LevelSet::mesh_->vertices[LevelSet::mesh_->tets[i][0]] +
-          LevelSet::mesh_->vertices[LevelSet::mesh_->tets[i][1]]  +
-          LevelSet::mesh_->vertices[LevelSet::mesh_->tets[i][2]])
-        / 3. - point(54.,54.,54);
+    for (size_t i = 0; i < LevelSet3d::mesh_->tets.size(); i++) {
+      point p = (LevelSet3d::mesh_->vertices[LevelSet3d::mesh_->tets[i][0]] +
+        LevelSet3d::mesh_->vertices[LevelSet3d::mesh_->tets[i][1]] +
+        LevelSet3d::mesh_->vertices[LevelSet3d::mesh_->tets[i][2]])
+        / 3. - center;
       double mag = std::sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
       adv.push_back(p / mag);
     }
-    LevelSet::initializeVertices(data,vals);
-    LevelSet::initializeAdvection(data,adv);
+    LevelSet3d::initializeVertices(data, vals);
+    LevelSet3d::initializeAdvection(data, adv);
   }
-  LevelSet::solveLevelSet(data);
-  LevelSet::writeVTK();
+  LevelSet3d::solveLevelSet(data);
+  LevelSet3d::writeVTK();
   return 0;
 }
 

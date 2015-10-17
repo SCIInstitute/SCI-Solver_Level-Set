@@ -29,16 +29,17 @@ class meshFIM2d
     {
       m_meshPtr = mesh;
     }
-    void GenerateData(const char* filename, int nsteps, LevelsetValueType timestep, 
+    std::vector< std::vector <float> > GenerateData(
+      const char* filename, int nsteps, LevelsetValueType timestep,
         int inside_niter, int nside, int block_size, LevelsetValueType bandwidth, 
-        int part_type, int metis_size, int axis, double domain, bool verbose = false);
+        int part_type, int metis_size, bool verbose = false);
     void Partition_METIS(int metissize);
     void GraphPartition_Square(int squareLength, int squareWidth, int blockLength, int blockWidth);
     void InitPatches();
     void InitPatches2();
     void compute_deltaT(int num_narrowband);
     void GenerateBlockNeighbors();
-    void writeVTK();
+    void writeVTK(std::vector< std::vector <float> > time_values);
     void writeFLD();
 
     meshFIM2d(TriMesh* mesh)

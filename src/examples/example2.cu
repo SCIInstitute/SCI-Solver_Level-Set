@@ -1,67 +1,81 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string>
-#include <meshFIM2d.h>
-#include <math.h>
-#include <TriMesh.h>
-#include <cuda_runtime.h>
-#include <mycutil.h>
-using std::string;
-
-void usage(const char *myname)
-{
-  fprintf(stderr, "Usage: %s infile ntimestep timestep niter side_vert_num block_size bandwidth part_type(0 is metis and 1 is square) metis_size axis domain verbose\n", myname);
-  exit(1);
-}
+#include <LevelSet2d.h>
 
 int main(int argc, char *argv[])
 {
-  if(argc != 13)
-    usage(argv[0]);
-
-  int deviceCount;
-  cudaGetDeviceCount(&deviceCount);
-  int device;
-  for(device = 0; device < deviceCount; ++device)
-  {
-    cudaDeviceProp deviceProp;
-    cudaGetDeviceProperties(&deviceProp, device);
-    printf("Device %d has compute capability %d.%d.\n",
-        device, deviceProp.major, deviceProp.minor);
+  LevelSet2d::LevelSet2d data;
+  //input filename (minus extension)
+  std::string filename;
+  for (int i = 0; i < argc; i++) {
+    if (strcmp(argv[i], "-v") == 0) {
+      data.verbose_ = true;
+    }
+    else if (strcmp(argv[i], "-i") == 0) {
+      if (i + 1 >= argc) break;
+      data.filename_ = std::string(argv[i + 1]);
+      if (data.filename_.substr(data.filename_.size() - 5, 5) == ".node")
+        data.filename_ = data.filename_.substr(0, data.filename_.size() - 5);
+      if (data.filename_.substr(data.filename_.size() - 4, 4) == ".ele")
+        data.filename_ = data.filename_.substr(0, data.filename_.size() - 4);
+      i++;
+    }
+    else if (strcmp(argv[i], "-n") == 0) {
+      if (i + 1 >= argc) break;
+      data.numSteps_ = atoi(argv[i + 1]);
+      i++;
+    }
+    else if (strcmp(argv[i], "-t") == 0) {
+      if (i + 1 >= argc) break;
+      data.timeStep_ = atof(argv[i + 1]);
+      i++;
+    }
+    else if (strcmp(argv[i], "-s") == 0) {
+      if (i + 1 >= argc) break;
+      data.insideIterations_ = atoi(argv[i + 1]);
+      i++;
+    }
+    else if (strcmp(argv[i], "-d") == 0) {
+      if (i + 1 >= argc) break;
+      data.sideLengths_ = atoi(argv[i + 1]);
+      i++;
+    }
+    else if (strcmp(argv[i], "-p") == 0) {
+      if (i + 1 >= argc) break;
+      data.partitionType_ = atoi(argv[i + 1]);
+      i++;
+    }
+    else if (strcmp(argv[i], "-m") == 0) {
+      if (i + 1 >= argc) break;
+      data.metisSize_ = atoi(argv[i + 1]);
+      i++;
+    }
+    else if (strcmp(argv[i], "-b") == 0) {
+      if (i + 1 >= argc) break;
+      data.blockSize_ = atoi(argv[i + 1]);
+      i++;
+    }
+    else if (strcmp(argv[i], "-w") == 0) {
+      if (i + 1 >= argc) break;
+      data.bandwidth_ = atof(argv[i + 1]);
+      i++;
+    } 
+    else if (strcmp(argv[i], "-h") == 0) {
+      std::cout << "Usage: ./Example1 [OPTIONS]" << std::endl;
+      std::cout << "   -h                 Print this help message." << std::endl;
+      std::cout << "   -v                 Print verbose runtime information." << std::endl;
+      std::cout << "   -i FILENAME        Use this input tet mesh (node/ele)." << std::endl;
+      std::cout << "   -n NSTEPS          # of steps to take of TIMESTEP amount." << std::endl;
+      std::cout << "   -t TIMESTEP        Duration of a timestep." << std::endl;
+      std::cout << "   -s INSIDE_NITER    # of inside iterations." << std::endl;
+      std::cout << "   -d NSIDE           # of sides for Square partition type." << std::endl;
+      std::cout << "   -p PARTITION_TYPE  1 for Square, otherwise is it METIS." << std::endl;
+      std::cout << "   -b NUM_BLOCKS      # of blocks for Square partition type." << std::endl;
+      std::cout << "   -m METIS_SIZE      The size for METIS partiation type." << std::endl;
+      std::cout << "   -w BANDWIDTH       The Bandwidth for the algorithm." << std::endl;
+      exit(0);
+    }
   }
-
-  cudaSetDevice(0);
-  if(cudaDeviceReset() != cudaSuccess)
-    exit(0);
-
-  cudaSafeCall((cudaDeviceSetCacheConfig(cudaFuncCachePreferShared)));
-
-  TriMesh* themesh;
-  string filename = argv[1];
-  filename += ".ply";
-  int nsteps = atoi(argv[2]);
-  LevelsetValueType timestep = atof(argv[3]);
-  int inside_niter = atoi(argv[4]);
-  int nside = atoi(argv[5]);
-  int block_size = atoi(argv[6]);
-  LevelsetValueType bandwidth = atof(argv[7]);
-  int part_type =atoi(argv[8]);
-  int metis_size = atoi(argv[9]);
-  int axis = atoi(argv[10]);
-  double domain = atof(argv[11]);
-  bool verbose = atoi(argv[12])==1?true:false;
-  //  themesh.init(in.pointlist, in.numberofpoints, in.trifacelist, in.numberoffacets, in.tetrahedronlist, in.numberoftetrahedra, in.numberoftetrahedronattributes, in.tetrahedronattributelist);
-  //  themesh.reorient();
-  themesh = TriMesh::read(filename.c_str());
-  //  themesh.rescale(domain_size);
-  themesh->need_neighbors();
-  themesh->need_adjacentfaces();
-  themesh->need_Rinscribe();
-  meshFIM2d* FIMPtr = new meshFIM2d(themesh);
-  //  FIMPtr->SetMesh(&themesh, 1);
-  FIMPtr->GenerateData((char*)filename.c_str(), nsteps,
-      timestep, inside_niter, nside, block_size,
-      bandwidth, part_type, metis_size, axis, domain, verbose);
+  LevelSet2d::solveLevelSet(data);
+  LevelSet2d::writeVTK();
   return 0;
 }
 

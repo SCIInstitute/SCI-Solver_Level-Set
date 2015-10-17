@@ -8,6 +8,7 @@
 #include <cusp/detail/format_utils.h>
 #include <cusp/print.h>
 #include <thrust/functional.h>
+#include <sstream>
 
 extern "C"
 {
@@ -50,35 +51,39 @@ void meshFIM2d::writeFLD()
   fclose(fldfile);
 }
 
-void meshFIM2d::writeVTK()
+void meshFIM2d::writeVTK(std::vector< std::vector <float> > time_values)
 {
-  FILE* vtkfile;
   int nv = m_meshPtr->vertices.size();
   int nt = m_meshPtr->faces.size();
-  vtkfile = fopen("result.vtk", "w+");
-  fprintf(vtkfile, "# vtk DataFile Version 3.0\nvtk output\nASCII\nDATASET UNSTRUCTURED_GRID\n");
-  fprintf(vtkfile, "POINTS %d float\n", nv);
-  for (int i = 0; i < nv; i++)
-  {
-    fprintf(vtkfile, "%.12f %.12f %.12f\n", m_meshPtr->vertices[i][0], m_meshPtr->vertices[i][1], m_meshPtr->vertices[i][2]);
-  }
-  fprintf(vtkfile, "CELLS %d %d\n", nt, nt * 4);
-  for (int i = 0; i < nt; i++)
-  {
-    fprintf(vtkfile, "3 %d %d %d\n", m_meshPtr->faces[i][0], m_meshPtr->faces[i][1], m_meshPtr->faces[i][2]);
-  }
+  for (size_t j = 0; j < time_values.size(); j++) {
+    FILE* vtkfile;
+    std::stringstream ss;
+    ss << "result" << j << ".vtk";
+    vtkfile = fopen(ss.str().c_str(), "w+");
+    fprintf(vtkfile, "# vtk DataFile Version 3.0\nvtk output\nASCII\nDATASET UNSTRUCTURED_GRID\n");
+    fprintf(vtkfile, "POINTS %d float\n", nv);
+    for (int i = 0; i < nv; i++)
+    {
+      fprintf(vtkfile, "%.12f %.12f %.12f\n", m_meshPtr->vertices[i][0], m_meshPtr->vertices[i][1], m_meshPtr->vertices[i][2]);
+    }
+    fprintf(vtkfile, "CELLS %d %d\n", nt, nt * 4);
+    for (int i = 0; i < nt; i++)
+    {
+      fprintf(vtkfile, "3 %d %d %d\n", m_meshPtr->faces[i][0], m_meshPtr->faces[i][1], m_meshPtr->faces[i][2]);
+    }
 
-  fprintf(vtkfile, "CELL_TYPES %d\n", nt);
-  for (int i = 0; i < nt; i++)
-  {
-    fprintf(vtkfile, "5\n");
+    fprintf(vtkfile, "CELL_TYPES %d\n", nt);
+    for (int i = 0; i < nt; i++)
+    {
+      fprintf(vtkfile, "5\n");
+    }
+    fprintf(vtkfile, "POINT_DATA %d\nSCALARS traveltime float 1\nLOOKUP_TABLE default\n", nv);
+    for (int i = 0; i < nv; i++)
+    {
+      fprintf(vtkfile, "%.12f\n", time_values[j][i]);
+    }
+    fclose(vtkfile);
   }
-  fprintf(vtkfile, "POINT_DATA %d\nSCALARS traveltime float 1\nLOOKUP_TABLE default\n", nv);
-  for (int i = 0; i < nv; i++)
-  {
-    fprintf(vtkfile, "%.12f\n", m_meshPtr->vertT[i]);
-  }
-  fclose(vtkfile);
 }
 
 void meshFIM2d::updateT_single_stage_d(LevelsetValueType timestep, int niter, IdxVector_d& narrowband, int num_narrowband)
@@ -102,7 +107,6 @@ void meshFIM2d::updateT_single_stage_d(LevelsetValueType timestep, int niter, Id
 
 void meshFIM2d::updateT_single_stage(LevelsetValueType timestep, int nside, int niter, vector<int>& narrowband)
 {
-  vec3 sigma(1.0, 0.0, 1.0);
   int nv = m_meshPtr->vertices.size();
   int nt = m_meshPtr->faces.size();
   vector<LevelsetValueType> values(4);
@@ -116,6 +120,7 @@ void meshFIM2d::updateT_single_stage(LevelsetValueType timestep, int nside, int 
   for (int bandidx = 0; bandidx < narrowband.size(); bandidx++)
   {
     int tidx = narrowband[bandidx];
+    vec3 sigma = m_meshPtr->normals[tidx];
     for (int j = 0; j < 4; j++)
     {
       values[j] = m_meshPtr->vertT[m_meshPtr->faces[tidx][j]];
@@ -588,10 +593,11 @@ void meshFIM2d::compute_deltaT(int num_narrowband)
 
 }
 
-void meshFIM2d::GenerateData(const char* filename, int nsteps,
+std::vector< std::vector< float > > meshFIM2d::GenerateData(
+    const char* filename, int nsteps,
     LevelsetValueType timestep, int inside_niter,
     int nside, int block_size, LevelsetValueType bandwidth,
-    int part_type, int metis_size, int axis, double domain, bool verbose)
+    int part_type, int metis_size, bool verbose)
 {
   printf("Starting meshFIM2d::GenerateData\n");
   int nv = m_meshPtr->vertices.size();
@@ -617,8 +623,6 @@ void meshFIM2d::GenerateData(const char* filename, int nsteps,
   Vector_h h_vertT(nv);
   for (int i = 0; i < nv; i++)
   {
-    vec3 v1 = (vec3) m_meshPtr->vertices[i];
-    m_meshPtr->vertT[i] = v1[axis] - domain;
     h_vertT[i] = m_meshPtr->vertT[i];
   }
   m_vertT_d = h_vertT;
@@ -629,16 +633,17 @@ void meshFIM2d::GenerateData(const char* filename, int nsteps,
   starttime = clock();
   //Init patches
   InitPatches();
-  Vector_h cadv_h(3 * full_num_ele);
+  Vector_h cadv_h(3 * full_num_ele, 0);
   Vector_h ceik_h(full_num_ele);
   Vector_h ccurv_h(full_num_ele);
-  for (int i = 0; i < full_num_ele; i++)
-  {
+  IdxVector_h ele_permute_h = IdxVector_h(ele_permute);
+  for (int i = 0; i < full_num_ele; i++) {
+    size_t triIdx = static_cast<size_t>(ele_permute_h[i]);
     ceik_h[i] = 0.0f;
     ccurv_h[i] = 0.0f;
-    cadv_h[0 * full_num_ele + i] = 1.0;
-    cadv_h[1 * full_num_ele + i] = 0.0;
-    cadv_h[2 * full_num_ele + i] = 0.0;
+    cadv_h[0 * full_num_ele + i] = m_meshPtr->normals[triIdx][0];
+    cadv_h[1 * full_num_ele + i] = m_meshPtr->normals[triIdx][1];
+    cadv_h[2 * full_num_ele + i] = m_meshPtr->normals[triIdx][2];
   }
   m_cadv_global_d = Vector_d(cadv_h);
   m_ceik_global_d = Vector_d(ceik_h);
@@ -662,6 +667,8 @@ void meshFIM2d::GenerateData(const char* filename, int nsteps,
   int num_narrowband = 0;
 
   starttime = clock();
+  std::vector< std::vector< float > > data;
+  data.push_back(m_meshPtr->vertT);
   for (int stepcount = 0; stepcount < nsteps; stepcount++)
   {
     m_redist->FindSeedPoint(m_narrowband_d, num_narrowband, m_meshPtr, m_vertT_after_permute_d, nparts, largest_vert_part, largest_ele_part, m_largest_num_inside_mem, full_num_ele,
@@ -677,23 +684,24 @@ void meshFIM2d::GenerateData(const char* filename, int nsteps,
     compute_deltaT(num_narrowband);
     for (int niter = 0; niter < inside_niter; niter++)
       updateT_single_stage_d(timestep, stepcount, m_narrowband_d, num_narrowband);
+    //////////////////////////done updating/////////////////////////////////////////////////
+    int nthreads = 256;
+    int nblocks = min((int)ceil((LevelsetValueType)nv / nthreads), 655535);
+    cudaSafeCall((kernel_compute_vertT_before_permute << <nblocks, nthreads >> >(nv, CAST(m_vert_permute_d),
+      CAST(m_vertT_after_permute_d), CAST(tmp_vertT_before_permute_d))));
+    Vector_h vertT_before_permute_h = tmp_vertT_before_permute_d;
+    for (int i = 0; i < nv; i++)
+    {
+      m_meshPtr->vertT[i] = vertT_before_permute_h[i];
+    }
+    data.push_back(m_meshPtr->vertT);
   }
 
   cudaThreadSynchronize();
   endtime = clock();
   duration = (LevelsetValueType) (endtime - starttime) / CLOCKS_PER_SEC;
   printf("Processing time : %.10lf s\n", duration);
-  //  ////////////////////////done updating/////////////////////////////////////////////////
-  int nthreads = 256;
-  int nblocks = min((int) ceil((LevelsetValueType) nv / nthreads), 655535);
-  cudaSafeCall((kernel_compute_vertT_before_permute << <nblocks, nthreads >> >(nv, CAST(m_vert_permute_d), CAST(m_vertT_after_permute_d), CAST(tmp_vertT_before_permute_d))));
-  Vector_h vertT_before_permute_h = tmp_vertT_before_permute_d;
-  for (int i = 0; i < nv; i++)
-  {
-    m_meshPtr->vertT[i] = vertT_before_permute_h[i];
-  }
-  writeVTK();
-  writeFLD();
+  return data;
 }
 
 void meshFIM2d::getPartIndicesNegStart(IdxVector_d& sortedPartition, IdxVector_d& partIndices)

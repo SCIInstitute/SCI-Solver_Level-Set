@@ -43,7 +43,8 @@ __global__ void CopyOutBack_levelset(int* narrowband_list, int* vert_offsets, Le
   }
 }
 
-__global__ void kernel_updateT_single_stage(LevelsetValueType timestep, int* narrowband_list, int largest_ele_part, int largest_vert_part, int full_ele_num, int* ele, int* ele_offsets, LevelsetValueType* cadv_local,
+__global__ void kernel_updateT_single_stage(LevelsetValueType timestep, int* narrowband_list,
+  int largest_ele_part, int largest_vert_part, int full_ele_num, int* ele, int* ele_offsets, LevelsetValueType* cadv_local,
     int nn, int* vert_offsets, LevelsetValueType* vert, LevelsetValueType* vertT, LevelsetValueType* ele_local_coords,
     int largest_num_inside_mem, int* mem_locations, int* mem_location_offsets, LevelsetValueType* vertT_out)
 {
@@ -127,45 +128,11 @@ __global__ void kernel_updateT_single_stage(LevelsetValueType timestep, int* nar
       else
       {
         eleT[i] = vertT[global_vidx];
-        //        isboundary = true;
       }
     }
   }
 
   __syncthreads();
-
-  //  if (tidx < nv)
-  //  {
-  //    for (int i = 0; i < 3; i++) s_vert[tidx * 3 + i] = vert[ i * nn + (vert_start + tidx) ];
-  //  }
-  //  __syncthreads();
-  //
-  //  if (tidx < ne)
-  //  {
-  //
-  //#pragma unroll
-  //    for (int i = 0; i < 3; i++)
-  //    {
-  //      int global_vidx = ele[i * full_ele_num + ele_start + tidx];
-  //      if (global_vidx >= vert_start && global_vidx < vert_end)
-  //      {
-  //#pragma unroll
-  //        for (int j = 0; j < 2; j++)
-  //        {
-  //          vertices[i][j] = s_vert[ (global_vidx - vert_start)*3 + j];
-  //        }
-  //      }
-  //      else
-  //      {
-  //#pragma unroll
-  //        for (int j = 0; j < 2; j++)
-  //        {
-  //          vertices[i][j] = vert[j * nn + global_vidx];
-  //        }
-  //      }
-  //    }
-  //  }
-  //  __syncthreads();
 
   if (tidx < ne)
   {
@@ -176,20 +143,14 @@ __global__ void kernel_updateT_single_stage(LevelsetValueType timestep, int* nar
     sigma[1] = cadv_local[full_ele_num + ele_start + tidx];
 
     LevelsetValueType cross[3];
-    //    LevelsetValueType v01[3] = {vertices[1][0] - vertices[0][0], vertices[1][1] - vertices[0][1], 0.0};
-    //    LevelsetValueType v02[3] = {vertices[2][0] - vertices[0][0], vertices[2][1] - vertices[0][1], 0.0};
     LevelsetValueType v01[3] = {local_coord0, 0.0f, 0.0f};
     LevelsetValueType v02[3] = {local_coord1, local_coord2, 0.0f};
 
     CROSS_PRODUCT(v01, v02, cross);
-    //    LevelsetValueType dotproduct = DOT_PRODUCT(cross, v30);
 
     volume = LENGTH(cross) / 2.0;
 
     //compute inverse of 3 by 3 matrix
-    //    LevelsetValueType a11 = vertices[0][0], a12 = vertices[0][1], a13 = 1.0;
-    //    LevelsetValueType a21 = vertices[1][0], a22 = vertices[1][1], a23 = 1.0;
-    //    LevelsetValueType a31 = vertices[2][0], a32 = vertices[2][1], a33 = 1.0;
     LevelsetValueType a11 = 0.0, a12 = 0.0, a13 = 1.0;
     LevelsetValueType a21 = local_coord0, a22 = 0.0, a23 = 1.0;
     LevelsetValueType a31 = local_coord1, a32 = local_coord2, a33 = 1.0;
@@ -211,11 +172,6 @@ __global__ void kernel_updateT_single_stage(LevelsetValueType timestep, int* nar
     nablaN[2][0] = b13 / det;
     nablaN[2][1] = b23 / det;
 
-    //    if (tidx == 1)
-    //    {
-    //      printf("det=%f, b11=%f, b12=%f, b13=%f, b21=%f, b22=%f, b23=%f, %f, %f, %f, %f, %f, %f\n", det, b11, b12, b13, b21, b22, b23, a11, a12, a21, a22, a31, a32);
-    //    }
-
     //compuate grad of Phi
 
 #pragma unroll
@@ -235,9 +191,7 @@ __global__ void kernel_updateT_single_stage(LevelsetValueType timestep, int* nar
 #pragma unroll
     for (int i = 0; i < 3; i++)
     {
-      K[i] = volume * DOT_PRODUCT2(sigma, nablaN[i]); // for H(\nabla u) = sigma DOT \nabla u
-      //      K[i] = volume * (nablaPhi DOT nablaN[i]) / len(nablaPhi); // for F(x) = 1
-      //      K[i] = -volume* (nablaPhi DOT nablaN[i]) / len(nablaPhi); // for F(x) = -1
+      K[i] = volume * DOT_PRODUCT2(sigma, nablaN[i]); // for H(\nabla u) = sigma DOT \nabla 
       Hintegral += K[i] * eleT[i];
       Kplus[i] = fmax(K[i], 0.0);
       Kminus[i] = fmin(K[i], 0.0);
@@ -273,51 +227,23 @@ __global__ void kernel_updateT_single_stage(LevelsetValueType timestep, int* nar
       {
         alphatuda[i] = fmax(alpha[i], 0.0) / theta;
       }
-
-      //      if (tidx == 0 || tidx == 1 || tidx == 2 || tidx == 3 || tidx == 32 || tidx == 34 || tidx == 35)
-      //      {
-      //        printf("tidx=%d, volume=%f, Hintegral=%f, K={%f, %f, %f}, beta=%f, delta={%f, %f, %f}, alphatuda={%f, %f, %f}\n",
-      //               tidx, volume, Hintegral, K[0], K[1], K[2], beta, delta[0], delta[1], delta[2], alphatuda[0], alphatuda[1], alphatuda[2]);
-      //      }
     }
 
   }
-
-  //  for (int i = 0; i < 4; i++)
-  //  {
-  //    s_alphatuda_Hintegral[tidx * 4 + i] = 0.0;
-  //    //    s_alphatuda_volume[tidx * 4 + i] = 0;
-  //  }
   __syncthreads();
 
   if (tidx < ne)
   {
-    //    if (eleT[0] < LARGENUM)
-    //    {
-
     for (int i = 0; i < 3; i++)
     {
       s_alphatuda_Hintegral[tidx * 3 + i] = alphatuda[i] * Hintegral;
     }
-    //      if (tidx == 0 || tidx == 1 || tidx == 2 || tidx == 3 || tidx == 32 || tidx == 34 || tidx == 35)
-    //      {
-    //        printf("tidx=%d, alphatuda_Hintegral = {%f, %f, %f}\n", tidx, s_alphatuda_Hintegral[tidx * 3 + 0], s_alphatuda_Hintegral[tidx * 3 + 1], s_alphatuda_Hintegral[tidx * 3 + 2]);
-    //      }
-    //    }
-    //    else
-    //    {
-    //      for (int i = 0; i < 3; i++)
-    //      {
-    //        s_alphatuda_Hintegral[tidx * 3 + i] = 0.0;
-    //      }
-    //    }
   }
   __syncthreads();
 
   LevelsetValueType up = 0.0, down = 0.0;
   if (tidx < nv)
   {
-    //    LevelsetValueType down = 0;
 #pragma unroll
     for (int i = 0; i < 16; i++)
     {
@@ -325,52 +251,32 @@ __global__ void kernel_updateT_single_stage(LevelsetValueType timestep, int* nar
       if (lmem > -1)
       {
         up += s_alphatuda_Hintegral[lmem];
-        //        down += s_alphatuda_volume[lmem];
       }
     }
-    //    if (down != 0) vertT_out[vert_start + tidx] = up / down;
   }
   __syncthreads();
 
   if (tidx < ne)
   {
-    //    if (eleT[0] < LARGENUM)
-    //    {
 
     for (int i = 0; i < 3; i++)
     {
-      //      s_alphatuda_Hintegral[tidx * 4 + i] = alphatuda[i] * Hintegral;
       s_alphatuda_volume[tidx * 3 + i] = alphatuda[i] * volume;
     }
-    //      if (tidx == 0 || tidx == 1 || tidx == 2 || tidx == 3 || tidx == 32 || tidx == 34 || tidx == 35)
-    //      {
-    //        printf("tidx=%d, alphatuda_volume = {%f, %f, %f}\n", tidx, s_alphatuda_volume[tidx * 3 + 0], s_alphatuda_volume[tidx * 3 + 1], s_alphatuda_volume[tidx * 3 + 2]);
-    //      }
-    //    }
-    //    else
-    //    {
-    //      for (int i = 0; i < 3; i++)
-    //      {
-    //        s_alphatuda_volume[tidx * 3 + i] = 0.0;
-    //      }
-    //    }
   }
   __syncthreads();
 
   if (tidx < nv)
   {
-    //    LevelsetValueType up = 0;
 #pragma unroll
     for (int i = 0; i < 16; i++)
     {
       short lmem = l_mem[i];
       if (lmem > -1)
       {
-        //        up += s_alphatuda_Hintegral[lmem];
         down += s_alphatuda_volume[lmem];
       }
     }
-    //    if (tidx == 1 || tidx == 18 || tidx == 35) printf("tidx=%d, up=%f, down=%f, timestep=%f, oldT=%f\n", tidx, up, down, timestep, oldT);
   }
   __syncthreads();
 
@@ -392,7 +298,6 @@ __global__ void kernel_updateT_single_stage(LevelsetValueType timestep, int* nar
         sum_nb_volume += s_volume[lmem / 3];
       }
     }
-    //    if (tidx == 1 || tidx == 18 || tidx == 35) printf("tidx=%d, up=%f, down=%f, timestep=%f, oldT=%f\n", tidx, up, down, timestep, oldT);
   }
   __syncthreads();
 
@@ -416,59 +321,38 @@ __global__ void kernel_updateT_single_stage(LevelsetValueType timestep, int* nar
         node_nabla_phi_up[1] += s_grad_phi[lmem / 3 * 2 + 1];
       }
     }
-    //    if (tidx == 1 || tidx == 18 || tidx == 35) printf("tidx=%d, up=%f, down=%f, timestep=%f, oldT=%f\n", tidx, up, down, timestep, oldT);
   }
   __syncthreads();
 
   if (tidx < ne)
   {
-    //    if (eleT[0] < LARGENUM)
-    //    {
 
     for (int i = 0; i < 3; i++)
     {
-      //      s_alphatuda_Hintegral[tidx * 4 + i] = alphatuda[i] * Hintegral;
       s_curv_up[tidx * 3 + i] = volume * (DOT_PRODUCT2(nablaN[i], nablaN[i]) / abs_nabla_phi * eleT[i] +
           DOT_PRODUCT2(nablaN[i], nablaN[(i + 1) % 3]) / abs_nabla_phi * eleT[(i + 1) % 3] +
           DOT_PRODUCT2(nablaN[i], nablaN[(i + 2) % 3]) / abs_nabla_phi * eleT[(i + 2) % 3]);
     }
-    //      if (tidx == 0 || tidx == 1 || tidx == 2 || tidx == 3 || tidx == 32 || tidx == 34 || tidx == 35)
-    //      {
-    //        printf("tidx=%d, alphatuda_volume = {%f, %f, %f}\n", tidx, s_alphatuda_volume[tidx * 3 + 0], s_alphatuda_volume[tidx * 3 + 1], s_alphatuda_volume[tidx * 3 + 2]);
-    //      }
-    //    }
-    //    else
-    //    {
-    //      for (int i = 0; i < 3; i++)
-    //      {
-    //        s_alphatuda_volume[tidx * 3 + i] = 0.0;
-    //      }
-    //    }
   }
   __syncthreads();
 
   LevelsetValueType curv_up = 0.0f;
   if (tidx < nv)
   {
-    //    LevelsetValueType up = 0;
 #pragma unroll
     for (int i = 0; i < 16; i++)
     {
       short lmem = l_mem[i];
       if (lmem > -1)
       {
-        //        up += s_alphatuda_Hintegral[lmem];
         curv_up += s_curv_up[lmem];
       }
     }
-    //    if (tidx == 1 || tidx == 18 || tidx == 35) printf("tidx=%d, up=%f, down=%f, timestep=%f, oldT=%f\n", tidx, up, down, timestep, oldT);
     if (fabs(down) > 1e-8)
     {
       LevelsetValueType eikonal = up / down;
-      //LevelsetValueType curvature = curv_up / sum_nb_volume;
       LevelsetValueType node_eikonal = LENGTH2(node_nabla_phi_up) / sum_nb_volume;
       vertT_out[vert_start + tidx] = oldT - timestep * eikonal;
-      //      vertT_out[vert_start + tidx] = oldT - node_eikonal * curvature * timestep;
     }
     else
     {
@@ -488,7 +372,8 @@ __global__ void kernel_compute_vert_ipermute(int nn, int* vert_permute, int* ver
 }
 
 __global__ void kernel_ele_and_vert(int full_num_ele, int ne, int* ele, int* ele_after_permute, int* ele_permute,
-    int nn, LevelsetValueType* vert, LevelsetValueType* vert_after_permute, LevelsetValueType* vertT, LevelsetValueType* vertT_after_permute,
+    int nn, LevelsetValueType* vert, LevelsetValueType* vert_after_permute, LevelsetValueType* vertT, 
+    LevelsetValueType* vertT_after_permute,
     LevelsetValueType* Rinscribe_before_permute, LevelsetValueType* Rinscribe_after_permute,
     int* vert_permute, int* vert_ipermute)
 {
@@ -519,7 +404,8 @@ __global__ void kernel_ele_and_vert(int full_num_ele, int ne, int* ele, int* ele
 
 template<int SZ>
 __global__ void kernel_compute_timestep(int full_ele_num, int* narrowband, int* ele_offsets,
-    LevelsetValueType* Rinscribe, LevelsetValueType* cadv_local, LevelsetValueType* ceik_global, LevelsetValueType* ccurv_global,
+    LevelsetValueType* Rinscribe, LevelsetValueType* cadv_local, LevelsetValueType* ceik_global,
+    LevelsetValueType* ccurv_global,
     LevelsetValueType* timestep_per_block, LevelsetValueType* Rin_per_block)
 {
   int tx = threadIdx.x;
@@ -566,7 +452,6 @@ __global__ void kernel_compute_timestep(int full_ele_num, int* narrowband, int* 
 
   if (tx < ne)
   {
-    //    printf("bidx=%d, tidx = %d, Rin 2 = %f\n", block_idx, tx, Rin);
     sdata[tx] = Rin;
   }
   else
@@ -586,7 +471,6 @@ __global__ void kernel_compute_timestep(int full_ele_num, int* narrowband, int* 
   if (tx == 0)
   {
     Rin_per_block[blockIdx.x] = sdata[0];
-    //    printf("bidx=%d, tidx = %d, Rin_per_block[%d] = %f\n", block_idx, tx, blockIdx.x, Rin_per_block[blockIdx.x]);
   }
 }
 
@@ -639,57 +523,6 @@ __global__ void kernel_compute_local_coords(int full_num_ele, int nn, int* ele, 
   }
 }
 
-//__global__ void kernel_compute_local_coords(int full_num_ele, int nn, int* ele, int* ele_offsets, LevelsetValueType* vert, LevelsetValueType* ele_local_coords)
-//{
-//  int tidx = threadIdx.x;
-//  int bstart = ele_offsets[blockIdx.x];
-//  int bend = ele_offsets[blockIdx.x + 1];
-//  int ne = bend - bstart;
-//  if (tidx < ne)
-//  {
-//    int ele0 = ele[0 * full_num_ele + bstart + tidx];
-//    int ele1 = ele[1 * full_num_ele + bstart + tidx];
-//    int ele2 = ele[2 * full_num_ele + bstart + tidx];
-//    int ele3 = ele[3 * full_num_ele + bstart + tidx];
-//
-//    LevelsetValueType x0 = vert[0 * nn + ele0];
-//    LevelsetValueType y0 = vert[1 * nn + ele0];
-//    LevelsetValueType z0 = vert[2 * nn + ele0];
-//
-//    LevelsetValueType x1 = vert[0 * nn + ele1];
-//    LevelsetValueType y1 = vert[1 * nn + ele1];
-//    LevelsetValueType z1 = vert[2 * nn + ele1];
-//
-//    LevelsetValueType x2 = vert[0 * nn + ele2];
-//    LevelsetValueType y2 = vert[1 * nn + ele2];
-//    LevelsetValueType z2 = vert[2 * nn + ele2];
-//
-//    LevelsetValueType x3 = vert[0 * nn + ele3];
-//    LevelsetValueType y3 = vert[1 * nn + ele3];
-//    LevelsetValueType z3 = vert[2 * nn + ele3];
-//
-//    LevelsetValueType AB[3] = {x1 - x0, y1 - y0, z1 - z0};
-//    LevelsetValueType AC[3] = {x2 - x0, y2 - y0, z2 - z0};
-//    LevelsetValueType AD[3] = {x3 - x0, y3 - y0, z3 - z0};
-//    LevelsetValueType lenAB = sqrt(AB[0] * AB[0] + AB[1] * AB[1] + AB[2] * AB[2]);
-//
-//    LevelsetValueType planeN[3];
-//    CROSS_PRODUCT(AB, AC, planeN);
-//    LevelsetValueType lenN = sqrt(planeN[0] * planeN[0] + planeN[1] * planeN[1] + planeN[2] * planeN[2]);
-//    LevelsetValueType Z[3] = {planeN[0] / lenN, planeN[1] / lenN, planeN[2] / lenN};
-//    LevelsetValueType X[3] = {AB[0] / lenAB, AB[1] / lenAB, AB[2] / lenAB};
-//    LevelsetValueType Y[3];
-//    CROSS_PRODUCT(Z, X, Y);
-//
-//    ele_local_coords[0 * full_num_ele + bstart + tidx] = lenAB;
-//    ele_local_coords[1 * full_num_ele + bstart + tidx] = DOT_PRODUCT(AC, X);
-//    ele_local_coords[2 * full_num_ele + bstart + tidx] = DOT_PRODUCT(AC, Y);
-//    ele_local_coords[3 * full_num_ele + bstart + tidx] = DOT_PRODUCT(AD, X);
-//    ele_local_coords[4 * full_num_ele + bstart + tidx] = DOT_PRODUCT(AD, Y);
-//    ele_local_coords[5 * full_num_ele + bstart + tidx] = DOT_PRODUCT(AD, Z);
-//  }
-//}
-
 __global__ void kernel_fill_ele_label(int ne, int* ele_permute, int* ele_offsets, int* npart, int* ele, int* ele_label)
 {
   int bidx = blockIdx.x;
@@ -732,23 +565,21 @@ __global__ void kernel_compute_ele_npart(int ne, int* npart, int* ele, int* ele_
 
   for (int eidx = tidx; eidx < ne; eidx += blockDim.x * gridDim.x)
   {
-    //    if (blockIdx.x == 0 && threadIdx.x == 217) printf("eidx=%d\n", eidx);
     int part0 = npart[ele[0 * ne + eidx]];
     int part1 = npart[ele[1 * ne + eidx]];
     int part2 = npart[ele[2 * ne + eidx]];
-    //    int part3 = npart[ele[3 * ne + eidx]];
 
     int n = 1;
 
     if (part1 != part0) n++;
     if (part2 != part0 && part2 != part1) n++;
-    //    if (part3 != part0 && part3 != part1 && part3 != part2) n++;
 
     ele_label[eidx] = n;
   }
 }
 
-__global__ void permuteInitialAdjacencyKernel(int size, int *adjIndexesIn, int *adjacencyIn, int *permutedAdjIndexesIn, int *permutedAdjacencyIn, int *ipermutation, int *fineAggregate, int* neighbor_part)
+__global__ void permuteInitialAdjacencyKernel(int size, int *adjIndexesIn, int *adjacencyIn, 
+  int *permutedAdjIndexesIn, int *permutedAdjacencyIn, int *ipermutation, int *fineAggregate, int* neighbor_part)
 {
   int idx = blockIdx.x * blockDim.x + threadIdx.x;
   if (idx < size)
@@ -757,11 +588,6 @@ __global__ void permuteInitialAdjacencyKernel(int size, int *adjIndexesIn, int *
     int oldEnd = adjIndexesIn[ipermutation[idx] + 1];
     int runSize = oldEnd - oldBegin;
     int newBegin = permutedAdjIndexesIn[idx];
-    //int newEnd = permutedAdjIndexesIn[idx + 1];
-    //int newRunSize = newEnd - newBegin;
-
-    //printf("Thread %d is copying from %d through %d into %d through %d\n", idx, oldBegin, oldEnd, newBegin, newEnd);
-
     // Transfer old adjacency into new, while changing node id's with partition id's
     for (int i = 0; i < runSize; i++)
     {
@@ -770,7 +596,8 @@ __global__ void permuteInitialAdjacencyKernel(int size, int *adjIndexesIn, int *
   }
 }
 
-__global__ void getInducedGraphNeighborCountsKernel(int size, int *aggregateIdx, int *adjIndexesOut, int *permutedAdjIndexes, int *permutedAdjacencyIn)
+__global__ void getInducedGraphNeighborCountsKernel(int size, int *aggregateIdx, 
+  int *adjIndexesOut, int *permutedAdjIndexes, int *permutedAdjacencyIn)
 {
   int idx = blockIdx.x * blockDim.x + threadIdx.x;
   if (idx < size)
@@ -811,7 +638,8 @@ __global__ void getInducedGraphNeighborCountsKernel(int size, int *aggregateIdx,
   }
 }
 
-__global__ void fillCondensedAdjacencyKernel(int size, int *aggregateIdx, int *adjIndexesOut, int *adjacencyOut, int *permutedAdjIndexesIn, int *permutedAdjacencyIn)
+__global__ void fillCondensedAdjacencyKernel(int size, int *aggregateIdx, int *adjIndexesOut, 
+  int *adjacencyOut, int *permutedAdjIndexesIn, int *permutedAdjacencyIn)
 {
   int idx = blockIdx.x * blockDim.x + threadIdx.x;
   if (idx < size)
@@ -828,7 +656,8 @@ __global__ void fillCondensedAdjacencyKernel(int size, int *aggregateIdx, int *a
   }
 }
 
-__global__ void mapAdjacencyToBlockKernel(int size, int *adjIndexes, int *adjacency, int *adjacencyBlockLabel, int *blockMappedAdjacency, int *fineAggregate)
+__global__ void mapAdjacencyToBlockKernel(int size, int *adjIndexes, int *adjacency, 
+  int *adjacencyBlockLabel, int *blockMappedAdjacency, int *fineAggregate)
 {
   int idx = blockIdx.x * blockDim.x + threadIdx.x;
   if (idx < size)
@@ -868,7 +697,8 @@ __global__ void findPartIndicesNegStartKernel(int size, int *array, int *partInd
   }
 }
 
-__global__ void kernel_compute_vertT_before_permute(int nn, int* vert_permute, LevelsetValueType* vertT_after_permute, LevelsetValueType* vertT_before_permute)
+__global__ void kernel_compute_vertT_before_permute(int nn, int* vert_permute, 
+  LevelsetValueType* vertT_after_permute, LevelsetValueType* vertT_before_permute)
 {
   int bidx = blockIdx.x;
   int tidx = bidx * blockDim.x + threadIdx.x;

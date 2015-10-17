@@ -17,7 +17,7 @@ extern "C"
 #include <metis.h>
 }
 
-void meshFIM::writeFLD(std::vector < std::vector <LevelsetValueType> > values)
+void meshFIM::writeFLD()
 {
   int nv = m_meshPtr->vertices.size();
   int nt = m_meshPtr->tets.size();

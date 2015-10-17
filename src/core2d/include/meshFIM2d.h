@@ -33,11 +33,11 @@ class meshFIM2d
       const char* filename, int nsteps, LevelsetValueType timestep,
         int inside_niter, int nside, int block_size, LevelsetValueType bandwidth, 
         int part_type, int metis_size, bool verbose = false);
-    void Partition_METIS(int metissize);
-    void GraphPartition_Square(int squareLength, int squareWidth, int blockLength, int blockWidth);
-    void InitPatches();
+    void Partition_METIS(int metissize, bool verbose = false);
+    void GraphPartition_Square(int squareLength, int squareWidth, int blockLength, int blockWidth, bool verbose = false);
+    void InitPatches(bool verbose = false);
     void InitPatches2();
-    void compute_deltaT(int num_narrowband);
+    void compute_deltaT(int num_narrowband, bool verbose = false);
     void GenerateBlockNeighbors();
     void writeVTK(std::vector< std::vector <float> > time_values);
     void writeFLD();

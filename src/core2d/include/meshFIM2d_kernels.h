@@ -504,19 +504,15 @@ __global__ void kernel_compute_local_coords(int full_num_ele, int nn, int* ele, 
     LevelsetValueType len_local_Y = LENGTH(local_Y);
     LevelsetValueType edgelenAB = LENGTH(AB);
     ele_local_coords[0 * full_num_ele + eidx] = edgelenAB;
-    //    ele_local_coords[1 * full_num_ele + eidx] = LENGTH(cross) / edgelenAB;
-    //    ele_local_coords[2 * full_num_ele + eidx] = DOT_PRODUCT(AC, AB) / edgelenAB;
-    //????????????????????????????????????local coords correct: (above) (below)?
     ele_local_coords[1 * full_num_ele + eidx] = DOT_PRODUCT(AC, AB) / edgelenAB;
     ele_local_coords[2 * full_num_ele + eidx] = DOT_PRODUCT(AC, local_Y) / len_local_Y;
 
-    LevelsetValueType old_cadv[3] = {cadv_global[0 * full_num_ele + eidx], cadv_global[1 * full_num_ele + eidx], cadv_global[2 * full_num_ele + eidx]};
-    //    LevelsetValueType old_cadv[3] = {1.0, 0.0, 0.0};
+    LevelsetValueType old_cadv[3] = {
+      cadv_global[0 * full_num_ele + eidx],
+      cadv_global[1 * full_num_ele + eidx],
+      cadv_global[2 * full_num_ele + eidx]};
     LevelsetValueType sigma0 = DOT_PRODUCT(old_cadv, AB) / edgelenAB;
     LevelsetValueType sigma1 = DOT_PRODUCT(old_cadv, local_Y) / len_local_Y;
-
-    //    if (threadIdx.x == 0 || threadIdx.x == 1)
-    //      printf("bidx=%d, threadIdx.x=%d, sigma0=%f, sigma1=%f\n", blockIdx.x, threadIdx.x, sigma0, sigma1);
 
     cadv_local[0 * full_num_ele + eidx] = sigma0;
     cadv_local[1 * full_num_ele + eidx] = sigma1;

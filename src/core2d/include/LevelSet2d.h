@@ -100,14 +100,14 @@ namespace LevelSet2d {
 
   void initializeMesh(LevelSet2d data = LevelSet2d()) {
     if (mesh_ == NULL) {
-      mesh_ = TriMesh::read(data.filename_.c_str());
+      mesh_ = TriMesh::read(data.filename_.c_str(), data.verbose_);
       if(mesh_ == NULL)
       {
         printf("File open failed!!\n");
         exit(0);
       }
-      mesh_->need_neighbors();
-      mesh_->need_adjacentfaces();
+      mesh_->need_neighbors(data.verbose_);
+      mesh_->need_adjacentfaces(data.verbose_);
       mesh_->need_Rinscribe();
     }
   }

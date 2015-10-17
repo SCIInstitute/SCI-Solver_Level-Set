@@ -12,10 +12,6 @@ int main(int argc, char *argv[])
     else if (strcmp(argv[i], "-i") == 0) {
       if (i + 1 >= argc) break;
       data.filename_ = std::string(argv[i + 1]);
-      if (data.filename_.substr(data.filename_.size() - 5, 5) == ".node")
-        data.filename_ = data.filename_.substr(0, data.filename_.size() - 5);
-      if (data.filename_.substr(data.filename_.size() - 4, 4) == ".ele")
-        data.filename_ = data.filename_.substr(0, data.filename_.size() - 4);
       i++;
     }
     else if (strcmp(argv[i], "-n") == 0) {

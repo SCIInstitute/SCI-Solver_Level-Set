@@ -97,7 +97,7 @@ void redistance::GenerateData(IdxVector_d& new_narrowband, int& new_num_narrowba
                               Vector_d& vert_after_permute_d, IdxVector_d& vert_offsets_d,
                               IdxVector_d& ele_after_permute_d, IdxVector_d& ele_offsets_d, Vector_d& ele_local_coords_d,
                               IdxVector_d& mem_location_offsets, IdxVector_d& mem_locations,
-                              IdxVector_d& part_label_d, IdxVector_d& block_xadj, IdxVector_d& block_adjncy)
+                              IdxVector_d& part_label_d, IdxVector_d& block_xadj, IdxVector_d& block_adjncy, bool verbose)
 {
   int nn = mesh->vertices.size();
   int totalIterationNumber = 0;
@@ -119,6 +119,16 @@ void redistance::GenerateData(IdxVector_d& new_narrowband, int& new_num_narrowba
   //  h_block_vertT_min = Vector_h(nparts);
   while(numActive > 0)
   {
+    if (verbose) {
+      size_t act = numActive / 3;
+      for (size_t ab = 0; ab < 60; ab++) {
+        if (ab < act)
+          printf("=");
+        else
+          printf(" ");
+      }
+      printf(" %d Active blocks.\n", numActive);
+    }
 //    printf("nTotalIter = %d, numActive=%d\n", nTotalIter, numActive);
     ///////////////////////////step 1: run solver //////////////////////////////////////////////////////////////////
     nTotalIter++;

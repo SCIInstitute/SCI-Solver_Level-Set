@@ -446,13 +446,14 @@ void TriMesh::need_speed()
 
 
 // Find the direct neighbors of each vertex
-void TriMesh::need_neighbors()
+void TriMesh::need_neighbors(bool verbose)
 {
 	if (!neighbors.empty())
 		return;
 	need_faces();
 
-	dprintf("Finding vertex neighbors... ");
+	if (verbose)
+    dprintf("Finding vertex neighbors... ");
 	int nv = vertices.size(), nf = faces.size();
 
 	vector<int> numneighbors(nv);
@@ -478,7 +479,8 @@ void TriMesh::need_neighbors()
 		}
 	}
 
-	dprintf("Done.\n");
+  if (verbose)
+	  dprintf("Done.\n");
 }
 
 void TriMesh::need_oneringfaces()
@@ -499,13 +501,13 @@ void TriMesh::need_oneringfaces()
 
 
 // Find the faces touching each vertex
-void TriMesh::need_adjacentfaces()
+void TriMesh::need_adjacentfaces(bool verbose)
 {
 	if (!adjacentfaces.empty())
 		return;
 	need_faces();
-
-	dprintf("Finding vertex to triangle maps... ");
+  if (verbose)
+	  dprintf("Finding vertex to triangle maps... ");
 	int nv = vertices.size(), nf = faces.size();
 
 	vector<int> numadjacentfaces(nv);
@@ -524,7 +526,8 @@ void TriMesh::need_adjacentfaces()
 			adjacentfaces[faces[i][j]].push_back(i);
 	}
 
-	dprintf("Done.\n");
+  if (verbose)
+    dprintf("Done.\n");
 }
 
 

@@ -28,30 +28,30 @@ Can write: PLY (triangle mesh and range grid), OFF, OBJ, RAY, SM, C++
 
 
 // Forward declarations
-static bool read_ply(FILE *f, TriMesh *mesh);
-static bool read_3ds(FILE *f, TriMesh *mesh);
-static bool read_vvd(FILE *f, TriMesh *mesh);
-static bool read_ray(FILE *f, TriMesh *mesh);
-static bool read_obj(FILE *f, TriMesh *mesh);
-static bool read_off(FILE *f, TriMesh *mesh);
-static bool read_sm( FILE *f, TriMesh *mesh);
+static bool read_ply(FILE *f, TriMesh *mesh, bool verbose = false);
+static bool read_3ds(FILE *f, TriMesh *mesh, bool verbose = false);
+static bool read_vvd(FILE *f, TriMesh *mesh, bool verbose = false);
+static bool read_ray(FILE *f, TriMesh *mesh, bool verbose = false);
+static bool read_obj(FILE *f, TriMesh *mesh, bool verbose = false);
+static bool read_off(FILE *f, TriMesh *mesh, bool verbose = false);
+static bool read_sm( FILE *f, TriMesh *mesh, bool verbose = false);
 
 static bool read_verts_bin(FILE *f, TriMesh *mesh, bool &need_swap,
 	int nverts, int vert_len, int vert_pos, int vert_norm,
-	int vert_color, bool float_color, int vert_conf);
+	int vert_color, bool float_color, int vert_conf, bool verbose = false);
 static bool slurp_verts_bin(FILE *f, TriMesh *mesh, bool need_swap,
-	int nverts);
+	int nverts, bool verbose = false);
 static bool read_verts_asc(FILE *f, TriMesh *mesh,
 	int nverts, int vert_len, int vert_pos, int vert_norm,
-	int vert_color, bool float_color, int vert_conf);
+	int vert_color, bool float_color, int vert_conf, bool verbose = false);
 static bool read_faces_bin(FILE *f, TriMesh *mesh, bool need_swap,
-	int nfaces, int face_len, int face_count, int face_idx);
+	int nfaces, int face_len, int face_count, int face_idx, bool verbose = false);
 static bool read_faces_asc(FILE *f, TriMesh *mesh, int nfaces,
-	int face_len, int face_count, int face_idx, bool read_to_eol = false);
-static bool read_strips_bin(FILE *f, TriMesh *mesh, bool need_swap);
-static bool read_strips_asc(FILE *f, TriMesh *mesh);
-static bool read_grid_bin(FILE *f, TriMesh *mesh, bool need_swap);
-static bool read_grid_asc(FILE *f, TriMesh *mesh);
+	int face_len, int face_count, int face_idx, bool read_to_eol = false, bool verbose = false);
+static bool read_strips_bin(FILE *f, TriMesh *mesh, bool need_swap, bool verbose = false);
+static bool read_strips_asc(FILE *f, TriMesh *mesh, bool verbose = false);
+static bool read_grid_bin(FILE *f, TriMesh *mesh, bool need_swap, bool verbose = false);
+static bool read_grid_asc(FILE *f, TriMesh *mesh, bool verbose = false);
 
 static bool ply_property(const char *buf, int &len, bool binary);
 static bool we_are_little_endian();
@@ -148,11 +148,11 @@ static void pushback(const char *buf, FILE *f)
 
 // Read a TriMesh from a file.  Defined to use a helper function to make
 // subclassing easier.
-TriMesh *TriMesh::read(const char *filename)
+TriMesh *TriMesh::read(const char *filename, bool verbose)
 {
 	TriMesh *mesh = new TriMesh();
 
-	if (read_helper(filename, mesh))
+	if (read_helper(filename, mesh, verbose))
 		return mesh;
 
 	delete mesh;
@@ -162,7 +162,7 @@ TriMesh *TriMesh::read(const char *filename)
 
 // Actually read a mesh.  Tries to figure out type of file from first
 // few bytes.  Filename can be "-" for stdin
-bool TriMesh::read_helper(const char *filename, TriMesh *mesh)
+bool TriMesh::read_helper(const char *filename, TriMesh *mesh, bool verbose)
 {
 	if (!filename || *filename == '\0')
 		return false;
@@ -181,7 +181,8 @@ bool TriMesh::read_helper(const char *filename, TriMesh *mesh)
 			goto out;
 		}
 	}
-	dprintf("Reading %s... ", filename);
+	if (verbose)
+	  dprintf("Reading %s... ", filename);
 
 	c = fgetc(f);
 	if (c == EOF) {
@@ -197,7 +198,7 @@ bool TriMesh::read_helper(const char *filename, TriMesh *mesh)
 			goto out;
 		}
 		if (strncmp(buf, "ly", 2) == 0)
-			ok = read_ply(f, mesh);
+			ok = read_ply(f, mesh, verbose);
 	} else if (c == 0x4d) {
 		int c2 = fgetc(f);
 		ungetc(c2, f);
@@ -211,7 +212,7 @@ bool TriMesh::read_helper(const char *filename, TriMesh *mesh)
 			goto out;
 		}
 		if (strncmp(buf, "IVID", 4) == 0)
-			ok = read_vvd(f, mesh);
+			ok = read_vvd(f, mesh, verbose);
 	} else if (c == '#') {
 		char buf[1024];
 		fscanf(f, "%1024s", buf);
@@ -220,15 +221,15 @@ bool TriMesh::read_helper(const char *filename, TriMesh *mesh)
 			// Assume a ray file
 			pushback(buf, f);
 			ungetc(c, f);
-			ok = read_ray(f, mesh);
+			ok = read_ray(f, mesh, verbose);
 		} else {
 			// Assume an obj file
-			ok = read_obj(f, mesh);
+			ok = read_obj(f, mesh, verbose);
 		}
 	} else if (c == 'v' || c == 'u' || c == 'f' || c == 'g' || c == 's' || c == 'o') {
 		// Assume an obj file
 		ungetc(c, f);
-		ok = read_obj(f, mesh);
+		ok = read_obj(f, mesh, verbose);
 	} else if (c == 'O') {
 		// Assume an OFF file
 		char buf[3];
@@ -237,11 +238,11 @@ bool TriMesh::read_helper(const char *filename, TriMesh *mesh)
 			goto out;
 		}
 		if (strncmp(buf, "FF", 2) == 0)
-			ok = read_off(f, mesh);
+			ok = read_off(f, mesh, verbose);
 	} else if (isdigit(c)) {
 		// Assume an old-style sm file
 		ungetc(c, f);
-		ok = read_sm(f, mesh);
+		ok = read_sm(f, mesh, verbose);
 	} else {
 		fprintf(stderr, "Unknown file type\n");
 	}
@@ -254,14 +255,15 @@ out:
 		return false;
 	}
 
-	dprintf("Done.\n");
+	if (verbose)
+	  dprintf("Done.\n");
 	check_ind_range(mesh);
 	return true;
 }
 
 
 // Read a ply file
-static bool read_ply(FILE *f, TriMesh *mesh)
+static bool read_ply(FILE *f, TriMesh *mesh, bool verbose)
 {
 	char buf[1024];	
 	bool binary = false, need_swap = false, float_color = false;
@@ -447,12 +449,12 @@ static bool read_ply(FILE *f, TriMesh *mesh)
 	if (binary) {
 		if (!read_verts_bin(f, mesh, need_swap, nverts, vert_len,
 				    vert_pos, vert_norm, vert_color,
-				    float_color, vert_conf))
+				    float_color, vert_conf, verbose))
 			return false;
 	} else {
 		if (!read_verts_asc(f, mesh, nverts, vert_len,
 				    vert_pos, vert_norm, vert_color,
-				    float_color, vert_conf))
+				    float_color, vert_conf, verbose))
 			return false;
 	}
 
@@ -466,29 +468,29 @@ static bool read_ply(FILE *f, TriMesh *mesh)
 
 	if (ngrid) {
 		if (binary) {
-			if (!read_grid_bin(f, mesh, need_swap))
+			if (!read_grid_bin(f, mesh, need_swap, verbose))
 				return false;
 		} else {
-			if (!read_grid_asc(f, mesh))
+			if (!read_grid_asc(f, mesh, verbose))
 				return false;
 		}
 	} else if (nstrips) {
 		if (binary) {
-			if (!read_strips_bin(f, mesh, need_swap))
+			if (!read_strips_bin(f, mesh, need_swap, verbose))
 				return false;
 		} else {
-			if (!read_strips_asc(f, mesh))
+			if (!read_strips_asc(f, mesh, verbose))
 				return false;
 		}
 		mesh->convert_strips(TriMesh::TSTRIP_LENGTH);
 	} else if (nfaces) {
 		if (binary) {
 			if (!read_faces_bin(f, mesh, need_swap, nfaces,
-					    face_len, face_count, face_idx))
+					    face_len, face_count, face_idx, verbose))
 				return false;
 		} else {
 			if (!read_faces_asc(f, mesh, nfaces,
-					    face_len, face_count, face_idx))
+					    face_len, face_count, face_idx, false, verbose))
 				return false;
 		}
 	}
@@ -505,7 +507,7 @@ static bool read_ply(FILE *f, TriMesh *mesh)
 #define CHUNK_3DS_FACE  0x4120
 
 // Read a 3DS file.
-static bool read_3ds(FILE *f, TriMesh *mesh)
+static bool read_3ds(FILE *f, TriMesh *mesh, bool verbose)
 {
 	bool need_swap = !we_are_little_endian();
 	int mstart = 0;
@@ -553,7 +555,8 @@ static bool read_3ds(FILE *f, TriMesh *mesh)
 					return false;
 				if (need_swap)
 					swap_ushort(nfaces);
-				TriMesh::dprintf("\n  Reading %d faces... ", nfaces);
+				if (verbose)
+					TriMesh::dprintf("\n  Reading %d faces... ", nfaces);
 				int old_nfaces = mesh->faces.size();
 				int new_nfaces = old_nfaces + nfaces;
 				mesh->faces.resize(new_nfaces);
@@ -582,7 +585,7 @@ static bool read_3ds(FILE *f, TriMesh *mesh)
 
 
 // Read a VVD file.
-static bool read_vvd(FILE *f, TriMesh *mesh)
+static bool read_vvd(FILE *f, TriMesh *mesh, bool verbose)
 {
 	bool need_swap = we_are_little_endian();
 	const int skip = 127;
@@ -597,7 +600,8 @@ static bool read_vvd(FILE *f, TriMesh *mesh)
 	if (need_swap)
 		swap_int(nverts);
 	mesh->vertices.resize(nverts);
-	TriMesh::dprintf("\n  Reading %d vertices... ", nverts);
+	if (verbose)
+	  TriMesh::dprintf("\n  Reading %d vertices... ", nverts);
 
 	for (int i = 0; i < nverts; i++) {
 		double v[3];
@@ -627,7 +631,7 @@ static bool read_vvd(FILE *f, TriMesh *mesh)
 
 
 // Read a ray file
-static bool read_ray(FILE *f, TriMesh *mesh)
+static bool read_ray(FILE *f, TriMesh *mesh, bool verbose)
 {
 	while (!feof(f)) {
 		char buf[1024];
@@ -653,7 +657,7 @@ static bool read_ray(FILE *f, TriMesh *mesh)
 
 
 // Read an obj file
-static bool read_obj(FILE *f, TriMesh *mesh)
+static bool read_obj(FILE *f, TriMesh *mesh, bool verbose)
 {
 	vector<int> thisface;
 	while (1) {
@@ -694,7 +698,7 @@ static bool read_obj(FILE *f, TriMesh *mesh)
 
 
 // Read an off file
-static bool read_off(FILE *f, TriMesh *mesh)
+static bool read_off(FILE *f, TriMesh *mesh, bool verbose)
 {
 	skip_comments(f);
 	char buf[1024];
@@ -702,9 +706,9 @@ static bool read_off(FILE *f, TriMesh *mesh)
 	int nverts, nfaces, unused;
 	if (sscanf(buf, "%d %d %d", &nverts, &nfaces, &unused) < 2)
 		return false;
-	if (!read_verts_asc(f, mesh, nverts, 3, 0, -1, -1, false, -1))
+	if (!read_verts_asc(f, mesh, nverts, 3, 0, -1, -1, false, -1, verbose))
 		return false;
-	if (!read_faces_asc(f, mesh, nfaces, 1, 0, 1, true))
+	if (!read_faces_asc(f, mesh, nfaces, 1, 0, 1, true, verbose))
 		return false;
 
 	return true;
@@ -712,20 +716,20 @@ static bool read_off(FILE *f, TriMesh *mesh)
 
 
 // Read an sm file
-static bool read_sm(FILE *f, TriMesh *mesh)
+static bool read_sm(FILE *f, TriMesh *mesh, bool verbose)
 {
 	int nverts, nfaces;
 
 	if (fscanf(f, "%d", &nverts) != 1)
 		return false;
 
-	if (!read_verts_asc(f, mesh, nverts, 3, 0, -1, -1, false, -1))
+	if (!read_verts_asc(f, mesh, nverts, 3, 0, -1, -1, false, -1, verbose))
 		return false;
 
 	skip_comments(f);
 	if (fscanf(f, "%d", &nfaces) != 1)
 		return true;
-	if (!read_faces_asc(f, mesh, nfaces, 0, -1, 0))
+	if (!read_faces_asc(f, mesh, nfaces, 0, -1, 0, verbose))
 		return false;
 
 	return true;
@@ -740,7 +744,7 @@ static bool read_sm(FILE *f, TriMesh *mesh)
 // float_color = colors are 4-byte float * 3, vs 1-byte uchar * 3
 static bool read_verts_bin(FILE *f, TriMesh *mesh, bool &need_swap,
 	int nverts, int vert_len, int vert_pos, int vert_norm,
-	int vert_color, bool float_color, int vert_conf)
+	int vert_color, bool float_color, int vert_conf, bool verbose)
 {
 	const int vert_size = 12;
 	const int norm_size = 12;
@@ -797,7 +801,8 @@ static bool read_verts_bin(FILE *f, TriMesh *mesh, bool &need_swap,
 			swap_float(mesh->confidences[i]);
 	}
 
-	TriMesh::dprintf("\n  Reading %d vertices... ", nverts);
+	if (verbose)
+	  TriMesh::dprintf("\n  Reading %d vertices... ", nverts);
 	if (vert_len == 12 && sizeof(point) == 12 && nverts > 1)
 		return slurp_verts_bin(f, mesh, need_swap, nverts);
 	while (++i < new_nverts) {
@@ -836,7 +841,7 @@ static bool read_verts_bin(FILE *f, TriMesh *mesh, bool &need_swap,
 
 
 // Optimized reader for the simple case of just vertices w/o other properties
-static bool slurp_verts_bin(FILE *f, TriMesh *mesh, bool need_swap, int nverts)
+static bool slurp_verts_bin(FILE *f, TriMesh *mesh, bool need_swap, int nverts, bool verbose)
 {
 	int first = mesh->vertices.size() - nverts + 1;
 	COND_READ(true, mesh->vertices[first][0], (nverts-1)*12);
@@ -856,7 +861,7 @@ static bool slurp_verts_bin(FILE *f, TriMesh *mesh, bool need_swap, int nverts)
 // (white-space-separated) words, rather than in bytes
 static bool read_verts_asc(FILE *f, TriMesh *mesh,
 	int nverts, int vert_len, int vert_pos, int vert_norm,
-	int vert_color, bool float_color, int vert_conf)
+	int vert_color, bool float_color, int vert_conf, bool verbose)
 {
 	if (nverts <= 0 || vert_len < 3 || vert_pos < 0)
 		return false;
@@ -873,7 +878,8 @@ static bool read_verts_asc(FILE *f, TriMesh *mesh,
 
 	char buf[1024];
 	skip_comments(f);
-	TriMesh::dprintf("\n  Reading %d vertices... ", nverts);
+	if (verbose)
+	  TriMesh::dprintf("\n  Reading %d vertices... ", nverts);
 	for (int i = old_nverts; i < new_nverts; i++) {
 		for (int j = 0; j < vert_len; j++) {
 			if (j == vert_pos) {
@@ -922,7 +928,7 @@ static bool read_verts_asc(FILE *f, TriMesh *mesh,
 //  (If this is -1, does not read a count and assumes triangles)
 // face_idx = offset within record of the indices themselves
 static bool read_faces_bin(FILE *f, TriMesh *mesh, bool need_swap,
-	int nfaces, int face_len, int face_count, int face_idx)
+	int nfaces, int face_len, int face_count, int face_idx, bool verbose)
 {
 	if (nfaces < 0 || face_idx < 0)
 		return false;
@@ -930,7 +936,8 @@ static bool read_faces_bin(FILE *f, TriMesh *mesh, bool need_swap,
 	if (nfaces == 0)
 		return true;
 
-	TriMesh::dprintf("\n  Reading %d faces... ", nfaces);
+	if (verbose)
+	  TriMesh::dprintf("\n  Reading %d faces... ", nfaces);
 
 	int old_nfaces = mesh->faces.size();
 	int new_nfaces = old_nfaces + nfaces;
@@ -972,7 +979,7 @@ static bool read_faces_bin(FILE *f, TriMesh *mesh, bool need_swap,
 
 // Read a bunch of faces from an ASCII file
 static bool read_faces_asc(FILE *f, TriMesh *mesh, int nfaces,
-	int face_len, int face_count, int face_idx, bool read_to_eol /* = false */)
+	int face_len, int face_count, int face_idx, bool read_to_eol /* = false */, bool verbose)
 {
 	if (nfaces < 0 || face_idx < 0)
 		return false;
@@ -986,7 +993,8 @@ static bool read_faces_asc(FILE *f, TriMesh *mesh, int nfaces,
 
 	char buf[1024];
 	skip_comments(f);
-	TriMesh::dprintf("\n  Reading %d faces... ", nfaces);
+	if (verbose)
+	  TriMesh::dprintf("\n  Reading %d faces... ", nfaces);
 	vector<int> thisface;
 	for (int i = 0; i < nfaces; i++) {
 		thisface.clear();
@@ -1023,7 +1031,7 @@ static bool read_faces_asc(FILE *f, TriMesh *mesh, int nfaces,
 
 
 // Read triangle strips from a binary file
-static bool read_strips_bin(FILE *f, TriMesh *mesh, bool need_swap)
+static bool read_strips_bin(FILE *f, TriMesh *mesh, bool need_swap, bool verbose)
 {
 	int striplen;
 	COND_READ(true, striplen, 4);
@@ -1034,7 +1042,8 @@ static bool read_strips_bin(FILE *f, TriMesh *mesh, bool need_swap)
 	int new_striplen = old_striplen + striplen;
 	mesh->tstrips.resize(new_striplen);
 
-	TriMesh::dprintf("\n  Reading triangle strips... ");
+	if (verbose)
+	  TriMesh::dprintf("\n  Reading triangle strips... ");
 	COND_READ(true, mesh->tstrips[old_striplen], 4*striplen);
 	if (need_swap) {
 		for (int i = old_striplen; i < new_striplen; i++)
@@ -1046,7 +1055,7 @@ static bool read_strips_bin(FILE *f, TriMesh *mesh, bool need_swap)
 
 
 // Read triangle strips from an ASCII file
-static bool read_strips_asc(FILE *f, TriMesh *mesh)
+static bool read_strips_asc(FILE *f, TriMesh *mesh, bool verbose)
 {
 	skip_comments(f);
 	int striplen;
@@ -1056,7 +1065,8 @@ static bool read_strips_asc(FILE *f, TriMesh *mesh)
 	int new_striplen = old_striplen + striplen;
 	mesh->tstrips.resize(new_striplen);
 
-	TriMesh::dprintf("\n  Reading triangle strips... ");
+	if (verbose)
+	  TriMesh::dprintf("\n  Reading triangle strips... ");
 	skip_comments(f);
 	for (int i = old_striplen; i < new_striplen; i++)
 		if (fscanf(f, "%d", &mesh->tstrips[i]) != 1)
@@ -1067,9 +1077,10 @@ static bool read_strips_asc(FILE *f, TriMesh *mesh)
 
 
 // Read range grid data from a binary file
-static bool read_grid_bin(FILE *f, TriMesh *mesh, bool need_swap)
+static bool read_grid_bin(FILE *f, TriMesh *mesh, bool need_swap, bool verbose)
 {
-	TriMesh::dprintf("\n  Reading range grid... ");
+	if (verbose)
+	  TriMesh::dprintf("\n  Reading range grid... ");
 	int ngrid = mesh->grid_width * mesh->grid_height;
 	mesh->grid.resize(ngrid, TriMesh::GRID_INVALID);
 	for (int i = 0; i < ngrid; i++) {
@@ -1090,9 +1101,10 @@ static bool read_grid_bin(FILE *f, TriMesh *mesh, bool need_swap)
 
 
 // Read range grid data from an ASCII file
-static bool read_grid_asc(FILE *f, TriMesh *mesh)
+static bool read_grid_asc(FILE *f, TriMesh *mesh, bool verbose)
 {
-	TriMesh::dprintf("\n  Reading range grid... ");
+	if (verbose)
+	  TriMesh::dprintf("\n  Reading range grid... ");
 	int ngrid = mesh->grid_width * mesh->grid_height;
 	mesh->grid.resize(ngrid, TriMesh::GRID_INVALID);
 	for (int i = 0; i < ngrid; i++) {

@@ -209,9 +209,7 @@ void meshFIM2d::updateT_single_stage(LevelsetValueType timestep, int nside, int 
     LevelsetValueType beta = 0;
     for (int i = 0; i < 4; i++)
     {
-      K[i] = volume * (sigma DOT nablaN[i]); // for H(\nabla u) = sigma DOT \nabla u
-      //      K[i] = volume * (nablaPhi DOT nablaN[i]) / len(nablaPhi); // for F(x) = 1
-      //      K[i] = -volume* (nablaPhi DOT nablaN[i]) / len(nablaPhi); // for F(x) = -1
+      K[i] = volume * (sigma DOT nablaN[i]); 
       Hintegral += K[i] * values[i];
       Kplus[i] = std::max(K[i], 0.0);
       Kminus[i] = std::min(K[i], 0.0);
@@ -271,7 +269,7 @@ void meshFIM2d::updateT_single_stage(LevelsetValueType timestep, int nside, int 
   }
 }
 
-void meshFIM2d::GraphPartition_Square(int squareLength, int squareWidth, int blockLength, int blockWidth)
+void meshFIM2d::GraphPartition_Square(int squareLength, int squareWidth, int blockLength, int blockWidth, bool verbose)
 {
   int nn = m_meshPtr->vertices.size();
   int numBlockLength = ceil((LevelsetValueType) squareLength / blockLength);
@@ -292,7 +290,9 @@ void meshFIM2d::GraphPartition_Square(int squareLength, int squareWidth, int blo
     if (m_meshPtr->adjacentfaces[i].size() > m_largest_num_inside_mem)
       m_largest_num_inside_mem = m_meshPtr->adjacentfaces[i].size();
   }
-  printf("m_largest_num_inside_mem = %d\n", m_largest_num_inside_mem);
+
+  if (verbose)
+    printf("m_largest_num_inside_mem = %d\n", m_largest_num_inside_mem);
 
   //Allocating storage for array values of adjacency
   int* xadj = new int[nn + 1];
@@ -334,13 +334,15 @@ void meshFIM2d::GraphPartition_Square(int squareLength, int squareWidth, int blo
   }
   int min_part_size = thrust::reduce(part_sizes.begin(), part_sizes.end(), 100000000, thrust::minimum<int>());
   largest_vert_part = thrust::reduce(part_sizes.begin(), part_sizes.end(), -1, thrust::maximum<int>());
-  printf("Largest vertex partition size is: %d\n", largest_vert_part);
+
+  if (verbose)
+    printf("Largest vertex partition size is: %d\n", largest_vert_part);
   if (min_part_size == 0) printf("Min partition size is 0!!\n");
   delete [] xadj;
   delete [] adjncy;
 }
 
-void meshFIM2d::Partition_METIS(int metissize)
+void meshFIM2d::Partition_METIS(int metissize, bool verbose)
 {
   int options[10], pnumflag = 0, wgtflag = 0;
   options[0] = 0;
@@ -366,7 +368,8 @@ void meshFIM2d::Partition_METIS(int metissize)
       m_largest_num_inside_mem = m_meshPtr->adjacentfaces[i].size();
   }
 
-  printf("m_largest_num_inside_mem = %d\n", m_largest_num_inside_mem);
+  if (verbose)
+    printf("m_largest_num_inside_mem = %d\n", m_largest_num_inside_mem);
 
   //Allocating storage for array values of adjacency
   int* xadj = new int[nn + 1];
@@ -402,13 +405,15 @@ void meshFIM2d::Partition_METIS(int metissize)
   }
   int min_part_size = thrust::reduce(part_sizes.begin(), part_sizes.end(), 100000000, thrust::minimum<int>());
   largest_vert_part = thrust::reduce(part_sizes.begin(), part_sizes.end(), -1, thrust::maximum<int>());
-  printf("Largest vertex partition size is: %d\n", largest_vert_part);
+
+  if (verbose)
+    printf("Largest vertex partition size is: %d\n", largest_vert_part);
   if (min_part_size == 0) printf("Min partition size is 0!!\n");
   delete [] xadj;
   delete [] adjncy;
 }
 
-void meshFIM2d::InitPatches()
+void meshFIM2d::InitPatches(bool verbose)
 {
   int ne = m_meshPtr->faces.size();
   int nn = m_meshPtr->vertices.size();
@@ -437,7 +442,9 @@ void meshFIM2d::InitPatches()
   cudaSafeCall((kernel_compute_ele_npart << <nblocks, nthreads >> >(ne, thrust::raw_pointer_cast(&m_npart_d[0]), thrust::raw_pointer_cast(&ele_d[0]), thrust::raw_pointer_cast(&ele_label_d[0]))));
 
   full_num_ele = thrust::reduce(ele_label_d.begin(), ele_label_d.end());
-  printf("full_num_ele = %d\n", full_num_ele);
+
+  if (verbose)
+    printf("full_num_ele = %d\n", full_num_ele);
   IdxVector_d ele_offsets_d(ne + 1);
   ele_offsets_d[0] = 0;
   thrust::inclusive_scan(ele_label_d.begin(), ele_label_d.end(), ele_offsets_d.begin() + 1);
@@ -453,7 +460,8 @@ void meshFIM2d::InitPatches()
   IdxVector_d reduce_output(full_num_ele);
   thrust::reduce_by_key(ele_full_label.begin(), ele_full_label.end(), ones.begin(), tmp.begin(), reduce_output.begin());
   largest_ele_part = thrust::reduce(reduce_output.begin(), reduce_output.begin() + nparts, -1, thrust::maximum<int>());
-  printf("Largest element partition size is: %d\n", largest_ele_part);
+  if (verbose)
+    printf("Largest element partition size is: %d\n", largest_ele_part);
   if (largest_ele_part > 1024)
   {
     printf("Error: largest_ele_part > 1024 !!\n");
@@ -540,7 +548,7 @@ void meshFIM2d::GenerateBlockNeighbors()
 
 }
 
-void meshFIM2d::compute_deltaT(int num_narrowband)
+void meshFIM2d::compute_deltaT(int num_narrowband, bool verbose)
 {
   int nn = m_meshPtr->vertices.size();
   int ne = m_meshPtr->faces.size();
@@ -549,8 +557,6 @@ void meshFIM2d::compute_deltaT(int num_narrowband)
   m_timestep = LARGENUM;
   int nblocks = nnb;
   int nthreads = largest_ele_part;
-  std::cout << "nblocks: " << nblocks << ", nthreads: " << nthreads <<
-    std::endl;
 
   if (nthreads <= 32)
   {
@@ -599,7 +605,9 @@ std::vector< std::vector< float > > meshFIM2d::GenerateData(
     int nside, int block_size, LevelsetValueType bandwidth,
     int part_type, int metis_size, bool verbose)
 {
-  printf("Starting meshFIM2d::GenerateData\n");
+
+  if (verbose)
+    printf("Starting meshFIM2d::GenerateData\n");
   int nv = m_meshPtr->vertices.size();
   int nt = m_meshPtr->faces.size();
 
@@ -611,10 +619,10 @@ std::vector< std::vector< float > > meshFIM2d::GenerateData(
   LevelsetValueType duration;
 
   if (part_type == 1)
-    GraphPartition_Square(squareLength, squareWidth, squareBlockLength, squareBlockWidth);
+    GraphPartition_Square(squareLength, squareWidth, squareBlockLength, squareBlockWidth,verbose);
   else //partition with METIS
   {
-    Partition_METIS(metis_size);
+    Partition_METIS(metis_size, verbose);
   }
 
   if (m_meshPtr->vertT.size() == 0)
@@ -632,7 +640,7 @@ std::vector< std::vector< float > > meshFIM2d::GenerateData(
 
   starttime = clock();
   //Init patches
-  InitPatches();
+  InitPatches(verbose);
   Vector_h cadv_h(3 * full_num_ele, 0);
   Vector_h ceik_h(full_num_ele);
   Vector_h ccurv_h(full_num_ele);
@@ -652,11 +660,13 @@ std::vector< std::vector< float > > meshFIM2d::GenerateData(
   InitPatches2();
   GenerateBlockNeighbors();
   cudaThreadSynchronize();
-  printf("After  preprocessing\n");
+  if (verbose) 
+    printf("After  preprocessing\n");
   endtime = clock();
-  duration = (LevelsetValueType) (endtime - starttime) / CLOCKS_PER_SEC;
-  printf("pre processing time : %.10lf s\n", duration);
-
+  duration = (LevelsetValueType)(endtime - starttime) / CLOCKS_PER_SEC;
+  if (verbose)
+    printf("pre processing time : %.10lf s\n", duration);
+  
   //Inite redistance
   m_redist = new redistance(m_meshPtr, nparts, m_block_xadj_d, m_block_adjncy_d);
 
@@ -680,8 +690,13 @@ std::vector< std::vector< float > > meshFIM2d::GenerateData(
 
     m_redist->GenerateData(m_narrowband_d, num_narrowband, bandwidth, stepcount, m_meshPtr, m_vertT_after_permute_d, nparts, largest_vert_part, largest_ele_part, m_largest_num_inside_mem, full_num_ele,
         m_vert_after_permute_d, m_vert_offsets_d, m_ele_after_permute_d, m_ele_offsets_d, m_ele_local_coords_d, m_mem_location_offsets, m_mem_locations,
-        m_part_label_d, m_block_xadj_d, m_block_adjncy_d);
-    compute_deltaT(num_narrowband);
+        m_part_label_d, m_block_xadj_d, m_block_adjncy_d, verbose);
+    if (num_narrowband == 0) {
+      std::cout << "NOTE: Ending at timestep " << stepcount <<
+        " due to zero narrow band." << std::endl;
+      break;
+    }
+    compute_deltaT(num_narrowband, verbose);
     for (int niter = 0; niter < inside_niter; niter++)
       updateT_single_stage_d(timestep, stepcount, m_narrowband_d, num_narrowband);
     //////////////////////////done updating/////////////////////////////////////////////////
@@ -700,7 +715,8 @@ std::vector< std::vector< float > > meshFIM2d::GenerateData(
   cudaThreadSynchronize();
   endtime = clock();
   duration = (LevelsetValueType) (endtime - starttime) / CLOCKS_PER_SEC;
-  printf("Processing time : %.10lf s\n", duration);
+  if (verbose)
+    printf("Processing time : %.10lf s\n", duration);
   return data;
 }
 

@@ -32,7 +32,7 @@ using std::vector;
 class TriMesh
 {
   protected:
-    static bool read_helper(const char *filename, TriMesh *mesh);
+    static bool read_helper(const char *filename, TriMesh *mesh, bool verbose = false);
 
   public:
     // Types
@@ -223,14 +223,14 @@ class TriMesh
     void need_dcurv();
     void need_bbox();
     void need_bsphere();
-    void need_neighbors();
-    void need_adjacentfaces();
+    void need_neighbors(bool verbose = false);
+    void need_adjacentfaces(bool verbose = false);
     void need_across_edge();
     void need_meshinfo();
     void need_Rinscribe();
 
     // Input and output
-    static TriMesh *read(const char *filename);
+    static TriMesh *read(const char *filename, bool verbose = false);
     void write(const char *filename);
 
     // Statistics

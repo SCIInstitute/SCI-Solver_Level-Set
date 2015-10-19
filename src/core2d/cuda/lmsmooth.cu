@@ -16,10 +16,10 @@ void umbrella(TriMesh *mesh, float stepsize)
 {
 	mesh->need_neighbors();
 	mesh->need_adjacentfaces();
-	int nv = mesh->vertices.size();
+  size_t nv = mesh->vertices.size();
 	vector<vec> disp(nv);
 #pragma omp parallel for
-	for (int i = 0; i < nv; i++) {
+  for (size_t i = 0; i < nv; i++) {
 		if (mesh->is_bdy(i)) {
 			// Change to #if 1 to smooth boundaries.
 			// This way, we leave boundaries alone.
@@ -40,17 +40,17 @@ void umbrella(TriMesh *mesh, float stepsize)
 			disp[i].clear();
 #endif
 		} else {
-			int nn = mesh->neighbors[i].size();
+      size_t nn = mesh->neighbors[i].size();
 			if (!nn)
 				continue;
-			for (int j = 0; j < nn; j++)
+      for (size_t j = 0; j < nn; j++)
 				disp[i] += mesh->vertices[mesh->neighbors[i][j]];
 			disp[i] /= (float)nn;
 			disp[i] -= mesh->vertices[i];
 		}
 	}
 #pragma omp parallel for
-	for (int i = 0; i < nv; i++)
+  for (size_t i = 0; i < nv; i++)
 		mesh->vertices[i] += stepsize * disp[i];
 
 	mesh->bbox.valid = false;
@@ -64,7 +64,7 @@ void lmsmooth(TriMesh *mesh, int niters)
 	mesh->need_neighbors();
 	mesh->need_adjacentfaces();
 	TriMesh::dprintf("Smoothing mesh... ");
-	for (int i = 0; i < niters; i++) {
+  for (size_t i = 0; i < niters; i++) {
 		umbrella(mesh, 0.330f);
 		umbrella(mesh, -0.331f);
 	}

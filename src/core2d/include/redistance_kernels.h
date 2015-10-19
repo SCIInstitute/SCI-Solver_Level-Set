@@ -23,7 +23,6 @@ template<int SZ>
 __global__ void kernel_compute_new_narrowband(int* new_narrowband, LevelsetValueType* vertT, int* vert_offsets, LevelsetValueType bandwidth)
 {
   int block_idx = blockIdx.x;
-  int maxblocksize = blockDim.x;
   int tx = threadIdx.x;
   int start = vert_offsets[block_idx];
   int end = vert_offsets[block_idx + 1];
@@ -59,7 +58,6 @@ template<int SZ>
 __global__ void run_reduction_bandwidth(int *con, int *blockCon, int* ActiveList, LevelsetValueType* vertT, LevelsetValueType* block_vertT_min, int* vert_offsets)
 {
   int list_idx = blockIdx.x;
-  int maxblocksize = blockDim.x;
   int tx = threadIdx.x;
   int block_idx = ActiveList[list_idx];
   int start = vert_offsets[block_idx];
@@ -101,7 +99,6 @@ __global__ void run_reduction_bandwidth(int *con, int *blockCon, int* ActiveList
 __global__ void run_reduction(int *con, int *blockCon, int* ActiveList, int* vert_offsets)
 {
   int list_idx = blockIdx.x;
-  int maxblocksize = blockDim.x;
   int tx = threadIdx.x;
   int block_idx = ActiveList[list_idx];
   int start = vert_offsets[block_idx];
@@ -349,8 +346,7 @@ __global__ void kernel_update_values(int* active_block_list, int* seed_label, in
 
   int nv = vert_end - vert_start;
   int ne = ele_end - ele_start;
-  LevelsetValueType oldoldT, oldT, newT;
-  //	if(threadIdx.x==0)printf("%d %d %d %d %d %d\n", bidx, tidx, vert_start, vert_end ,ele_start, ele_end);
+  LevelsetValueType oldT, newT;
 
   extern __shared__ char s_array[];
   LevelsetValueType* s_vertT = (LevelsetValueType*)s_array;
@@ -367,7 +363,6 @@ __global__ void kernel_update_values(int* active_block_list, int* seed_label, in
     s_vertT[tidx] = vertT[vert_start + tidx];
     oldT = s_vertT[tidx];
     newT = oldT;
-    oldoldT = oldT;
     for (int i = mem_start; i < mem_end; i++)
     {
       int lmem = mem_locations[i];
@@ -435,7 +430,6 @@ __global__ void kernel_update_values(int* active_block_list, int* seed_label, in
     LenBC = sqrt(c2 * c2 + (c1 - c0)*(c1 - c0));
     LenCA = sqrt(c1 * c1 + c2 * c2);
 
-    bool converged = false;
     for (int iter = 0; iter < NITER; iter++)
     {
       if (tidx < nv)
@@ -526,8 +520,7 @@ __global__ void kernel_run_check_neghbor(int* active_block_list, int* seed_label
 
   int nv = vert_end - vert_start;
   int ne = ele_end - ele_start;
-  LevelsetValueType oldoldT, oldT, newT;
-  //	if(threadIdx.x==0)printf("%d %d %d %d %d %d\n", bidx, tidx, vert_start, vert_end ,ele_start, ele_end);
+  LevelsetValueType oldT, newT;
 
   extern __shared__ char s_array[];
   LevelsetValueType* s_vertT = (LevelsetValueType*)s_array;
@@ -543,7 +536,6 @@ __global__ void kernel_run_check_neghbor(int* active_block_list, int* seed_label
     s_vertT[tidx] = vertT[vert_start + tidx];
     oldT = s_vertT[tidx];
     newT = oldT;
-    oldoldT = oldT;
     for (int i = mem_start; i < mem_end; i++)
     {
       int lmem = mem_locations[i];
@@ -551,9 +543,6 @@ __global__ void kernel_run_check_neghbor(int* active_block_list, int* seed_label
       {
         int local_ele_index = (lmem % full_ele_num) - ele_start;
         int ele_off = lmem / full_ele_num;
-        //				printf("%d %d %d %d\n", bidx, tidx, local_ele_index, ele_off);
-        //        l_mem[count] = (short) (lmem - ele_start);
-        //        if(bidx == 4 && tidx ==0) printf("%d %d %d %d=%d\n", bidx, tidx, i, local_ele_index, ele_off);
         s_mem[tidx * largest_num_inside_mem + count] = (short)(local_ele_index * 3 + ele_off);
         count++;
       }
@@ -614,7 +603,6 @@ __global__ void kernel_run_check_neghbor(int* active_block_list, int* seed_label
     LenBC = sqrt(c2 * c2 + (c1 - c0)*(c1 - c0));
     LenCA = sqrt(c1 * c1 + c2 * c2);
 
-    bool converged = false;
     for (int iter = 0; iter < NITER; iter++)
     {
       if (tidx < nv)

@@ -510,7 +510,7 @@ static bool read_ply(FILE *f, TriMesh *mesh, bool verbose)
 static bool read_3ds(FILE *f, TriMesh *mesh, bool verbose)
 {
 	bool need_swap = !we_are_little_endian();
-	int mstart = 0;
+  size_t mstart = 0;
 
 	while (!feof(f)) {
 		short chunkid;
@@ -557,10 +557,10 @@ static bool read_3ds(FILE *f, TriMesh *mesh, bool verbose)
 					swap_ushort(nfaces);
 				if (verbose)
 					TriMesh::dprintf("\n  Reading %d faces... ", nfaces);
-				int old_nfaces = mesh->faces.size();
-				int new_nfaces = old_nfaces + nfaces;
+        size_t old_nfaces = mesh->faces.size();
+        size_t new_nfaces = old_nfaces + nfaces;
 				mesh->faces.resize(new_nfaces);
-				for (int i = old_nfaces; i < new_nfaces; i++) {
+        for (size_t i = old_nfaces; i < new_nfaces; i++) {
 					unsigned short buf[4];
 					COND_READ(true, buf[0], 8);
 					if (need_swap) {
@@ -663,7 +663,7 @@ static bool read_obj(FILE *f, TriMesh *mesh, bool verbose)
 	while (1) {
 		skip_comments(f);
 		if (feof(f))
-			return true;
+			break;
 		char buf[1024];
 		GET_LINE();
 		if (LINE_IS("v ") || LINE_IS("v\t")) {
@@ -685,7 +685,7 @@ static bool read_obj(FILE *f, TriMesh *mesh, bool verbose)
 				if (sscanf(c, " %d", &thisf) != 1)
 					break;
 				if (thisf < 0)
-					thisf += mesh->vertices.size();
+					thisf += static_cast<int>(mesh->vertices.size());
 				else
 					thisf--;
 				thisface.push_back(thisf);
@@ -846,7 +846,7 @@ static bool slurp_verts_bin(FILE *f, TriMesh *mesh, bool need_swap, int nverts, 
 	int first = mesh->vertices.size() - nverts + 1;
 	COND_READ(true, mesh->vertices[first][0], (nverts-1)*12);
 	if (need_swap) {
-	    for (int i = first; i < mesh->vertices.size(); i++) {
+    for (size_t i = first; i < mesh->vertices.size(); i++) {
 			swap_float(mesh->vertices[i][0]);
 			swap_float(mesh->vertices[i][1]);
 			swap_float(mesh->vertices[i][2]);
@@ -880,8 +880,8 @@ static bool read_verts_asc(FILE *f, TriMesh *mesh,
 	skip_comments(f);
 	if (verbose)
 	  TriMesh::dprintf("\n  Reading %d vertices... ", nverts);
-	for (int i = old_nverts; i < new_nverts; i++) {
-		for (int j = 0; j < vert_len; j++) {
+  for (size_t i = old_nverts; i < new_nverts; i++) {
+    for (size_t j = 0; j < vert_len; j++) {
 			if (j == vert_pos) {
 				if (fscanf(f, "%f %f %f",
 					      &mesh->vertices[i][0],
@@ -1058,17 +1058,17 @@ static bool read_strips_bin(FILE *f, TriMesh *mesh, bool need_swap, bool verbose
 static bool read_strips_asc(FILE *f, TriMesh *mesh, bool verbose)
 {
 	skip_comments(f);
-	int striplen;
+  size_t striplen;
 	if (fscanf(f, "%d", &striplen) != 1)
 		return false;
-	int old_striplen = mesh->tstrips.size();
-	int new_striplen = old_striplen + striplen;
+  size_t old_striplen = mesh->tstrips.size();
+  size_t new_striplen = old_striplen + striplen;
 	mesh->tstrips.resize(new_striplen);
 
 	if (verbose)
 	  TriMesh::dprintf("\n  Reading triangle strips... ");
 	skip_comments(f);
-	for (int i = old_striplen; i < new_striplen; i++)
+  for (size_t i = old_striplen; i < new_striplen; i++)
 		if (fscanf(f, "%d", &mesh->tstrips[i]) != 1)
 			return false;
 
@@ -1083,7 +1083,7 @@ static bool read_grid_bin(FILE *f, TriMesh *mesh, bool need_swap, bool verbose)
 	  TriMesh::dprintf("\n  Reading range grid... ");
 	int ngrid = mesh->grid_width * mesh->grid_height;
 	mesh->grid.resize(ngrid, TriMesh::GRID_INVALID);
-	for (int i = 0; i < ngrid; i++) {
+  for (size_t i = 0; i < ngrid; i++) {
 		int n = fgetc(f);
 		if (n == EOF)
 			return false;
@@ -1634,8 +1634,8 @@ static void write_cc(TriMesh *mesh, FILE *f, const char *filename,
 	delete [] meshname;
 
 	fprintf(f, "\tstatic const float vertdata[][3] = {\n");
-	int nv = mesh->vertices.size(), nf = mesh->faces.size();
-	for (int i = 0; i < nv; i++) {
+  size_t nv = mesh->vertices.size(), nf = mesh->faces.size();
+  for (size_t i = 0; i < nv; i++) {
 		fprintf(f, "\t\t{ %.7g, %.7g, %.7g },\n",
 				mesh->vertices[i][0],
 				mesh->vertices[i][1],
@@ -1644,7 +1644,7 @@ static void write_cc(TriMesh *mesh, FILE *f, const char *filename,
 	fprintf(f, "\t};\n");
 	if (write_norm) {
 		fprintf(f, "\tstatic const float normdata[][3] = {\n");
-		for (int i = 0; i < nv; i++) {
+    for (size_t i = 0; i < nv; i++) {
 			fprintf(f, "\t\t{ %.7g, %.7g, %.7g },\n",
 					mesh->normals[i][0],
 					mesh->normals[i][1],
@@ -1654,7 +1654,7 @@ static void write_cc(TriMesh *mesh, FILE *f, const char *filename,
 	}
 	if (!mesh->colors.empty() && float_color) {
 		fprintf(f, "\tstatic const float colordata[][3] = {\n");
-		for (int i = 0; i < nv; i++) {
+    for (size_t i = 0; i < nv; i++) {
 			fprintf(f, "\t\t{ %.7g, %.7g, %.7g },\n",
 					mesh->colors[i][0],
 					mesh->colors[i][1],
@@ -1664,7 +1664,7 @@ static void write_cc(TriMesh *mesh, FILE *f, const char *filename,
 	}
 	if (!mesh->colors.empty() && !float_color) {
 		fprintf(f, "\tstatic const unsigned char colordata[][3] = {\n");
-		for (int i = 0; i < nv; i++) {
+    for (size_t i = 0; i < nv; i++) {
 			fprintf(f, "\t\t{ %d, %d, %d },\n",
 					color2uchar(mesh->colors[i][0]),
 					color2uchar(mesh->colors[i][1]),
@@ -1673,7 +1673,7 @@ static void write_cc(TriMesh *mesh, FILE *f, const char *filename,
 		fprintf(f, "\t};\n");
 	}
 	fprintf(f, "\tstatic const int facedata[][3] = {\n");
-	for (int i = 0; i < nf; i++) {
+  for (size_t i = 0; i < nf; i++) {
 		fprintf(f, "\t\t{ %d, %d, %d },\n",
 				mesh->faces[i][0],
 				mesh->faces[i][1],
@@ -1707,7 +1707,7 @@ static void write_verts_asc(TriMesh *mesh, FILE *f,
 			    const char *before_conf,
 			    const char *after_line)
 {
-    for (int i = 0; i < mesh->vertices.size(); i++) {
+  for (size_t i = 0; i < mesh->vertices.size(); i++) {
 		fprintf(f, "%s%.7g %.7g %.7g", before_vert,
 				mesh->vertices[i][0],
 				mesh->vertices[i][1],
@@ -1740,27 +1740,27 @@ static void write_verts_bin(TriMesh *mesh, FILE *f, bool need_swap,
 			    bool float_color, bool write_conf)
 {
 	if (need_swap) {
-		for (int i = 0; i < mesh->vertices.size(); i++) {
+    for (size_t i = 0; i < mesh->vertices.size(); i++) {
 			swap_float(mesh->vertices[i][0]);
 			swap_float(mesh->vertices[i][1]);
 			swap_float(mesh->vertices[i][2]);
 		}
 		if (!mesh->normals.empty()) {
-			for (int i = 0; i < mesh->normals.size(); i++) {
+      for (size_t i = 0; i < mesh->normals.size(); i++) {
 				swap_float(mesh->normals[i][0]);
 				swap_float(mesh->normals[i][1]);
 				swap_float(mesh->normals[i][2]);
 			}
 		}
 		if (!mesh->colors.empty() && float_color) {
-			for (int i = 0; i < mesh->normals.size(); i++) {
+      for (size_t i = 0; i < mesh->normals.size(); i++) {
 				swap_float(mesh->colors[i][0]);
 				swap_float(mesh->colors[i][1]);
 				swap_float(mesh->colors[i][2]);
 			}
 		}
 		if (!mesh->confidences.empty()) {
-			for (int i = 0; i < mesh->confidences.size(); i++)
+      for (size_t i = 0; i < mesh->confidences.size(); i++)
 				swap_float(mesh->confidences[i]);
 		}
 	}

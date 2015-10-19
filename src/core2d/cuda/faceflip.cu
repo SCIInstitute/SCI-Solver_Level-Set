@@ -18,9 +18,9 @@ void faceflip(TriMesh *mesh)
 	mesh->tstrips.clear();
 
 	TriMesh::dprintf("Flipping faces... ");
-	int nf = mesh->faces.size();
+  size_t nf = mesh->faces.size();
 #pragma omp parallel for
-	for (int i = 0; i < nf; i++)
+  for (size_t i = 0; i < nf; i++)
 		swap(mesh->faces[i][0], mesh->faces[i][2]);
 	TriMesh::dprintf("Done.\n");
 

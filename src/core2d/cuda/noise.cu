@@ -24,21 +24,7 @@
 #include <math.h> 
 #include <cstdlib>
 #include <ctime>
-//#include <complex.h>
 #include "noise.h"
-//namespace SPUC {
-//noise::noise(double i) : idum((long)i), s(0) {;}	// Constructor
-//complex<double> noise::Cgauss(void)
-//{
-//	double fac, r, v1, v2;
-//		do {
-//			v1 = (2.0 * uniform()) - 1.0;
-//			v2 = (2.0 * uniform()) - 1.0;
-//			r = (v1*v1) + (v2*v2);
-//		} while (r >= 1.0);
-//		fac = sqrt(-2.0 * log(r) / r);
-//		return( complex<double>( v2*fac, v1*fac ) );
-//}  
 double noise::gauss()
 	{
 	double fac, r, v1, v2;
@@ -74,9 +60,6 @@ double noise::uni(void)
 
 void noise::whiteGauss(int numSamples)
 {
-
-
-
 	/* Generate a new random seed from system time - do this once in your constructor */
 	srand(time(0));
 
@@ -94,23 +77,7 @@ void noise::whiteGauss(int numSamples)
 
 	for (int i = 0; i < numSamples; i++)
 	{
-		random = ((float)rand() / (float)(RAND_MAX + 1));
+		random = ((float)rand() / ((float)RAND_MAX + 1.f));
 		noise = (2.f * ((random * c2) + (random * c2) + (random * c2)) - 3.f * (c2 - 1.f)) * c3;
 	}
 }
-//double noise::uniform(void)
-////--------------------------------------------------------------------
-////       Returns uniform deviate between 0.0 and 1.0.
-////       Used to generate PN data
-////---------------------------------------------------------------------
-//
-//	{
-//	double r1;
-//	long hi;
-//	hi = idum/LQ;
-//	idum = LA*(idum-hi*LQ) - LR*hi;
-//	if (idum < 0) idum += LM;
-//	r1  = LAM*idum;
-//	return(r1);
-//}
-//} // namespace SPUC 

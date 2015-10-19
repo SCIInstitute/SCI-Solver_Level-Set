@@ -2,7 +2,6 @@
 #define REDIST_H
 
 #include <TriMesh.h>
-//#include <TriMesh_algo.h>
 #include <typeinfo>
 #include <functional>
 #include <queue>
@@ -13,11 +12,11 @@
 using namespace std;
 
 #ifndef _EPS
-#define _EPS 1e-8
+#define _EPS 1e-5
 #endif
 
 #ifndef SMALLNUM
-#define SMALLNUM 1e-8
+#define SMALLNUM 1e-5
 #endif
 
 class redistance
@@ -46,12 +45,9 @@ public:
 
   redistance(TriMesh* mesh, int nparts, IdxVector_d& block_xadj, IdxVector_d& block_adjncy)
   {
-    int nn = mesh->vertices.size();
+    size_t nn = mesh->vertices.size();
     m_DT_d = Vector_d(nn);
     m_active_block_list_d = IdxVector_d(nparts + 1);
-    //    m_largest_num_inside_mem = largest_num_inside_mem;
-    //    m_block_xadj_h = block_xadj;
-    //    m_block_adjncy_h = block_adjncy;
     m_Tsign_d = CharVector_d(nn);
     m_Label_d = IdxVector_d(nn);
     h_ActiveListNew.reserve(nparts);
@@ -72,34 +68,14 @@ public:
   {
   };
 
-  //  TriMesh* m_meshPtr;
   int NumComputation;
   list<index> m_ActivePoints;
   vector<index> m_SeedPoints;
   vector<LabelType> m_Label;
   IdxVector_d m_Label_d;
-  //  vector<int> m_Tsign;
   LevelsetValueType m_StopDistance;
-  //  int m_nparts;
-  //  int m_largest_vert_part;
-  //  int m_largest_ele_part;
-  //  int m_full_num_ele;
-  //  int m_largest_num_inside_mem;
-  //  Vector_d m_vertT_after_permute_d;
-  //  Vector_d m_vert_after_permute_d;
-  //  IdxVector_d m_vert_offsets_d;
-  //  IdxVector_d m_ele_after_permute_d;
-  //  IdxVector_d m_ele_offsets_d;
-  //  IdxVector_d m_mem_location_offsets;
-  //  IdxVector_d m_mem_locations;
-  //  Vector_d m_ele_local_coords_d;
-  //  IdxVector_d m_part_label_d;
   IdxVector_d m_active_block_list_d;
-  //  IdxVector_d m_block_xadj_d;
-  //  IdxVector_d m_block_adjncy_d;
   Vector_d m_DT_d;
-  //  IdxVector_h m_block_xadj_h;
-  //  IdxVector_h m_block_adjncy_h;
   CharVector_d m_Tsign_d;
   vector<int> h_ActiveListNew;
   IdxVector_d tmp_new_narrowband;

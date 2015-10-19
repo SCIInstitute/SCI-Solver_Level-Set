@@ -303,18 +303,10 @@ class TriMesh
       neighbors[v3].push_back(v1);
       Face af = faces[nfAdj];
 
-      // create faces (v1,v3,v4) and (v1,v2,v3), check angle at v1
       Face f1(v1, v3, v4);
-      //f1.T[f1.indexof(v1)] = this->vertT[currentVert][v1];
-      //f1.T[f1.indexof(v3)] = this->vertT[currentVert][v3];
-      //f1.T[f1.indexof(v4)] = this->vertT[currentVert][v4];
 
 
       Face f2(v1, v2, v3);
-      //f2.T[f2.indexof(v1)] = this->vertT[currentVert][v1];
-      //f2.T[f2.indexof(v2)] = this->vertT[currentVert][v2];
-      //f2.T[f2.indexof(v3)] = this->vertT[currentVert][v3];
-
 
 
       if (IsNonObtuse(v, f1))
@@ -412,7 +404,7 @@ class TriMesh
       vector<Face> t_faces;
 
       // get adjacent faces
-      int naf = this->adjacentfaces[v].size();
+      size_t naf = this->adjacentfaces[v].size();
 
       if (!naf)
       {
@@ -420,16 +412,13 @@ class TriMesh
       }
       else
       {
-        for (int af = 0; af < naf; af++)
+        for (size_t af = 0; af < naf; af++)
         {
           Face cf = this->faces[adjacentfaces[v][af]];
 
           t_faces.clear();
           if (IsNonObtuse(v, cf))// check angle: if non-obtuse, return existing face
           {
-            //this->colors[cf[0]] = Color::red();
-            //this->colors[cf[1]] = Color::red();
-            //this->colors[cf[2]] = Color::red();
             t_faces.push_back(cf);
           }
           else
@@ -444,11 +433,8 @@ class TriMesh
             //SplitFace(t_faces,v,cf,nfae,currentVert);// if obtuse, split face till we get all acute angles
           }
 
-          for (int tf = 0; tf < t_faces.size(); tf++)
+          for (size_t tf = 0; tf < t_faces.size(); tf++)
           {
-            //this->colors[t_faces[tf][0]] = Color::red();
-            //this->colors[t_faces[tf][1]] = Color::red();
-            //this->colors[t_faces[tf][2]] = Color::red();
             oneRingFaces.push_back(t_faces[tf]);
           }
         }
@@ -456,60 +442,6 @@ class TriMesh
       //this->colors[v] = Color::green();
       return oneRingFaces;
     }
-
-    // FIM: initialize attributes
-    //typedef std::<int> ListType;
-
-    //  void InitializeAttributes(int currentVert, std::vector<int> seeds = vector<int>())
-    //  {
-    //    // initialize the travel times over all vertices...
-    //    int nv = this->vertices.size();
-    //    vertT.resize(nv);
-    //    vertT.assign(nv, LARGENUM);
-    //
-    //    //    for (int v = 0; v < nv; v++)
-    //    //    {
-    //    //      this->vertT.push_back(LARGENUM);  //modified from this->vertT[v] = 1000000.0)
-    //    //    }
-    //
-    //    //vector<int> nb;
-    //
-    //    // initialize seed points if present...
-    //    if (!seeds.empty())
-    //    {
-    //      int ns = seeds.size();
-    //      for (int s = 0; s < ns; s++)
-    //      {
-    //        this->vertT[seeds[s]] = 0.0; //modified from this->vertT[s] = 0.0;
-    //        //nb = this->neighbors[seeds[s]];
-    //
-    //      }
-    //
-    //
-    //    }
-    //
-    //    // pre-compute faces, normals, and other per-vertex properties that may be needed
-    //    this->need_neighbors();
-    //    this->need_normals();
-    //    this->need_adjacentfaces();
-    //    this->need_across_edge();
-    //    this->need_faces();
-    //
-    //    // for all faces: initialize per-vertex travel time and face-speed
-    //    int nf = this->faces.size();
-    //    for (int f = 0; f < nf; f++)
-    //    {
-    //      Face cf = this->faces[f];
-    //
-    //      // travel time
-    //      faces[f].T[0] = this->vertT[cf[0]];
-    //      faces[f].T[1] = this->vertT[cf[1]];
-    //      faces[f].T[2] = this->vertT[cf[2]];
-    //
-    //      // speed
-    //      //faces[f].speedInv = 1.0;
-    //    }
-    //  }
 
     // Debugging printout, controllable by a "verbose"ness parameter
     static int verbose;

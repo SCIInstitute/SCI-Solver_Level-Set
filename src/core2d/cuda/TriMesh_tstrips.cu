@@ -12,8 +12,6 @@ Code for dealing with triangle strips
 // Forward declarations
 static void tstrip_build(TriMesh &mesh, int f, vector<signed char> &face_avail,
 			 vector<int> &todo);
-static void collect_tris_in_strips(vector<int> &tstrips);
-
 
 // Convert faces to tstrips
 void TriMesh::need_tstrips()
@@ -24,11 +22,11 @@ void TriMesh::need_tstrips()
 	need_across_edge();
 
 	dprintf("Building triangle strips... ");
-	int nf = faces.size();
+  size_t nf = faces.size();
 
 	vector<int> todo;
 	vector<signed char> face_avail(nf);
-	for (int i = 0; i < nf; i++) {
+  for (size_t i = 0; i < nf; i++) {
 		face_avail[i] = (across_edge[i][0] != -1) +
 				(across_edge[i][1] != -1) +
 				(across_edge[i][2] != -1);
@@ -177,7 +175,6 @@ void TriMesh::convert_strips(tstrip_rep rep)
 	if (rep == TSTRIP_TERM && tstrips.back() == -1)
 		return;
 	if (rep == TSTRIP_LENGTH && tstrips.back() != -1) {
-		//collect_tris_in_strips(tstrips);
 		return;
 	}
 
@@ -205,41 +202,5 @@ void TriMesh::convert_strips(tstrip_rep rep)
 			}
 		}
 		tstrips[0] = len;
-		//collect_tris_in_strips(tstrips);
 	}
 }
-
-
-// Collect all single triangles to be at the end of the list of tstrips
-static void collect_tris_in_strips(vector<int> &tstrips)
-{
-	if (tstrips.empty())
-		return;
-	vector<int> tris;
-
-	int n = 0, offset = 0;
-	bool have_tri = false, bad_strip = false;
-	for (int i = 0; i < tstrips.size(); i++) {
-		if (n == 0) {
-			n = tstrips[i];
-			bad_strip = (n < 3);
-			have_tri = (n == 3);
-			n++;
-		}
-		if (bad_strip) {
-			offset++;
-		} else if (have_tri) {
-			tris.push_back(tstrips[i]);
-			offset++;
-		} else if (offset > 0) {
-			tstrips[i-offset] = tstrips[i];
-		}
-		n--;
-	}
-	if (offset == 0)
-		return;
-	tstrips.erase(tstrips.end() - offset, tstrips.end());
-	tstrips.insert(tstrips.end(), tris.begin(), tris.end());
-
-}
-

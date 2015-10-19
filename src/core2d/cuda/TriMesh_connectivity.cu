@@ -170,7 +170,7 @@ void TriMesh::need_noise()
 	vector< float> tmpNoiseOnVert;
 	tmpNoiseOnVert.resize(nv);
 
-	float dt = 1.0 / 20.0;
+	float dt = 1.0f / 20.0f;
 	//iterate 
 	int maxIterNum = 1;
 	int iterStep = 10;

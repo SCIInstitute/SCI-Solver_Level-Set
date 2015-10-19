@@ -124,7 +124,7 @@ void smooth_mesh(TriMesh *themesh, float sigma)
 {
 	themesh->need_faces();
 	diffuse_normals(themesh, 0.5f * sigma);
-	int nv = themesh->vertices.size();
+  size_t nv = themesh->vertices.size();
 
 	TriMesh::dprintf("\rSmoothing... ");
 	timestamp t = now();
@@ -132,7 +132,7 @@ void smooth_mesh(TriMesh *themesh, float sigma)
 	float invsigma2 = 1.0f / sqr(sigma);
 
 	vector<point> dflt(nv);
-	for (int i = 0; i < nv; i++) {
+  for (size_t i = 0; i < nv; i++) {
 		diffuse_vert_field(themesh, AccumVec(themesh->vertices),
 				   i, invsigma2, dflt[i]);
 		// Just keep the displacement
@@ -140,15 +140,15 @@ void smooth_mesh(TriMesh *themesh, float sigma)
 	}
 
 	// Slightly better small-neighborhood approximation
-	int nf = themesh->faces.size();
+  size_t nf = themesh->faces.size();
 #pragma omp parallel for
-	for (int i = 0; i < nf; i++) {
+  for (size_t i = 0; i < nf; i++) {
 		point c = themesh->vertices[themesh->faces[i][0]] +
 			  themesh->vertices[themesh->faces[i][1]] +
 			  themesh->vertices[themesh->faces[i][2]];
 		c /= 3.0f;
-		for (int j = 0; j < 3; j++) {
-			int v = themesh->faces[i][j];
+    for (size_t j = 0; j < 3; j++) {
+      size_t v = themesh->faces[i][j];
 			vec d = 0.5f * (c - themesh->vertices[v]);
 			dflt[v] += themesh->cornerareas[i][j] /
 				   themesh->pointareas[themesh->faces[i][j]] *
@@ -158,14 +158,14 @@ void smooth_mesh(TriMesh *themesh, float sigma)
 
 	// Filter displacement field
 	vector<point> dflt2(nv);
-	for (int i = 0; i < nv; i++) {
+  for (size_t i = 0; i < nv; i++) {
 		diffuse_vert_field(themesh, AccumVec(dflt),
 				   i, invsigma2, dflt2[i]);
 	}
 
 	// Update vertex positions
 #pragma omp parallel for
-	for (int i = 0; i < nv; i++)
+  for (size_t i = 0; i < nv; i++)
 		themesh->vertices[i] += dflt[i] - dflt2[i]; // second Laplacian
 
 	TriMesh::dprintf("Done.  Filtering took %f sec.\n", now() - t);
@@ -242,7 +242,7 @@ void bilateral_smooth_mesh(TriMesh *themesh, float sigma1, float sigma2)
 	themesh->need_faces();
 	themesh->need_adjacentfaces();
 	themesh->need_across_edge();
-	int nv = themesh->vertices.size(), nf = themesh->faces.size();
+  size_t nv = themesh->vertices.size(), nf = themesh->faces.size();
 	if (themesh->flags.size() != nf)
 		themesh->flags.resize(nf);
 
@@ -256,11 +256,11 @@ void bilateral_smooth_mesh(TriMesh *themesh, float sigma1, float sigma2)
 
 	// Pass I: mollification
 	vector<point> mpoints(nv);
-	for (int i = 0; i < nv; i++)
+  for (size_t i = 0; i < nv; i++)
 		jones_filter(themesh, i, invsigma2_3, 0.0f, true, mpoints);
 
 	// Pass II: bilateral
-	for (int i = 0; i < nv; i++)
+  for (size_t i = 0; i < nv; i++)
 		jones_filter(themesh, i, invsigma2_1, invsigma2_2, false, mpoints);
 
 	TriMesh::dprintf("Done.  Filtering took %f sec.\n", now() - t);
@@ -273,7 +273,7 @@ void diffuse_normals(TriMesh *themesh, float sigma)
 	themesh->need_normals();
 	themesh->need_pointareas();
 	themesh->need_neighbors();
-	int nv = themesh->vertices.size();
+  size_t nv = themesh->vertices.size();
 	if (themesh->flags.size() != nv)
 		themesh->flags.resize(nv);
 
@@ -283,7 +283,7 @@ void diffuse_normals(TriMesh *themesh, float sigma)
 	float invsigma2 = 1.0f / sqr(sigma);
 
 	vector<vec> nflt(nv);
-	for (int i = 0; i < nv; i++) {
+  for (size_t i = 0; i < nv; i++) {
 		diffuse_vert_field(themesh, AccumVec(themesh->normals),
 				   i, invsigma2, nflt[i]);
 		normalize(nflt[i]);
@@ -302,7 +302,7 @@ void diffuse_curv(TriMesh *themesh, float sigma)
 	themesh->need_pointareas();
 	themesh->need_curvatures();
 	themesh->need_neighbors();
-	int nv = themesh->vertices.size();
+  size_t nv = themesh->vertices.size();
 	if (themesh->flags.size() != nv)
 		themesh->flags.resize(nv);
 
@@ -312,10 +312,10 @@ void diffuse_curv(TriMesh *themesh, float sigma)
 	float invsigma2 = 1.0f / sqr(sigma);
 
 	vector<vec> cflt(nv);
-	for (int i = 0; i < nv; i++)
+  for (size_t i = 0; i < nv; i++)
 		diffuse_vert_field(themesh, AccumCurv(), i, invsigma2, cflt[i]);
 #pragma omp parallel for
-	for (int i = 0; i < nv; i++)
+  for (size_t i = 0; i < nv; i++)
 		diagonalize_curv(themesh->pdir1[i], themesh->pdir2[i],
 				 cflt[i][0], cflt[i][1], cflt[i][2],
 				 themesh->normals[i],
@@ -334,7 +334,7 @@ void diffuse_dcurv(TriMesh *themesh, float sigma)
 	themesh->need_curvatures();
 	themesh->need_dcurv();
 	themesh->need_neighbors();
-	int nv = themesh->vertices.size();
+  size_t nv = themesh->vertices.size();
 	if (themesh->flags.size() != nv)
 		themesh->flags.resize(nv);
 
@@ -344,7 +344,7 @@ void diffuse_dcurv(TriMesh *themesh, float sigma)
 	float invsigma2 = 1.0f / sqr(sigma);
 
 	vector< Vec<4> > dflt(nv);
-	for (int i = 0; i < nv; i++)
+  for (size_t i = 0; i < nv; i++)
 		diffuse_vert_field(themesh, AccumDCurv(), i, invsigma2, dflt[i]);
 
 	themesh->dcurv = dflt;

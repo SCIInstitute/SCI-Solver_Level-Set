@@ -137,10 +137,10 @@ void edgeflip(TriMesh *mesh)
 
 	// Find edges that need to be flipped, and insert them into
 	// the to-do list
-	int nf = mesh->faces.size();
+  size_t nf = mesh->faces.size();
 	priority_queue<TriMeshEdgeWithBenefit> todo;
-	for (int i = 0; i < nf; i++) {
-		for (int j = 0; j < 3; j++) {
+  for (size_t i = 0; i < nf; i++) {
+    for (size_t j = 0; j < 3; j++) {
 			float b = flip_benefit(mesh, i, j);
 			if (b > 0.0f)
 				todo.push(make_pair(b, make_pair(i, j)));

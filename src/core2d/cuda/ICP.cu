@@ -354,11 +354,11 @@ static void compute_alignxf(float evec[6][6], float eval[6], float b[6],
 void compute_scale(const vector<PtPair> &pairs, xform &alignxf,
 		   int verbose, bool do_affine)
 {
-	int n = pairs.size();
+  size_t n = pairs.size();
 
 	// Compute COM
 	point centroid;
-	for (int i = 0; i < n; i++)
+  for (size_t i = 0; i < n; i++)
 		centroid += pairs[i].p1 + pairs[i].p2;
 	centroid /= 2.0f * n;
 	xform txf = xform::trans(centroid);
@@ -366,14 +366,14 @@ void compute_scale(const vector<PtPair> &pairs, xform &alignxf,
 	// Compute covariance matrices
 	double cov1[3][3] = { {0,0,0}, {0,0,0}, {0,0,0} };
 	double cov2[3][3] = { {0,0,0}, {0,0,0}, {0,0,0} };
-	for (int i = 0; i < n; i++) {
+  for (size_t i = 0; i < n; i++) {
 		vec p = pairs[i].p1 - centroid;
-		for (int j = 0; j < 3; j++)
-			for (int k = 0; k < 3; k++)
+    for (size_t j = 0; j < 3; j++)
+      for (size_t k = 0; k < 3; k++)
 				cov1[j][k] += p[j]*p[k];
 		p = pairs[i].p2 - centroid;
-		for (int j = 0; j < 3; j++)
-			for (int k = 0; k < 3; k++)
+    for (size_t j = 0; j < 3; j++)
+      for (size_t k = 0; k < 3; k++)
 				cov2[j][k] += p[j]*p[k];
 	}
 

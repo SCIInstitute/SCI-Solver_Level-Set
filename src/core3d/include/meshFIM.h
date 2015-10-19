@@ -47,8 +47,8 @@ class meshFIM
 
     meshFIM(TetMesh* mesh)
     {
-      int nn = mesh->vertices.size();
-      int ne = mesh->tets.size();
+      size_t nn = mesh->vertices.size();
+      size_t ne = mesh->tets.size();
       m_meshPtr = mesh;
       vertT_out = Vector_d(nn, 0.0);
       tmp_vertT_before_permute_d = Vector_d(nn, 0.0);

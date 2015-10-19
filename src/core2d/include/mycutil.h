@@ -15,7 +15,7 @@
   }                                                                 \
 }                                                                   \
 
-#define cudaSafeCall(x) {{(x); cudaCheckError()}}
+#define cudaSafeCall(x) { { (x); cudaCheckError() } }
 
 
 template <typename T>

@@ -17,33 +17,33 @@ extern "C"
 
 void meshFIM2d::writeFLD()
 {
-  int nv = m_meshPtr->vertices.size();
-  int nt = m_meshPtr->faces.size();
+  size_t nv = m_meshPtr->vertices.size();
+  size_t nt = m_meshPtr->faces.size();
   FILE* matfile;
   FILE* fldfile;
   matfile = fopen("result.txt", "w+");
   fldfile = fopen("result.fld", "w+");
   fprintf(fldfile, "SCI\nASC\n2\n{@1 {GenericField<TriSurfMesh<TriLinearLgn<Point>>,ConstantBasis<float>,vector<float>> 3 {Field 3 {PropertyManager 2 1 \"name\" @2 {Property<string> 2 0 \"TorsoVolumeMesh\" }\n}\n}\n{@3 {TriSurfMesh<TriLinearLgn<Point>> 4 {Mesh 2 {PropertyManager 2 0 }\n}\n");
   fprintf(fldfile, "{STLVector 2 %d ", nv);
-  for (int i = 0; i < nv; i++)
+  for (size_t i = 0; i < nv; i++)
   {
     fprintf(fldfile, "{%.12f %.12f %.12f}", m_meshPtr->vertices[i][0], m_meshPtr->vertices[i][1], m_meshPtr->vertices[i][2]);
   }
   fprintf(fldfile, "}\n{STLIndexVector 1 %d 8 ", nt * 3);
-  for (int i = 0; i < nt; i++)
+  for (size_t i = 0; i < nt; i++)
   {
     fprintf(fldfile, "%d %d %d ", m_meshPtr->faces[i][0], m_meshPtr->faces[i][1], m_meshPtr->faces[i][2]);
   }
   fprintf(fldfile, "}\n");
   fprintf(fldfile, "{TriLinearLgn<Point>  1 }\n}\n}{ConstantBasis<float>  1 }\n");
   fprintf(fldfile, "{STLVector 2 %d ", nt);
-  for (int i = 0; i < nt; i++)
+  for (size_t i = 0; i < nt; i++)
   {
     fprintf(fldfile, " 0");
   }
 
   fprintf(fldfile, "}\n}\n}");
-  for (int i = 0; i < nv; i++)
+  for (size_t i = 0; i < nv; i++)
   {
     fprintf(matfile, "%.12f\n", m_meshPtr->vertT[i]);
   }
@@ -53,8 +53,8 @@ void meshFIM2d::writeFLD()
 
 void meshFIM2d::writeVTK(std::vector< std::vector <float> > time_values)
 {
-  int nv = m_meshPtr->vertices.size();
-  int nt = m_meshPtr->faces.size();
+  size_t nv = m_meshPtr->vertices.size();
+  size_t nt = m_meshPtr->faces.size();
   for (size_t j = 0; j < time_values.size(); j++) {
     FILE* vtkfile;
     std::stringstream ss;
@@ -62,23 +62,23 @@ void meshFIM2d::writeVTK(std::vector< std::vector <float> > time_values)
     vtkfile = fopen(ss.str().c_str(), "w+");
     fprintf(vtkfile, "# vtk DataFile Version 3.0\nvtk output\nASCII\nDATASET UNSTRUCTURED_GRID\n");
     fprintf(vtkfile, "POINTS %d float\n", nv);
-    for (int i = 0; i < nv; i++)
+    for (size_t i = 0; i < nv; i++)
     {
       fprintf(vtkfile, "%.12f %.12f %.12f\n", m_meshPtr->vertices[i][0], m_meshPtr->vertices[i][1], m_meshPtr->vertices[i][2]);
     }
     fprintf(vtkfile, "CELLS %d %d\n", nt, nt * 4);
-    for (int i = 0; i < nt; i++)
+    for (size_t i = 0; i < nt; i++)
     {
       fprintf(vtkfile, "3 %d %d %d\n", m_meshPtr->faces[i][0], m_meshPtr->faces[i][1], m_meshPtr->faces[i][2]);
     }
 
     fprintf(vtkfile, "CELL_TYPES %d\n", nt);
-    for (int i = 0; i < nt; i++)
+    for (size_t i = 0; i < nt; i++)
     {
       fprintf(vtkfile, "5\n");
     }
     fprintf(vtkfile, "POINT_DATA %d\nSCALARS traveltime float 1\nLOOKUP_TABLE default\n", nv);
-    for (int i = 0; i < nv; i++)
+    for (size_t i = 0; i < nv; i++)
     {
       fprintf(vtkfile, "%.12f\n", time_values[j][i]);
     }
@@ -88,7 +88,7 @@ void meshFIM2d::writeVTK(std::vector< std::vector <float> > time_values)
 
 void meshFIM2d::updateT_single_stage_d(LevelsetValueType timestep, int niter, IdxVector_d& narrowband, int num_narrowband)
 {
-  int nn = m_meshPtr->vertices.size();
+  size_t nn = m_meshPtr->vertices.size();
   int nblocks = num_narrowband;
   int nthreads = largest_ele_part;
   thrust::fill(vertT_out.begin(), vertT_out.end(), 0.0);
@@ -107,8 +107,8 @@ void meshFIM2d::updateT_single_stage_d(LevelsetValueType timestep, int niter, Id
 
 void meshFIM2d::updateT_single_stage(LevelsetValueType timestep, int nside, int niter, vector<int>& narrowband)
 {
-  int nv = m_meshPtr->vertices.size();
-  int nt = m_meshPtr->faces.size();
+  size_t nv = m_meshPtr->vertices.size();
+  size_t nt = m_meshPtr->faces.size();
   vector<LevelsetValueType> values(4);
   vector<LevelsetValueType> up(nv, 0.0);
   vector<LevelsetValueType> down(nv, 0.0);
@@ -117,11 +117,11 @@ void meshFIM2d::updateT_single_stage(LevelsetValueType timestep, int nside, int 
   vector<LevelsetValueType> curv_up(nv, 0.0);
 
 
-  for (int bandidx = 0; bandidx < narrowband.size(); bandidx++)
+  for (size_t bandidx = 0; bandidx < narrowband.size(); bandidx++)
   {
-    int tidx = narrowband[bandidx];
+    size_t tidx = narrowband[bandidx];
     vec3 sigma = m_meshPtr->normals[tidx];
-    for (int j = 0; j < 4; j++)
+    for (size_t j = 0; j < 4; j++)
     {
       values[j] = m_meshPtr->vertT[m_meshPtr->faces[tidx][j]];
     }
@@ -257,7 +257,7 @@ void meshFIM2d::updateT_single_stage(LevelsetValueType timestep, int nside, int 
     }
   }
 
-  for (int vidx = 0; vidx < nv; vidx++)
+  for (size_t vidx = 0; vidx < nv; vidx++)
   {
     LevelsetValueType eikonal = up[vidx] / down[vidx];
     LevelsetValueType curvature = curv_up[vidx] / node_grad_phi_down[vidx];
@@ -271,7 +271,7 @@ void meshFIM2d::updateT_single_stage(LevelsetValueType timestep, int nside, int 
 
 void meshFIM2d::GraphPartition_Square(int squareLength, int squareWidth, int blockLength, int blockWidth, bool verbose)
 {
-  int nn = m_meshPtr->vertices.size();
+  size_t nn = m_meshPtr->vertices.size();
   int numBlockLength = ceil((LevelsetValueType) squareLength / blockLength);
   int numBlockWidth = ceil((LevelsetValueType) squareWidth / blockWidth);
   int numBlock = numBlockLength * numBlockWidth;
@@ -279,13 +279,13 @@ void meshFIM2d::GraphPartition_Square(int squareLength, int squareWidth, int blo
   nparts = numBlock;
 
   int edgeCount = 0;
-  for (int vIt = 0; vIt < nn; vIt++)
+  for (size_t vIt = 0; vIt < nn; vIt++)
   {
     edgeCount += m_meshPtr->neighbors[vIt].size();
   }
 
   m_largest_num_inside_mem = 0;
-  for (int i = 0; i < nn; i++)
+  for (size_t i = 0; i < nn; i++)
   {
     if (m_meshPtr->adjacentfaces[i].size() > m_largest_num_inside_mem)
       m_largest_num_inside_mem = m_meshPtr->adjacentfaces[i].size();
@@ -303,7 +303,7 @@ void meshFIM2d::GraphPartition_Square(int squareLength, int squareWidth, int blo
   int idx = 0;
   IdxVector_h neighbor_sizes(nn);
   // Populating the arrays:
-  for (int i = 1; i < nn + 1; i++)
+  for (size_t i = 1; i < nn + 1; i++)
   {
     neighbor_sizes[i - 1] = m_meshPtr->neighbors[i - 1].size();
     xadj[i] = xadj[i - 1] + m_meshPtr->neighbors[i - 1].size();
@@ -315,8 +315,8 @@ void meshFIM2d::GraphPartition_Square(int squareLength, int squareWidth, int blo
 
   m_neighbor_sizes_d = neighbor_sizes;
 
-  for (int i = 0; i < squareWidth; i++)
-    for (int j = 0; j < squareLength; j++)
+  for (size_t i = 0; i < squareWidth; i++)
+    for (size_t j = 0; j < squareLength; j++)
     {
       int index = i * squareLength + j;
       int i2 = i;
@@ -328,7 +328,7 @@ void meshFIM2d::GraphPartition_Square(int squareLength, int squareWidth, int blo
   m_adjncy_d = IdxVector_d(&adjncy[0], &adjncy[edgeCount]);
 
   IdxVector_h part_sizes(nparts, 0);
-  for (int i = 0; i < nn; i++)
+  for (size_t i = 0; i < nn; i++)
   {
     part_sizes[npart_h[i]]++;
   }
@@ -740,7 +740,8 @@ void meshFIM2d::getPartIndicesNegStart(IdxVector_d& sortedPartition, IdxVector_d
   partIndices[partIndices.size() - 1] = size - 1;
 }
 
-void meshFIM2d::mapAdjacencyToBlock(IdxVector_d &adjIndexes, IdxVector_d &adjacency, IdxVector_d &adjacencyBlockLabel, IdxVector_d &blockMappedAdjacency, IdxVector_d &fineAggregate)
+void meshFIM2d::mapAdjacencyToBlock(IdxVector_d &adjIndexes, IdxVector_d &adjacency,
+  IdxVector_d &adjacencyBlockLabel, IdxVector_d &blockMappedAdjacency, IdxVector_d &fineAggregate)
 {
   int size = adjIndexes.size() - 1;
   // Get pointers:adjacencyIn
@@ -755,6 +756,7 @@ void meshFIM2d::mapAdjacencyToBlock(IdxVector_d &adjIndexes, IdxVector_d &adjace
   int nBlocks = size / blockSize + (size % blockSize == 0 ? 0 : 1);
 
   // Calling kernel:
-  mapAdjacencyToBlockKernel << < nBlocks, blockSize >> > (size, adjIndexes_d, adjacency_d, adjacencyBlockLabel_d, blockMappedAdjacency_d, fineAggregate_d);
+  mapAdjacencyToBlockKernel << < nBlocks, blockSize >> > (size, adjIndexes_d, adjacency_d, 
+    adjacencyBlockLabel_d, blockMappedAdjacency_d, fineAggregate_d);
 }
 

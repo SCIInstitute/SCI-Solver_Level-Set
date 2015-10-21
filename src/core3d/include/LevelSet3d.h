@@ -164,14 +164,14 @@ namespace LevelSet3d {
     if (!data.userSetAdvection_) {
       mesh_->normals.resize(mesh_->tets.size());
       for (size_t i = 0; i < mesh_->tets.size(); i++) {
-        mesh_->normals[i] =  point((mx - mn) / 40.,0,0);
+        mesh_->normals[i] =  point((mx - mn) / 100.,0,0);
       }
     }
     //fill in initial values for the mesh if not given by the user
     if (!data.userSetInitial_) {
       mesh_->vertT.resize(mesh_->vertices.size());
       for (size_t i = 0; i < mesh_->vertices.size(); i++) {
-        mesh_->vertT[i] = - (mesh_->vertices[i][0] - mn) * 40. / (mx - mn) + 1.;
+        mesh_->vertT[i] = mesh_->vertices[i][0] -  (mx + mn) / 2.;
       }
     }
     meshFIM FIMPtr(mesh_);

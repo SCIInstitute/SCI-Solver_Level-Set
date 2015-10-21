@@ -31,7 +31,7 @@ namespace LevelSet3d {
         metisSize_(16),
         userSetInitial_(false),
         userSetAdvection_(false)
-      {}
+    {}
       //data
       bool verbose_;
       std::string filename_;
@@ -154,24 +154,24 @@ namespace LevelSet3d {
     if (mesh_ == NULL) {
       initializeMesh(data);
     }
+    float mn = std::numeric_limits<float>::max();
+    float mx = std::numeric_limits<float>::min();
+    for (size_t i = 0; i < mesh_->vertices.size(); i++) {
+      mn = std::min(mn, static_cast<float>(mesh_->vertices[i][0]));
+      mx = std::max(mx, static_cast<float>(mesh_->vertices[i][0]));
+    }
     //populate advection if it's empty
     if (!data.userSetAdvection_) {
       mesh_->normals.resize(mesh_->tets.size());
       for (size_t i = 0; i < mesh_->tets.size(); i++) {
-        mesh_->normals[i] =  point(1.,0.,0.);
+        mesh_->normals[i] =  point((mx - mn) / 40.,0,0);
       }
     }
-    //fill in initial values for the mesh if not given by the user //TODO
+    //fill in initial values for the mesh if not given by the user
     if (!data.userSetInitial_) {
-      double mn = std::numeric_limits<double>::max();
-      double mx = std::numeric_limits<double>::min();
-      for (size_t i = 0; i < mesh_->vertices.size(); i++) {
-        mn = std::min(mn, mesh_->vertices[i][0]);
-        mx = std::max(mx, mesh_->vertices[i][0]);
-      }
       mesh_->vertT.resize(mesh_->vertices.size());
       for (size_t i = 0; i < mesh_->vertices.size(); i++) {
-        mesh_->vertT[i] = mesh_->vertices[i][0] - (mn+mx) / 2.;
+        mesh_->vertT[i] = - (mesh_->vertices[i][0] - mn) * 40. / (mx - mn) + 1.;
       }
     }
     meshFIM FIMPtr(mesh_);

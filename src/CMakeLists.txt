@@ -13,33 +13,22 @@ find_package(CUDA REQUIRED)
 # Externals
 set(EXTERNAL_DIR "${CMAKE_BINARY_DIR}/externals")
 include(ExternalProject)
-# Metis
-set(METIS_INSTALL_DIR "${EXTERNAL_DIR}/metis")
-ExternalProject_Add( metis
-  PREFIX "${METIS_INSTALL_DIR}"
-  GIT_REPOSITORY "https://github.com/cibc-internal/metis-4.0.3.git"
-  INSTALL_DIR "${METIS_INSTALL_DIR}/include"
-  BINARY_DIR "${METIS_INSTALL_DIR}/lib"
+# Eikonal EXTERNAL
+set(EIKONAL_INSTALL_DIR "${EXTERNAL_DIR}/eikonal")
+ExternalProject_Add( eikonal
+  PREFIX "${EIKONAL_INSTALL_DIR}"
+  GIT_REPOSITORY "https://github.com/SCIInstitute/SCI-Solver_Eikonal.git"
+  INSTALL_DIR "${EIKONAL_INSTALL_DIR}/include"
+  BINARY_DIR "${EIKONAL_INSTALL_DIR}/lib"
   INSTALL_COMMAND ""
   )
-ExternalProject_Add_Step( metis copy_deps
-  COMMAND ${CMAKE_COMMAND} -E copy_directory ${METIS_INSTALL_DIR}/src/metis/Lib ${METIS_INSTALL_DIR}/include
+ExternalProject_Add_Step( eikonal copy_deps
+  COMMAND ${CMAKE_COMMAND} -E copy_directory ${EIKONAL_INSTALL_DIR}/src/eikonal/include ${EIKONAL_INSTALL_DIR}/include
   DEPENDEES install
 )
-include_directories("${METIS_INSTALL_DIR}/include")
-SET(METIS_LIBRARY "${METIS_INSTALL_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}metis${CMAKE_STATIC_LIBRARY_SUFFIX}")
-# cusp
-set(CUSP_INSTALL_DIR "${EXTERNAL_DIR}/cusp")
-ExternalProject_Add( cusp
-  PREFIX "${CUSP_INSTALL_DIR}"
-  GIT_REPOSITORY "https://github.com/cibc-internal/cusp.git"
-  INSTALL_DIR "${CUSP_INSTALL_DIR}/include"
-  BINARY_DIR "${CUSP_INSTALL_DIR}/lib"
-  INSTALL_COMMAND ""
-  BUILD_COMMAND ""
-  CONFIGURE_COMMAND ""
-  )
-include_directories("${CUSP_INSTALL_DIR}/src")
+include_directories("${EIKONAL_INSTALL_DIR}/include")
+FILE(GLOB EIKONAL_LIBRARIES ${EIKONAL_INSTALL_DIR}/lib/*)
+
 ###################
 #CMAKE SETTING CUDA_NVCC_FLAGS
 #############################

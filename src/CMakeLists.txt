@@ -11,8 +11,8 @@ find_package(CUDA REQUIRED)
 
 ###################
 # Externals
-include(ExternalProject)
 set(EXTERNAL_DIR "${CMAKE_BINARY_DIR}/externals")
+include(ExternalProject)
 # Metis
 set(METIS_INSTALL_DIR "${EXTERNAL_DIR}/metis")
 ExternalProject_Add( metis

@@ -1,5 +1,5 @@
-#ifndef REDIST_H
-#define REDIST_H
+#ifndef REDIST3d_H
+#define REDIST3d_H
 
 #include <tetmesh.h>
 #include <typeinfo>
@@ -15,7 +15,7 @@ using namespace std;
 #define _EPS 1e-9
 #endif
 
-class redistance
+class redistance3d
 {
 public:
   typedef int index;
@@ -39,7 +39,7 @@ public:
                    IdxVector_d& ele_after_permute_d, IdxVector_d& ele_offsets_d, Vector_d& ele_local_coords_d, IdxVector_d& mem_location_offsets, IdxVector_d& mem_locations,
                    IdxVector_d& part_label_d, IdxVector_d& block_xadj, IdxVector_d& block_adjncy);
 
-  redistance(TetMesh* mesh, int nparts, IdxVector_d& block_xadj, IdxVector_d& block_adjncy)
+  redistance3d(TetMesh* mesh, int nparts, IdxVector_d& block_xadj, IdxVector_d& block_adjncy)
   {
     int nn = mesh->vertices.size();
     m_DT_d = Vector_d(nn);
@@ -60,7 +60,7 @@ public:
     h_block_vertT_min = Vector_h(nparts);
   };
 
-  ~redistance()
+  ~redistance3d()
   {
   };
 

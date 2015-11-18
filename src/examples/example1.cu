@@ -1,8 +1,8 @@
-#include <LevelSet3d.h>
+#include <LevelSet.h>
 
 int main(int argc, char *argv[])
 {
-  LevelSet3d data;
+  LevelSet data(false);
   bool fromCenter = false;
   //input filename (minus extension)
   std::string filename;
@@ -72,29 +72,29 @@ int main(int argc, char *argv[])
     //find the center, max from center
     data.initializeMesh();
     point center(0, 0, 0);
-    for (size_t i = 0; i < data.mesh_->vertices.size(); i++) {
-      center = center + data.mesh_->vertices[i];
+    for (size_t i = 0; i < data.tetMesh_->vertices.size(); i++) {
+      center = center + data.tetMesh_->vertices[i];
     }
-    center = center / static_cast<float>(data.mesh_->vertices.size());
+    center = center / static_cast<float>(data.tetMesh_->vertices.size());
     double max = 0.;
-    for (size_t i = 0; i < data.mesh_->vertices.size(); i++) {
-      point p = data.mesh_->vertices[i] - center;
+    for (size_t i = 0; i < data.tetMesh_->vertices.size(); i++) {
+      point p = data.tetMesh_->vertices[i] - center;
       double mag = std::sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
       max = std::max(max, mag);
     }
     //initialize values of verts
-    std::vector<double> vals;
-    for (size_t i = 0; i < data.mesh_->vertices.size(); i++) {
-      point p = data.mesh_->vertices[i] - center;
+    std::vector<float> vals;
+    for (size_t i = 0; i < data.tetMesh_->vertices.size(); i++) {
+      point p = data.tetMesh_->vertices[i] - center;
       double mag = std::sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
       vals.push_back(mag - max / 2.);
     }
     //initialize advection to be away from the center.
     std::vector<point> adv;
-    for (size_t i = 0; i < data.mesh_->tets.size(); i++) {
-      point p = (data.mesh_->vertices[data.mesh_->tets[i][0]] +
-        data.mesh_->vertices[data.mesh_->tets[i][1]] +
-        data.mesh_->vertices[data.mesh_->tets[i][2]])
+    for (size_t i = 0; i < data.tetMesh_->tets.size(); i++) {
+      point p = (data.tetMesh_->vertices[data.tetMesh_->tets[i][0]] +
+        data.tetMesh_->vertices[data.tetMesh_->tets[i][1]] +
+        data.tetMesh_->vertices[data.tetMesh_->tets[i][2]])
         / 3.f - center;
       float mag = std::sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
       mag /= max / 20.f;

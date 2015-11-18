@@ -1,8 +1,8 @@
-#include <LevelSet2d.h>
+#include <LevelSet.h>
 
 int main(int argc, char *argv[])
 {
-  LevelSet2d data;
+  LevelSet data(true);
   //input filename (minus extension)
   std::string filename;
   for (int i = 0; i < argc; i++) {

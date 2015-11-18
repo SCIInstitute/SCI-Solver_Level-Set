@@ -106,26 +106,25 @@ Follow the example source code in <code>src/examples</code> to learn how to use 
 Using the Library
 ==============
 
-Examples will be referring to LevelSet3D, but the calls are nearly identical for 2D.
-A basic usage of the library links to the <code>LEVELSET-3D_CORE</code>
+A basic usage of the library links to the <code>LEVELSET_CORE</code>
 library during build and includes the headers needed, which are usually no more than:
 
 ```c++
-#include <LevelSet3d.h>
+#include <LevelSet.h>
 ```
 
 Then a program would setup the LevelSet parameters using the 
-<code>"LevelSet3d object"</code> object and call 
+<code>"LevelSet object"</code> object and call 
 <code>object.solveLevelSet()</code> to generate
 the array of vertex values per iteration.
 
-Here is a minimal usage example.<br/>
+Here is a minimal usage example (using a tet mesh).<br/>
 ```c++
-#include <LevelSet3d.h>
+#include <LevelSet.h>
 #include <iostream>
 int main(int argc, char *argv[])
 {
-  LevelSet3d data;
+  LevelSet data(false); // tet mesh, not a tri mesh
   //the below means ~/my_tet_mesh.node & ~/my_tet_mesh.ele
   data.filename_ = "~/my_tet_mesh"; 
   //Run the solver
@@ -138,20 +137,21 @@ int main(int argc, char *argv[])
 
 The following accessor functions are available after running the solver:
 ```c++
-std::vector < LevelsetValueType > LevelSet3d::getResultAtIteration(size_t i);
-size_t LevelSet3d::numIterations(); 
+std::vector < float > LevelSet::getResultAtIteration(size_t i);
+size_t LevelSet::numIterations(); 
 ```
 You can also access the results and the mesh directly after running the solver:
 ```c++
-TetMesh * LevelSet3d::mesh_;
+TetMesh * LevelSet::tetMesh_;
+TriMesh * LevelSet::triMesh_;
 // AND
-std::vector < std::vector < LevelsetValueType > > LevelSet3d::time_values_;
+std::vector < std::vector < LevelsetValueType > > LevelSet::time_values_;
 ```
 
-<h3>LevelSet3d Options (2D options are identical)</h3>
+<h3>LevelSet Options</h3>
 
 ```C++
-  class LevelSet3d {
+  class LevelSet {
       bool verbose_;                    //option to set for runtime verbosity [Default false]
       std::string filename_;            //the input tet mesh filename         [Default ../src/test/test_data/sphere334
       int partitionType_;               //0 for unstructured, 1 for square    [Default 0]
@@ -162,6 +162,7 @@ std::vector < std::vector < LevelsetValueType > > LevelSet3d::time_values_;
       int sideLengths_;                 //If structured, the cube size        [Default 16]
       LevelsetValueType bandwidth_;     //The algorithm bandwidth             [Default 16.]
       int metisSize_;                   //If unstructured, # of METIS patches [Default 16]
+      int isTriMesh_;                   //If this is a triangle mesh          [Default true]
   };
 ```
 <br/>

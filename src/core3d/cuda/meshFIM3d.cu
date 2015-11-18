@@ -1,4 +1,4 @@
-#include <meshFIM.h>
+#include <meshFIM3d.h>
 #include <tetmesh.h>
 #include <Vec.h>
 #include <cmath>
@@ -17,7 +17,7 @@ extern "C"
 #include <metis.h>
 }
 
-void meshFIM::writeFLD()
+void meshFIM3d::writeFLD()
 {
   int nv = m_meshPtr->vertices.size();
   int nt = m_meshPtr->tets.size();
@@ -45,7 +45,7 @@ void meshFIM::writeFLD()
   fclose(fldfile);
 }
 
-void meshFIM::writeVTK(std::vector < std::vector <float> > values)
+void meshFIM3d::writeVTK(std::vector < std::vector <float> > values)
 {
   int nv = m_meshPtr->vertices.size();
   int nt = m_meshPtr->tets.size();
@@ -80,27 +80,27 @@ void meshFIM::writeVTK(std::vector < std::vector <float> > values)
   }
 }
 
-void meshFIM::updateT_single_stage_d(float timestep, int niter, IdxVector_d& narrowband, int num_narrowband)
+void meshFIM3d::updateT_single_stage_d(float timestep, int niter, IdxVector_d& narrowband, int num_narrowband)
 {
   int nn = m_meshPtr->vertices.size();
   int nblocks = num_narrowband;
   int nthreads = largest_ele_part;
   thrust::fill(vertT_out.begin(), vertT_out.end(), 0.0);
   int shared_size = sizeof(float)* 4 * largest_ele_part + sizeof(short)*largest_vert_part*m_largest_num_inside_mem;
-  cudaSafeCall((kernel_updateT_single_stage << <nblocks, nthreads, shared_size >> >(timestep, CAST(narrowband), largest_ele_part, largest_vert_part, full_num_ele,
+  cudaSafeCall((kernel_updateT_single_stage3d << <nblocks, nthreads, shared_size >> >(timestep, CAST(narrowband), largest_ele_part, largest_vert_part, full_num_ele,
           CAST(m_ele_after_permute_d), CAST(m_ele_offsets_d), CAST(m_cadv_local_d),
           nn, CAST(m_vert_offsets_d), CAST(m_vert_after_permute_d), CAST(m_vertT_after_permute_d),
           CAST(m_ele_local_coords_d), m_largest_num_inside_mem, CAST(m_mem_locations), CAST(m_mem_location_offsets),
           CAST(vertT_out))));
 
   nthreads = largest_vert_part;
-  cudaSafeCall((CopyOutBack_levelset << <nblocks, nthreads >> >(CAST(narrowband),
+  cudaSafeCall((CopyOutBack_levelset3d << <nblocks, nthreads >> >(CAST(narrowband),
           CAST(m_vert_offsets_d), CAST(m_vertT_after_permute_d), CAST(vertT_out))));
 }
 
 //Single stage update
 
-void meshFIM::updateT_single_stage(float timestep, int nside, int niter, vector<int>& narrowband)
+void meshFIM3d::updateT_single_stage(float timestep, int nside, int niter, vector<int>& narrowband)
 {
   vec3 sigma(1.0, 0.0, 1.0);
   float epsilon = 1.0;
@@ -266,7 +266,7 @@ void meshFIM::updateT_single_stage(float timestep, int nside, int niter, vector<
   }
 }
 
-void meshFIM::GraphPartition_Square(int squareLength, int squareWidth, int squareHeight,
+void meshFIM3d::GraphPartition_Square(int squareLength, int squareWidth, int squareHeight,
     int blockLength, int blockWidth, int blockHeight, bool verbose)
 {
   int nn = m_meshPtr->vertices.size();
@@ -351,7 +351,7 @@ void meshFIM::GraphPartition_Square(int squareLength, int squareWidth, int squar
   delete[] adjncy;
 }
 
-void meshFIM::Partition_METIS(int metissize, bool verbose)
+void meshFIM3d::Partition_METIS(int metissize, bool verbose)
 {
   int options[10], pnumflag = 0, wgtflag = 0;
   options[0] = 0;
@@ -420,7 +420,7 @@ void meshFIM::Partition_METIS(int metissize, bool verbose)
   delete [] adjncy;
 }
 
-void meshFIM::InitPatches(bool verbose)
+void meshFIM3d::InitPatches(bool verbose)
 {
   int ne = m_meshPtr->tets.size();
   int nn = m_meshPtr->vertices.size();
@@ -445,7 +445,7 @@ void meshFIM::InitPatches(bool verbose)
   m_part_label_d = IdxVector_d(m_npart_d.begin(), m_npart_d.end());
   int nthreads = 256;
   int nblocks = min((int)ceil((float)ne / nthreads), 65535);
-  cudaSafeCall((kernel_compute_ele_npart << <nblocks, nthreads >> >(ne,
+  cudaSafeCall((kernel_compute_ele_npart3d << <nblocks, nthreads >> >(ne,
           thrust::raw_pointer_cast(&m_npart_d[0]), thrust::raw_pointer_cast(&ele_d[0]),
           thrust::raw_pointer_cast(&ele_label_d[0]))));
 
@@ -458,7 +458,7 @@ void meshFIM::InitPatches(bool verbose)
   ele_full_label = IdxVector_d(full_num_ele);
   ele_permute = IdxVector_d(full_num_ele);
 
-  cudaSafeCall((kernel_fill_ele_label << <nblocks, nthreads >> >(ne, thrust::raw_pointer_cast(&ele_permute[0]),
+  cudaSafeCall((kernel_fill_ele_label3d << <nblocks, nthreads >> >(ne, thrust::raw_pointer_cast(&ele_permute[0]),
           thrust::raw_pointer_cast(&ele_offsets_d[0]),
           thrust::raw_pointer_cast(&m_npart_d[0]), thrust::raw_pointer_cast(&ele_d[0]),
           thrust::raw_pointer_cast(&ele_full_label[0]))));
@@ -492,7 +492,7 @@ void meshFIM::InitPatches(bool verbose)
       m_ele_offsets_d.begin() + 1);
 }
 
-void meshFIM::InitPatches2()
+void meshFIM3d::InitPatches2()
 {
   int ne = m_meshPtr->tets.size();
   int nn = m_meshPtr->vertices.size();
@@ -500,10 +500,10 @@ void meshFIM::InitPatches2()
   IdxVector_d vert_ipermute(nn, 0);
   int nthreads = 256;
   int nblocks = min((int)ceil((float)nn / nthreads), 65535);
-  cudaSafeCall((kernel_fill_sequence << <nblocks, nthreads >> >(nn, CAST(vert_permute))));
+  cudaSafeCall((kernel_fill_sequence3d << <nblocks, nthreads >> >(nn, CAST(vert_permute))));
   thrust::sort_by_key(m_part_label_d.begin(), m_part_label_d.end(), vert_permute.begin());
   nblocks = min((int)ceil((float)nn / nthreads), 65535);
-  cudaSafeCall((kernel_compute_vert_ipermute << <nblocks, nthreads >> >(nn,
+  cudaSafeCall((kernel_compute_vert_ipermute3d << <nblocks, nthreads >> >(nn,
           thrust::raw_pointer_cast(&vert_permute[0]), thrust::raw_pointer_cast(&vert_ipermute[0]))));
 
   m_vert_permute_d = IdxVector_d(vert_permute);
@@ -514,7 +514,7 @@ void meshFIM::InitPatches2()
   m_ele_after_permute_d = IdxVector_d(4 * full_num_ele);
   m_vertT_after_permute_d = Vector_d(nn);
   nblocks = min((int)ceil((float)full_num_ele / nthreads), 65535);
-  cudaSafeCall((kernel_ele_and_vert << <nblocks, nthreads >> >(full_num_ele, ne,
+  cudaSafeCall((kernel_ele_and_vert3d << <nblocks, nthreads >> >(full_num_ele, ne,
           thrust::raw_pointer_cast(&ele_d[0]), thrust::raw_pointer_cast(&m_ele_after_permute_d[0]),
           thrust::raw_pointer_cast(&ele_permute[0]),
           nn, thrust::raw_pointer_cast(&vert_d[0]), thrust::raw_pointer_cast(&m_vert_after_permute_d[0]),
@@ -527,7 +527,7 @@ void meshFIM::InitPatches2()
   m_cadv_local_d = Vector_d(3 * full_num_ele);
   nthreads = 256;
   nblocks = min((int)ceil((float)full_num_ele / nthreads), 65535);
-  cudaSafeCall((kernel_compute_local_coords << <nblocks, nthreads >> >(full_num_ele, nn,
+  cudaSafeCall((kernel_compute_local_coords3d << <nblocks, nthreads >> >(full_num_ele, nn,
           thrust::raw_pointer_cast(&m_ele_after_permute_d[0]), thrust::raw_pointer_cast(&m_ele_offsets_d[0]),
           thrust::raw_pointer_cast(&m_vert_after_permute_d[0]),
           thrust::raw_pointer_cast(&m_ele_local_coords_d[0]),
@@ -543,7 +543,7 @@ void meshFIM::InitPatches2()
 
 }
 
-void meshFIM::GenerateBlockNeighbors()
+void meshFIM3d::GenerateBlockNeighbors()
 {
 
   //Generate block neighbors
@@ -569,7 +569,7 @@ void meshFIM::GenerateBlockNeighbors()
   thrust::copy(blockMappedAdjacency.begin() + 1, blockMappedAdjacency.end(), m_block_adjncy_d.begin());
 }
 
-std::vector <std::vector <float> > meshFIM::GenerateData(
+std::vector <std::vector <float> > meshFIM3d::GenerateData(
     char* filename, int nsteps, float timestep, int inside_niter,
     int nside, int block_size, float bandwidth, int part_type,
     int metis_size, bool verbose)
@@ -626,7 +626,7 @@ std::vector <std::vector <float> > meshFIM::GenerateData(
     printf("pre processing time : %.10lf s\n", duration);
 
   //Inite redistance
-  m_redist = new redistance(m_meshPtr, nparts, m_block_xadj_d, m_block_adjncy_d);
+  m_redist = new redistance3d(m_meshPtr, nparts, m_block_xadj_d, m_block_adjncy_d);
 
   //////////////////////////update values///////////////////////////////////////////
   IdxVector_d narrowband_d(nparts);
@@ -667,7 +667,8 @@ std::vector <std::vector <float> > meshFIM::GenerateData(
     ///////////////////done updating/////////////////////////////////////////////////
     int nthreads = 256;
     int nblocks = min((int)ceil((float)nv / nthreads), 655535);
-    cudaSafeCall((kernel_compute_vertT_before_permute << <nblocks, nthreads >> >(nv, CAST(m_vert_permute_d), CAST(m_vertT_after_permute_d), CAST(tmp_vertT_before_permute_d))));
+    cudaSafeCall((kernel_compute_vertT_before_permute3d << <nblocks, nthreads >> >(nv, 
+      CAST(m_vert_permute_d), CAST(m_vertT_after_permute_d), CAST(tmp_vertT_before_permute_d))));
     Vector_h vertT_before_permute_h = tmp_vertT_before_permute_d;
     for(int i = 0; i < nv; i++)
     {
@@ -688,7 +689,7 @@ std::vector <std::vector <float> > meshFIM::GenerateData(
   return ans;
 }
 
-void meshFIM::getPartIndicesNegStart(IdxVector_d& sortedPartition, IdxVector_d& partIndices)
+void meshFIM3d::getPartIndicesNegStart(IdxVector_d& sortedPartition, IdxVector_d& partIndices)
 {
   // Sizing the array:
   int maxPart = sortedPartition[sortedPartition.size() - 1];
@@ -704,11 +705,12 @@ void meshFIM::getPartIndicesNegStart(IdxVector_d& sortedPartition, IdxVector_d& 
   int *partIndices_d = thrust::raw_pointer_cast(&partIndices[0]);
 
   // Calling kernel to find indices for each part:
-  findPartIndicesNegStartKernel << < nBlocks, blockSize >> > (size, sortedPartition_d, partIndices_d);
+  findPartIndicesNegStartKernel3d << < nBlocks, blockSize >> > (size, sortedPartition_d, partIndices_d);
   partIndices[partIndices.size() - 1] = size - 1;
 }
 
-void meshFIM::mapAdjacencyToBlock(IdxVector_d &adjIndexes, IdxVector_d &adjacency, IdxVector_d &adjacencyBlockLabel, IdxVector_d &blockMappedAdjacency, IdxVector_d &fineAggregate)
+void meshFIM3d::mapAdjacencyToBlock(IdxVector_d &adjIndexes, IdxVector_d &adjacency, 
+  IdxVector_d &adjacencyBlockLabel, IdxVector_d &blockMappedAdjacency, IdxVector_d &fineAggregate)
 {
   int size = adjIndexes.size() - 1;
   // Get pointers:adjacencyIn
@@ -723,6 +725,7 @@ void meshFIM::mapAdjacencyToBlock(IdxVector_d &adjIndexes, IdxVector_d &adjacenc
   int nBlocks = size / blockSize + (size % blockSize == 0 ? 0 : 1);
 
   // Calling kernel:
-  mapAdjacencyToBlockKernel << < nBlocks, blockSize >> > (size, adjIndexes_d, adjacency_d, adjacencyBlockLabel_d, blockMappedAdjacency_d, fineAggregate_d);
+  mapAdjacencyToBlockKernel3d << < nBlocks, blockSize >> > (size, adjIndexes_d, adjacency_d, 
+    adjacencyBlockLabel_d, blockMappedAdjacency_d, fineAggregate_d);
 }
 

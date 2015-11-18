@@ -1,11 +1,9 @@
-#ifndef MESHFIM_H
-#define MESHFIM_H
+#ifndef MESHFIM3d_H
+#define MESHFIM3d_H
 
 
-//#include "TriMesh.h"
 #include <tetmesh.h>
-#include <redistance.h>
-//#include "TriMesh_algo.h"
+#include <redistance3d.h>
 #include <typeinfo>
 #include <functional>
 #include <queue>
@@ -16,7 +14,7 @@
 #ifndef _EPS
 #define _EPS 1e-5
 #endif
-class meshFIM
+class meshFIM3d
 {
   public:
 
@@ -45,7 +43,7 @@ class meshFIM
     void writeVTK(std::vector < std::vector <float> > values);
     void writeFLD();
 
-    meshFIM(TetMesh* mesh)
+    meshFIM3d(TetMesh* mesh)
     {
       size_t nn = mesh->vertices.size();
       size_t ne = mesh->tets.size();
@@ -64,12 +62,12 @@ class meshFIM
       m_redist = 0;
     };
 
-    ~meshFIM()
+    ~meshFIM3d()
     {
     };
 
     TetMesh* m_meshPtr;
-    redistance* m_redist;
+    redistance3d* m_redist;
     int NumComputation;
     vector<int> narrowband;
     IdxVector_h npart_h;

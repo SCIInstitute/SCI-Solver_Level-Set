@@ -5,10 +5,10 @@
  * Created on October 28, 2012, 4:14 PM
  */
 
-#ifndef REDISTANCE_KERNELS_H
-#define  REDISTANCE_KERNELS_H
+#ifndef REDISTANCE_KERNELS3d_H
+#define  REDISTANCE_KERNELS3d_H
 
-#include <redistance.h>
+#include <redistance3d.h>
 
 struct or_op
 {
@@ -96,7 +96,7 @@ __global__ void run_reduction_bandwidth(int *con, int *blockCon, int* ActiveList
   }
 }
 
-__global__ void run_reduction(int *con, int *blockCon, int* ActiveList, int* vert_offsets)
+__global__ void run_reduction3d(int *con, int *blockCon, int* ActiveList, int* vert_offsets)
 {
   int list_idx = blockIdx.x;
   int tx = threadIdx.x;
@@ -439,7 +439,7 @@ __global__ void kernel_update_values(int* active_block_list, int* seed_label, in
 
     if (tidx < nv)
     {
-      if (seed_label[vert_start + tidx] != redistance::SeedPoint)
+      if (seed_label[vert_start + tidx] != redistance3d::SeedPoint)
       {
         vertT_out[vert_start + tidx] = newT;
         if (oldT - newT < SMALLNUM) con[vert_start + tidx] = true;
@@ -609,7 +609,7 @@ __global__ void kernel_run_check_neghbor(int* active_block_list, int* seed_label
 
     if (tidx < nv)
     {
-      if (seed_label[vert_start + tidx] != redistance::SeedPoint)
+      if (seed_label[vert_start + tidx] != redistance3d::SeedPoint)
       {
         if (oldT - newT < SMALLNUM) con[vert_start + tidx] = true;
         else con[vert_start + tidx] = false;
@@ -646,35 +646,35 @@ __global__ void kernel_seedlabel(int nn, int full_ele_num, float* vert_after_per
 
     if (v0 == 0.0)
     {
-      label[e0] = redistance::SeedPoint;
+      label[e0] = redistance3d::SeedPoint;
       isSeed[0] = true;
       DT[e0] = fabs(v0);
     }
     if (v1 == 0.0)
     {
-      label[e1] = redistance::SeedPoint;
+      label[e1] = redistance3d::SeedPoint;
       isSeed[0] = true;
       DT[e1] = fabs(v1);
     }
     if (v2 == 0.0)
     {
-      label[e2] = redistance::SeedPoint;
+      label[e2] = redistance3d::SeedPoint;
       isSeed[0] = true;
       DT[e2] = fabs(v2);
     }
     if (v3 == 0.0)
     {
-      label[e3] = redistance::SeedPoint;
+      label[e3] = redistance3d::SeedPoint;
       isSeed[0] = true;
       DT[e3] = fabs(v3);
     }
 
     if (!((v0 >= 0 && v1 >= 0 && v2 >= 0 && v3 >= 0) || (v0 <= 0 && v1 <= 0 && v2 <= 0 && v3 <= 0)))
     {
-      label[e0] = redistance::SeedPoint;
-      label[e1] = redistance::SeedPoint;
-      label[e2] = redistance::SeedPoint;
-      label[e3] = redistance::SeedPoint;
+      label[e0] = redistance3d::SeedPoint;
+      label[e1] = redistance3d::SeedPoint;
+      label[e2] = redistance3d::SeedPoint;
+      label[e3] = redistance3d::SeedPoint;
       isSeed[0] = true;
       DT[e0] = fabs(v0);
       DT[e1] = fabs(v1);
@@ -720,35 +720,35 @@ __global__ void kernel_seedlabel_narrowband(int nn, int full_ele_num, const int*
 
     if (v0 == 0.0)
     {
-      label[e0] = redistance::SeedPoint;
+      label[e0] = redistance3d::SeedPoint;
       isSeed[0] = true;
       DT[e0] = fabs(v0);
     }
     if (v1 == 0.0)
     {
-      label[e1] = redistance::SeedPoint;
+      label[e1] = redistance3d::SeedPoint;
       isSeed[0] = true;
       DT[e1] = fabs(v1);
     }
     if (v2 == 0.0)
     {
-      label[e2] = redistance::SeedPoint;
+      label[e2] = redistance3d::SeedPoint;
       isSeed[0] = true;
       DT[e2] = fabs(v2);
     }
     if (v3 == 0.0)
     {
-      label[e3] = redistance::SeedPoint;
+      label[e3] = redistance3d::SeedPoint;
       isSeed[0] = true;
       DT[e3] = fabs(v3);
     }
 
     if (!((v0 >= 0 && v1 >= 0 && v2 >= 0 && v3 >= 0) || (v0 <= 0 && v1 <= 0 && v2 <= 0 && v3 <= 0)))
     {
-      label[e0] = redistance::SeedPoint;
-      label[e1] = redistance::SeedPoint;
-      label[e2] = redistance::SeedPoint;
-      label[e3] = redistance::SeedPoint;
+      label[e0] = redistance3d::SeedPoint;
+      label[e1] = redistance3d::SeedPoint;
+      label[e2] = redistance3d::SeedPoint;
+      label[e3] = redistance3d::SeedPoint;
       isSeed[0] = true;
       DT[e0] = fabs(v0);
       DT[e1] = fabs(v1);

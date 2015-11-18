@@ -127,6 +127,9 @@ ENDIF()
 # Core / Examples
 add_subdirectory(core3d)
 add_subdirectory(core2d)
+include_directories(core2d/include core3d/include )
+CUDA_ADD_LIBRARY(LEVELSET_CORE LevelSet.cu LevelSet.h)
+TARGET_LINK_LIBRARIES(LEVELSET_CORE LEVELSET-2D_CORE LEVELSET-3D_CORE)
 
 if (${BUILD_EXAMPLES})
   add_subdirectory(examples)

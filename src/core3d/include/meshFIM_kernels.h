@@ -10,16 +10,7 @@
 
 #include <cutil.h>
 
-struct count_op
-{
-
-  __host__ __device__ int operator () (const int& x, const int& y) const
-  {
-    return (int)(x > 0) + (int)(y > 0);
-  }
-};
-
-__global__ void kernel_fill_sequence(int nn, int* sequence)
+__global__ void kernel_fill_sequence3d(int nn, int* sequence)
 {
   int tidx = blockIdx.x * blockDim.x + threadIdx.x;
   for (int i = tidx; i < nn; i += blockDim.x * gridDim.x)
@@ -28,7 +19,7 @@ __global__ void kernel_fill_sequence(int nn, int* sequence)
   }
 }
 
-__global__ void CopyOutBack_levelset(int* narrowband_list, int* vert_offsets,
+__global__ void CopyOutBack_levelset3d(int* narrowband_list, int* vert_offsets,
     float* vertT, float* vertT_out)
 {
   int bidx = narrowband_list[blockIdx.x];
@@ -42,7 +33,7 @@ __global__ void CopyOutBack_levelset(int* narrowband_list, int* vert_offsets,
   }
 }
 
-__global__ void kernel_updateT_single_stage(float timestep, int* narrowband_list, int largest_ele_part,
+__global__ void kernel_updateT_single_stage3d(float timestep, int* narrowband_list, int largest_ele_part,
     int largest_vert_part, int full_ele_num, int* ele, int* ele_offsets,float* cadv_local,
     int nn, int* vert_offsets, float* vert, float* vertT, float* ele_local_coords,
     int largest_num_inside_mem, int* mem_locations, int* mem_location_offsets, float* vertT_out)
@@ -415,7 +406,7 @@ __global__ void kernel_updateT_single_stage(float timestep, int* narrowband_list
   }
 }
 
-__global__ void kernel_compute_vert_ipermute(int nn, int* vert_permute, int* vert_ipermute)
+__global__ void kernel_compute_vert_ipermute3d(int nn, int* vert_permute, int* vert_ipermute)
 {
   int bidx = blockIdx.x;
   int tidx = bidx * blockDim.x + threadIdx.x;
@@ -425,7 +416,7 @@ __global__ void kernel_compute_vert_ipermute(int nn, int* vert_permute, int* ver
   }
 }
 
-__global__ void kernel_ele_and_vert(int full_num_ele, int ne, int* ele, int* ele_after_permute,
+__global__ void kernel_ele_and_vert3d(int full_num_ele, int ne, int* ele, int* ele_after_permute,
     int* ele_permute, int nn, float* vert, float* vert_after_permute,
     float* vertT, float* vertT_after_permute, int* vert_permute, int* vert_ipermute)
 {
@@ -453,7 +444,7 @@ __global__ void kernel_ele_and_vert(int full_num_ele, int ne, int* ele, int* ele
   }
 }
 
-__global__ void kernel_compute_local_coords(int full_num_ele, int nn, int* ele, int* ele_offsets,
+__global__ void kernel_compute_local_coords3d(int full_num_ele, int nn, int* ele, int* ele_offsets,
     float* vert, float* ele_local_coords,
     float* cadv_global, float* cadv_local)
 {
@@ -507,7 +498,7 @@ __global__ void kernel_compute_local_coords(int full_num_ele, int nn, int* ele, 
   }
 }
 
-__global__ void kernel_fill_ele_label(int ne, int* ele_permute, int* ele_offsets, int* npart, int* ele, int* ele_label)
+__global__ void kernel_fill_ele_label3d(int ne, int* ele_permute, int* ele_offsets, int* npart, int* ele, int* ele_label)
 {
   int bidx = blockIdx.x;
   int tidx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -547,7 +538,7 @@ __global__ void kernel_fill_ele_label(int ne, int* ele_permute, int* ele_offsets
   }
 }
 
-__global__ void kernel_compute_ele_npart(int ne, int* npart, int* ele, int* ele_label)
+__global__ void kernel_compute_ele_npart3d(int ne, int* npart, int* ele, int* ele_label)
 {
   int tidx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -568,25 +559,7 @@ __global__ void kernel_compute_ele_npart(int ne, int* npart, int* ele, int* ele_
   }
 }
 
-__global__ void permuteInitialAdjacencyKernel(int size, int *adjIndexesIn, int *adjacencyIn, int *permutedAdjIndexesIn, int *permutedAdjacencyIn, int *ipermutation, int *fineAggregate, int* neighbor_part)
-{
-  int idx = blockIdx.x * blockDim.x + threadIdx.x;
-  if (idx < size)
-  {
-    int oldBegin = adjIndexesIn[ipermutation[idx]];
-    int oldEnd = adjIndexesIn[ipermutation[idx] + 1];
-    int runSize = oldEnd - oldBegin;
-    int newBegin = permutedAdjIndexesIn[idx];
-
-    // Transfer old adjacency into new, while changing node id's with partition id's
-    for (int i = 0; i < runSize; i++)
-    {
-      permutedAdjacencyIn[newBegin + i] = fineAggregate[ adjacencyIn[oldBegin + i] ];
-    }
-  }
-}
-
-__global__ void getInducedGraphNeighborCountsKernel(int size, int *aggregateIdx, int *adjIndexesOut, int *permutedAdjIndexes, int *permutedAdjacencyIn)
+__global__ void getInducedGraphNeighborCountsKernel3d(int size, int *aggregateIdx, int *adjIndexesOut, int *permutedAdjIndexes, int *permutedAdjacencyIn)
 {
   int idx = blockIdx.x * blockDim.x + threadIdx.x;
   if (idx < size)
@@ -627,7 +600,7 @@ __global__ void getInducedGraphNeighborCountsKernel(int size, int *aggregateIdx,
   }
 }
 
-__global__ void fillCondensedAdjacencyKernel(int size, int *aggregateIdx, int *adjIndexesOut, int *adjacencyOut, int *permutedAdjIndexesIn, int *permutedAdjacencyIn)
+__global__ void fillCondensedAdjacencyKernel3d(int size, int *aggregateIdx, int *adjIndexesOut, int *adjacencyOut, int *permutedAdjIndexesIn, int *permutedAdjacencyIn)
 {
   int idx = blockIdx.x * blockDim.x + threadIdx.x;
   if (idx < size)
@@ -644,7 +617,7 @@ __global__ void fillCondensedAdjacencyKernel(int size, int *aggregateIdx, int *a
   }
 }
 
-__global__ void mapAdjacencyToBlockKernel(int size, int *adjIndexes, int *adjacency, int *adjacencyBlockLabel, int *blockMappedAdjacency, int *fineAggregate)
+__global__ void mapAdjacencyToBlockKernel3d(int size, int *adjIndexes, int *adjacency, int *adjacencyBlockLabel, int *blockMappedAdjacency, int *fineAggregate)
 {
   int idx = blockIdx.x * blockDim.x + threadIdx.x;
   if (idx < size)
@@ -672,7 +645,7 @@ __global__ void mapAdjacencyToBlockKernel(int size, int *adjIndexes, int *adjace
   }
 }
 
-__global__ void findPartIndicesNegStartKernel(int size, int *array, int *partIndices)
+__global__ void findPartIndicesNegStartKernel3d(int size, int *array, int *partIndices)
 {
   int idx = blockIdx.x * blockDim.x + threadIdx.x + 1;
   if (idx < size)
@@ -684,7 +657,7 @@ __global__ void findPartIndicesNegStartKernel(int size, int *array, int *partInd
   }
 }
 
-__global__ void kernel_compute_vertT_before_permute(int nn, int* vert_permute, float* vertT_after_permute, float* vertT_before_permute)
+__global__ void kernel_compute_vertT_before_permute3d(int nn, int* vert_permute, float* vertT_after_permute, float* vertT_before_permute)
 {
   int bidx = blockIdx.x;
   int tidx = bidx * blockDim.x + threadIdx.x;

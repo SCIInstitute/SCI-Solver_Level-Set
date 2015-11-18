@@ -12,16 +12,7 @@
 
 #define DIMENSION 2
 
-struct count_op
-{
-
-  __host__ __device__ int operator () (const int& x, const int& y) const
-  {
-    return (int)(x > 0) + (int)(y > 0);
-  }
-};
-
-__global__ void kernel_fill_sequence(int nn, int* sequence)
+__global__ void kernel_fill_sequence2d(int nn, int* sequence)
 {
   int tidx = blockIdx.x * blockDim.x + threadIdx.x;
   for (int i = tidx; i < nn; i += blockDim.x * gridDim.x)
@@ -30,7 +21,7 @@ __global__ void kernel_fill_sequence(int nn, int* sequence)
   }
 }
 
-__global__ void CopyOutBack_levelset(int* narrowband_list, int* vert_offsets, double* vertT, double* vertT_out)
+__global__ void CopyOutBack_levelset2d(int* narrowband_list, int* vert_offsets, double* vertT, double* vertT_out)
 {
   int bidx = narrowband_list[blockIdx.x];
   int tidx = threadIdx.x;
@@ -43,7 +34,7 @@ __global__ void CopyOutBack_levelset(int* narrowband_list, int* vert_offsets, do
   }
 }
 
-__global__ void kernel_updateT_single_stage(double timestep, int* narrowband_list,
+__global__ void kernel_updateT_single_stage2d(double timestep, int* narrowband_list,
     int largest_ele_part, int largest_vert_part, int full_ele_num, int* ele, int* ele_offsets, double* cadv_local,
     int nn, int* vert_offsets, double* vert, double* vertT, double* ele_local_coords,
     int largest_num_inside_mem, int* mem_locations, int* mem_location_offsets, double* vertT_out)
@@ -361,7 +352,7 @@ __global__ void kernel_updateT_single_stage(double timestep, int* narrowband_lis
   }
 }
 
-__global__ void kernel_compute_vert_ipermute(int nn, int* vert_permute, int* vert_ipermute)
+__global__ void kernel_compute_vert_ipermute2d(int nn, int* vert_permute, int* vert_ipermute)
 {
   int bidx = blockIdx.x;
   int tidx = bidx * blockDim.x + threadIdx.x;
@@ -371,7 +362,7 @@ __global__ void kernel_compute_vert_ipermute(int nn, int* vert_permute, int* ver
   }
 }
 
-__global__ void kernel_ele_and_vert(int full_num_ele, int ne, int* ele, int* ele_after_permute, int* ele_permute,
+__global__ void kernel_ele_and_vert2d(int full_num_ele, int ne, int* ele, int* ele_after_permute, int* ele_permute,
     int nn, double* vert, double* vert_after_permute, double* vertT,
     double* vertT_after_permute,
     double* Rinscribe_before_permute, double* Rinscribe_after_permute,
@@ -403,7 +394,7 @@ __global__ void kernel_ele_and_vert(int full_num_ele, int ne, int* ele, int* ele
 }
 
 template<int SZ>
-__global__ void kernel_compute_timestep(int full_ele_num, int* narrowband, int* ele_offsets,
+__global__ void kernel_compute_timestep2d(int full_ele_num, int* narrowband, int* ele_offsets,
     double* Rinscribe, double* cadv_local, double* ceik_global,
     double* ccurv_global,
     double* timestep_per_block, double* Rin_per_block)
@@ -474,7 +465,7 @@ __global__ void kernel_compute_timestep(int full_ele_num, int* narrowband, int* 
   }
 }
 
-__global__ void kernel_compute_local_coords(int full_num_ele, int nn, int* ele, int* ele_offsets, double* vert, double* ele_local_coords,
+__global__ void kernel_compute_local_coords2d(int full_num_ele, int nn, int* ele, int* ele_offsets, double* vert, double* ele_local_coords,
     double* cadv_global, double* cadv_local)
 {
   int tidx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -519,7 +510,7 @@ __global__ void kernel_compute_local_coords(int full_num_ele, int nn, int* ele, 
   }
 }
 
-__global__ void kernel_fill_ele_label(int ne, int* ele_permute, int* ele_offsets, int* npart, int* ele, int* ele_label)
+__global__ void kernel_fill_ele_label2d(int ne, int* ele_permute, int* ele_offsets, int* npart, int* ele, int* ele_label)
 {
   int bidx = blockIdx.x;
   int tidx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -554,7 +545,7 @@ __global__ void kernel_fill_ele_label(int ne, int* ele_permute, int* ele_offsets
   }
 }
 
-__global__ void kernel_compute_ele_npart(int ne, int* npart, int* ele, int* ele_label)
+__global__ void kernel_compute_ele_npart2d(int ne, int* npart, int* ele, int* ele_label)
 {
   //int bidx = blockIdx.x;
   int tidx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -574,25 +565,7 @@ __global__ void kernel_compute_ele_npart(int ne, int* npart, int* ele, int* ele_
   }
 }
 
-__global__ void permuteInitialAdjacencyKernel(int size, int *adjIndexesIn, int *adjacencyIn,
-    int *permutedAdjIndexesIn, int *permutedAdjacencyIn, int *ipermutation, int *fineAggregate, int* neighbor_part)
-{
-  int idx = blockIdx.x * blockDim.x + threadIdx.x;
-  if (idx < size)
-  {
-    int oldBegin = adjIndexesIn[ipermutation[idx]];
-    int oldEnd = adjIndexesIn[ipermutation[idx] + 1];
-    int runSize = oldEnd - oldBegin;
-    int newBegin = permutedAdjIndexesIn[idx];
-    // Transfer old adjacency into new, while changing node id's with partition id's
-    for (int i = 0; i < runSize; i++)
-    {
-      permutedAdjacencyIn[newBegin + i] = fineAggregate[ adjacencyIn[oldBegin + i] ];
-    }
-  }
-}
-
-__global__ void getInducedGraphNeighborCountsKernel(int size, int *aggregateIdx,
+__global__ void getInducedGraphNeighborCountsKernel2d(int size, int *aggregateIdx,
     int *adjIndexesOut, int *permutedAdjIndexes, int *permutedAdjacencyIn)
 {
   int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -634,7 +607,7 @@ __global__ void getInducedGraphNeighborCountsKernel(int size, int *aggregateIdx,
   }
 }
 
-__global__ void fillCondensedAdjacencyKernel(int size, int *aggregateIdx, int *adjIndexesOut,
+__global__ void fillCondensedAdjacencyKernel2d(int size, int *aggregateIdx, int *adjIndexesOut,
     int *adjacencyOut, int *permutedAdjIndexesIn, int *permutedAdjacencyIn)
 {
   int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -652,7 +625,7 @@ __global__ void fillCondensedAdjacencyKernel(int size, int *aggregateIdx, int *a
   }
 }
 
-__global__ void mapAdjacencyToBlockKernel(int size, int *adjIndexes, int *adjacency,
+__global__ void mapAdjacencyToBlockKernel2d(int size, int *adjIndexes, int *adjacency,
     int *adjacencyBlockLabel, int *blockMappedAdjacency, int *fineAggregate)
 {
   int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -681,7 +654,7 @@ __global__ void mapAdjacencyToBlockKernel(int size, int *adjIndexes, int *adjace
   }
 }
 
-__global__ void findPartIndicesNegStartKernel(int size, int *array, int *partIndices)
+__global__ void findPartIndicesNegStartKernel2d(int size, int *array, int *partIndices)
 {
   int idx = blockIdx.x * blockDim.x + threadIdx.x + 1;
   if (idx < size)
@@ -693,7 +666,7 @@ __global__ void findPartIndicesNegStartKernel(int size, int *array, int *partInd
   }
 }
 
-__global__ void kernel_compute_vertT_before_permute(int nn, int* vert_permute,
+__global__ void kernel_compute_vertT_before_permute2d(int nn, int* vert_permute,
     double* vertT_after_permute, double* vertT_before_permute)
 {
   int bidx = blockIdx.x;

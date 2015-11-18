@@ -1,5 +1,5 @@
-#include <redistance.h>
-#include <redistance_kernels.h>
+#include <redistance3d.h>
+#include <redistance_kernels3d.h>
 #include <Vec.h>
 #include <math.h>
 #include <stdio.h>
@@ -7,7 +7,7 @@
 
 #include "cusp/print.h"
 
-void redistance::ReInitTsign(TetMesh* mesh, Vector_d& vertT_after_permute_d, int nparts, int largest_vert_part, int largest_ele_part, int largest_num_inside_mem, int full_num_ele,
+void redistance3d::ReInitTsign(TetMesh* mesh, Vector_d& vertT_after_permute_d, int nparts, int largest_vert_part, int largest_ele_part, int largest_num_inside_mem, int full_num_ele,
     Vector_d& vert_after_permute_d, IdxVector_d& vert_offsets_d,
     IdxVector_d& ele_after_permute_d, IdxVector_d& ele_offsets_d, Vector_d& ele_local_coords_d, IdxVector_d& mem_location_offsets, IdxVector_d& mem_locations,
     IdxVector_d& part_label_d, IdxVector_d& block_xadj, IdxVector_d& block_adjncy)
@@ -18,7 +18,7 @@ void redistance::ReInitTsign(TetMesh* mesh, Vector_d& vertT_after_permute_d, int
   cudaSafeCall((kernel_reinit_Tsign << <nblocks, nthreads >> >(nn, CAST(vertT_after_permute_d), CAST(m_Tsign_d))));
 }
 
-void redistance::FindSeedPoint(const IdxVector_d& old_narrowband, const int num_old_narrowband, TetMesh* mesh, Vector_d& vertT_after_permute_d, int nparts,
+void redistance3d::FindSeedPoint(const IdxVector_d& old_narrowband, const int num_old_narrowband, TetMesh* mesh, Vector_d& vertT_after_permute_d, int nparts,
     int largest_vert_part, int largest_ele_part, int largest_num_inside_mem, int full_num_ele,
     Vector_d& vert_after_permute_d, IdxVector_d& vert_offsets_d,
     IdxVector_d& ele_after_permute_d, IdxVector_d& ele_offsets_d, Vector_d& ele_local_coords_d,
@@ -64,7 +64,7 @@ void redistance::FindSeedPoint(const IdxVector_d& old_narrowband, const int num_
   }
 }
 
-void redistance::GenerateData(IdxVector_d& new_narrowband, int& new_num_narrowband, float bandwidth, int stepcount, TetMesh* mesh, Vector_d& vertT_after_permute_d,
+void redistance3d::GenerateData(IdxVector_d& new_narrowband, int& new_num_narrowband, float bandwidth, int stepcount, TetMesh* mesh, Vector_d& vertT_after_permute_d,
     int nparts, int largest_vert_part, int largest_ele_part, int largest_num_inside_mem, int full_num_ele,
     Vector_d& vert_after_permute_d, IdxVector_d& vert_offsets_d,
     IdxVector_d& ele_after_permute_d, IdxVector_d& ele_offsets_d, Vector_d& ele_local_coords_d,
@@ -204,7 +204,7 @@ void redistance::GenerateData(IdxVector_d& new_narrowband, int& new_num_narrowba
       // 5. reduction
       ////////////////////////////////////////////////////////////////
       nthreads = largest_vert_part;
-      run_reduction << <nblocks, nthreads >> >(CAST(d_vert_con), CAST(d_block_con), CAST(m_active_block_list_d), CAST(vert_offsets_d));
+      run_reduction3d << <nblocks, nthreads >> >(CAST(d_vert_con), CAST(d_block_con), CAST(m_active_block_list_d), CAST(vert_offsets_d));
 
       //////////////////////////////////////////////////////////////////
       // 6. update active list

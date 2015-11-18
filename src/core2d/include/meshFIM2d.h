@@ -19,19 +19,19 @@ class meshFIM2d
 {
   public:
 
-    void updateT_single_stage(LevelsetValueType, int, int, vector<int>&);
-    void updateT_single_stage_d(LevelsetValueType, int, IdxVector_d&, int);
+    void updateT_single_stage(double, int, int, vector<int>&);
+    void updateT_single_stage_d(double, int, IdxVector_d&, int);
     void getPartIndicesNegStart(IdxVector_d& sortedPartition, IdxVector_d& partIndices);
     void mapAdjacencyToBlock(IdxVector_d &adjIndexes, IdxVector_d &adjacency, IdxVector_d &adjacencyBlockLabel, IdxVector_d &blockMappedAdjacency, IdxVector_d &fineAggregate);
-    void updateT_two_stage(LevelsetValueType, int, int);
+    void updateT_two_stage(double, int, int);
 
     void SetMesh(TriMesh* mesh, int nNoiseIter)
     {
       m_meshPtr = mesh;
     }
     std::vector< std::vector <float> > GenerateData(
-      const char* filename, int nsteps, LevelsetValueType timestep,
-        int inside_niter, int nside, int block_size, LevelsetValueType bandwidth, 
+      const char* filename, int nsteps, double timestep,
+        int inside_niter, int nside, int block_size, double bandwidth, 
         int part_type, int metis_size, bool verbose = false);
     void Partition_METIS(int metissize, bool verbose = false);
     void GraphPartition_Square(int squareLength, int squareWidth, int blockLength, int blockWidth, bool verbose = false);
@@ -74,8 +74,8 @@ class meshFIM2d
     Vector_d m_cadv_global_d;
     Vector_d m_ceik_global_d;
     Vector_d m_ccurv_global_d;
-    LevelsetValueType m_timestep;
-    LevelsetValueType m_maxRin;
+    double m_timestep;
+    double m_maxRin;
     int nparts;
     int largest_vert_part;
     int largest_ele_part;

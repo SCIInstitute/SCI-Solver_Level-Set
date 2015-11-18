@@ -3,7 +3,7 @@
 #include <Vec.h>
 #include <math.h>
 #include <stdio.h>
-#include <mycutil.h>
+#include <cutil.h>
 
 #include "cusp/print.h"
 
@@ -14,7 +14,7 @@ void redistance::ReInitTsign(TetMesh* mesh, Vector_d& vertT_after_permute_d, int
 {
   int nn = mesh->vertices.size();
   int nthreads = 256;
-  int nblocks = min((int) ceil((LevelsetValueType) nn / nthreads), 65535);
+  int nblocks = min((int) ceil((float) nn / nthreads), 65535);
   cudaSafeCall((kernel_reinit_Tsign << <nblocks, nthreads >> >(nn, CAST(vertT_after_permute_d), CAST(m_Tsign_d))));
 }
 
@@ -64,7 +64,7 @@ void redistance::FindSeedPoint(const IdxVector_d& old_narrowband, const int num_
   }
 }
 
-void redistance::GenerateData(IdxVector_d& new_narrowband, int& new_num_narrowband, LevelsetValueType bandwidth, int stepcount, TetMesh* mesh, Vector_d& vertT_after_permute_d,
+void redistance::GenerateData(IdxVector_d& new_narrowband, int& new_num_narrowband, float bandwidth, int stepcount, TetMesh* mesh, Vector_d& vertT_after_permute_d,
     int nparts, int largest_vert_part, int largest_ele_part, int largest_num_inside_mem, int full_num_ele,
     Vector_d& vert_after_permute_d, IdxVector_d& vert_offsets_d,
     IdxVector_d& ele_after_permute_d, IdxVector_d& ele_offsets_d, Vector_d& ele_local_coords_d,
@@ -101,7 +101,7 @@ void redistance::GenerateData(IdxVector_d& new_narrowband, int& new_num_narrowba
     nblocks = numActive;
     nthreads = largest_ele_part;
     m_active_block_list_d = h_ActiveList;
-    shared_size = sizeof (LevelsetValueType)* 4 * largest_ele_part + sizeof (short) *largest_vert_part*largest_num_inside_mem;
+    shared_size = sizeof (float)* 4 * largest_ele_part + sizeof (short) *largest_vert_part*largest_num_inside_mem;
     cudaSafeCall((kernel_update_values << <nblocks, nthreads, shared_size >> >(CAST(m_active_block_list_d), CAST(m_Label_d), largest_ele_part, largest_vert_part, full_num_ele,
             CAST(ele_after_permute_d), CAST(ele_offsets_d),
             CAST(vert_offsets_d), CAST(m_DT_d),
@@ -268,7 +268,7 @@ void redistance::GenerateData(IdxVector_d& new_narrowband, int& new_num_narrowba
   thrust::copy(tmp_new_narrowband.begin() + 1, tmp_new_narrowband.begin() + numb + 1, new_narrowband.begin());
 
   nthreads = 256;
-  nblocks = min((int) ceil((LevelsetValueType) nn / nthreads), 65535);
+  nblocks = min((int) ceil((float) nn / nthreads), 65535);
   cudaSafeCall((kernel_recover_Tsign_whole << <nblocks, nthreads >> >(nn, CAST(vertT_after_permute_d), CAST(m_Tsign_d))));
 
 }

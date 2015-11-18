@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
     for (size_t i = 0; i < LevelSet3d::mesh_->vertices.size(); i++) {
       center = center + LevelSet3d::mesh_->vertices[i];
     }
-    center = center / static_cast<double>(LevelSet3d::mesh_->vertices.size());
+    center = center / static_cast<float>(LevelSet3d::mesh_->vertices.size());
     double max = 0.;
     for (size_t i = 0; i < LevelSet3d::mesh_->vertices.size(); i++) {
       point p = LevelSet3d::mesh_->vertices[i] - center;
@@ -95,9 +95,9 @@ int main(int argc, char *argv[])
       point p = (LevelSet3d::mesh_->vertices[LevelSet3d::mesh_->tets[i][0]] +
         LevelSet3d::mesh_->vertices[LevelSet3d::mesh_->tets[i][1]] +
         LevelSet3d::mesh_->vertices[LevelSet3d::mesh_->tets[i][2]])
-        / 3. - center;
-      double mag = std::sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
-      mag /= max / 20.;
+        / 3.f - center;
+      float mag = std::sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
+      mag /= max / 20.f;
       adv.push_back(p / mag / mag);
     }
     LevelSet3d::initializeVertices(data, vals);

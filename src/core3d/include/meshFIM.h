@@ -20,29 +20,29 @@ class meshFIM
 {
   public:
 
-    void updateT_single_stage(LevelsetValueType, int, int, vector<int>&);
-    void updateT_single_stage_d(LevelsetValueType, int, IdxVector_d&, int);
+    void updateT_single_stage(float, int, int, vector<int>&);
+    void updateT_single_stage_d(float, int, IdxVector_d&, int);
     void getPartIndicesNegStart(IdxVector_d& sortedPartition, IdxVector_d& partIndices);
     void mapAdjacencyToBlock(IdxVector_d &adjIndexes, IdxVector_d &adjacency,
-      IdxVector_d &adjacencyBlockLabel, IdxVector_d &blockMappedAdjacency, IdxVector_d &fineAggregate);
-    void updateT_two_stage(LevelsetValueType, int, int);
+        IdxVector_d &adjacencyBlockLabel, IdxVector_d &blockMappedAdjacency, IdxVector_d &fineAggregate);
+    void updateT_two_stage(float, int, int);
 
     void SetMesh(TetMesh* mesh, int nNoiseIter)
     {
       m_meshPtr = mesh;
     }
-    std::vector < std::vector < LevelsetValueType> >  GenerateData(
-        char* filename, int nsteps, LevelsetValueType timestep,
+    std::vector < std::vector < float> >  GenerateData(
+        char* filename, int nsteps, float timestep,
         int inside_niter, int nside, int block_size,
-        LevelsetValueType bandwidth, int part_type, int metis_size,
+        float bandwidth, int part_type, int metis_size,
         bool verbose = false);
     void Partition_METIS(int metissize, bool verbose = false);
-    void GraphPartition_Square(int squareLength, int squareWidth, int squareHeight, 
-      int blockLength, int blockWidth, int blockHeight, bool verbose = false);
+    void GraphPartition_Square(int squareLength, int squareWidth, int squareHeight,
+        int blockLength, int blockWidth, int blockHeight, bool verbose = false);
     void InitPatches(bool verbose = false);
     void InitPatches2();
     void GenerateBlockNeighbors();
-    void writeVTK(std::vector < std::vector <LevelsetValueType> > values);
+    void writeVTK(std::vector < std::vector <float> > values);
     void writeFLD();
 
     meshFIM(TetMesh* mesh)

@@ -8,7 +8,7 @@
 #include <TriMesh.h>
 #include <cuda_runtime.h>
 #include <time.h>
-#include <mycutil.h>
+#include <cutil.h>
 #include <cstring>
 #include <limits>
 
@@ -40,7 +40,7 @@ namespace LevelSet2d {
       int insideIterations_;
       int blockSize_;
       int sideLengths_;
-      LevelsetValueType bandwidth_;
+      double bandwidth_;
       int metisSize_;
       bool userSetInitial_;
       bool userSetAdvection_;

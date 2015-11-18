@@ -20,14 +20,14 @@ struct or_op
 };
 
 template<int SZ>
-__global__ void kernel_compute_new_narrowband(int* new_narrowband, LevelsetValueType* vertT, int* vert_offsets, LevelsetValueType bandwidth)
+__global__ void kernel_compute_new_narrowband(int* new_narrowband, double* vertT, int* vert_offsets, double bandwidth)
 {
   int block_idx = blockIdx.x;
   int tx = threadIdx.x;
   int start = vert_offsets[block_idx];
   int end = vert_offsets[block_idx + 1];
   int blocksize = end - start;
-  __shared__ LevelsetValueType sdata[SZ];
+  __shared__ double sdata[SZ];
   if (tx < blocksize)
     sdata[tx] = vertT[start + tx];
   else
@@ -55,7 +55,7 @@ __global__ void kernel_compute_new_narrowband(int* new_narrowband, LevelsetValue
 }
 
 template<int SZ>
-__global__ void run_reduction_bandwidth(int *con, int *blockCon, int* ActiveList, LevelsetValueType* vertT, LevelsetValueType* block_vertT_min, int* vert_offsets)
+__global__ void run_reduction_bandwidth(int *con, int *blockCon, int* ActiveList, double* vertT, double* block_vertT_min, int* vert_offsets)
 {
   int list_idx = blockIdx.x;
   int tx = threadIdx.x;
@@ -64,7 +64,7 @@ __global__ void run_reduction_bandwidth(int *con, int *blockCon, int* ActiveList
   int end = vert_offsets[block_idx + 1];
   int blocksize = end - start;
   __shared__ int s_block_conv;
-  __shared__ LevelsetValueType sdata[SZ];
+  __shared__ double sdata[SZ];
 
   if (tx < blocksize)
     sdata[tx] = vertT[start + tx];
@@ -121,18 +121,18 @@ __global__ void run_reduction(int *con, int *blockCon, int* ActiveList, int* ver
   }
 }
 
-__device__ LevelsetValueType localSolverTet1(LevelsetValueType TA, LevelsetValueType TB, LevelsetValueType TC, LevelsetValueType ACAC, LevelsetValueType ACBC, LevelsetValueType ACCD, LevelsetValueType BCBC, LevelsetValueType BCCD, LevelsetValueType CDCD)
+__device__ double localSolverTet1(double TA, double TB, double TC, double ACAC, double ACBC, double ACCD, double BCBC, double BCCD, double CDCD)
 {
   if (TA >= LARGENUM && TB >= LARGENUM && TC >= LARGENUM)
     return LARGENUM;
-  LevelsetValueType p, q, r;
-  LevelsetValueType lambda1, lambda2, lambda3;
-  LevelsetValueType FaceTAC = LARGENUM, FaceTAB = LARGENUM, FaceTBC = LARGENUM;
-  LevelsetValueType delta, TE;
-  LevelsetValueType TD = LARGENUM;
-  LevelsetValueType TAC = TC - TA;
-  LevelsetValueType TBC = TC - TB;
-  LevelsetValueType TAB = TB - TA;
+  double p, q, r;
+  double lambda1, lambda2, lambda3;
+  double FaceTAC = LARGENUM, FaceTAB = LARGENUM, FaceTBC = LARGENUM;
+  double delta, TE;
+  double TD = LARGENUM;
+  double TAC = TC - TA;
+  double TBC = TC - TB;
+  double TAB = TB - TA;
 
   //calculate FaceTBC, let lambda1 = 0
   p = BCBC * TBC * TBC - BCBC*BCBC;
@@ -167,7 +167,7 @@ __device__ LevelsetValueType localSolverTet1(LevelsetValueType TA, LevelsetValue
   FaceTBC = fmin(FaceTBC, fmin(TB + sqrt((BCBC + BCCD) + (BCCD + CDCD)), TC + sqrt(CDCD)));
 
   //calculate FaceTAB, let lambda3 = 0
-  LevelsetValueType gammax = ACAC - ACBC, gammay = ACBC - BCBC, gammaz = ACCD - BCCD;
+  double gammax = ACAC - ACBC, gammay = ACBC - BCBC, gammaz = ACCD - BCCD;
   p = (TAB * TAB * ACAC - gammax * gammax) + (BCBC * TAB * TAB - gammay * gammay) - ((ACBC + ACBC) * TAB * TAB - 2 * gammax * gammay);
 
   q = -(BCBC * TAB * TAB - gammay * gammay)*2 +
@@ -237,9 +237,9 @@ __device__ LevelsetValueType localSolverTet1(LevelsetValueType TA, LevelsetValue
 
   ////////Done calculating FaceTAC/////////////////////////
 
-  LevelsetValueType s = TAC * ACBC - TBC*ACAC;
-  LevelsetValueType t = TAC * BCCD - TBC*ACCD;
-  LevelsetValueType h = -(TAC * BCBC - TBC * ACBC);
+  double s = TAC * ACBC - TBC*ACAC;
+  double t = TAC * BCCD - TBC*ACCD;
+  double h = -(TAC * BCBC - TBC * ACBC);
 
   p = (TAC * TAC * ACAC - ACAC * ACAC) * h * h + (BCBC * TAC * TAC - ACBC * ACBC) * s * s + ((ACBC + ACBC) * TAC * TAC - 2 * ACAC * ACBC) * s*h;
 
@@ -284,15 +284,15 @@ __device__ LevelsetValueType localSolverTet1(LevelsetValueType TA, LevelsetValue
   return TD;
 }
 
-__device__ LevelsetValueType localSolverTri(LevelsetValueType TA, LevelsetValueType TB, LevelsetValueType LenAB, LevelsetValueType LenBC, LevelsetValueType LenAC)
+__device__ double localSolverTri(double TA, double TB, double LenAB, double LenBC, double LenAC)
 {
   if (TA >= LARGENUM && TB >= LARGENUM)
     return LARGENUM;
-  LevelsetValueType TAB, a, b, delta, lambda1, lambda2, EdgeTA, EdgeTB, cosA, LenAD, LenCD;
-  LevelsetValueType TC1 = LARGENUM;
-  LevelsetValueType TC2 = LARGENUM;
-  LevelsetValueType TC = LARGENUM;
-  LevelsetValueType speedI = 1.0;
+  double TAB, a, b, delta, lambda1, lambda2, EdgeTA, EdgeTB, cosA, LenAD, LenCD;
+  double TC1 = LARGENUM;
+  double TC2 = LARGENUM;
+  double TC = LARGENUM;
+  double speedI = 1.0;
   TAB = TB - TA;
 
   a = (speedI * speedI * LenAB * LenAB - TAB * TAB) * LenAB*LenAB;
@@ -334,8 +334,8 @@ __device__ LevelsetValueType localSolverTri(LevelsetValueType TA, LevelsetValueT
 }
 
 __global__ void kernel_update_values(int* active_block_list, int* seed_label, int largest_ele_part, int largest_vert_part, int full_ele_num, int* ele, int* ele_offsets,
-                                     int* vert_offsets, LevelsetValueType* vertT, LevelsetValueType* ele_local_coords,
-                                     int largest_num_inside_mem, int* mem_locations, int* mem_location_offsets, const int NITER, LevelsetValueType* vertT_out, int* con)
+                                     int* vert_offsets, double* vertT, double* ele_local_coords,
+                                     int largest_num_inside_mem, int* mem_locations, int* mem_location_offsets, const int NITER, double* vertT_out, int* con)
 {
   int bidx = active_block_list[blockIdx.x];
   int tidx = threadIdx.x;
@@ -346,11 +346,11 @@ __global__ void kernel_update_values(int* active_block_list, int* seed_label, in
 
   int nv = vert_end - vert_start;
   int ne = ele_end - ele_start;
-  LevelsetValueType oldT, newT;
+  double oldT, newT;
 
   extern __shared__ char s_array[];
-  LevelsetValueType* s_vertT = (LevelsetValueType*)s_array;
-  LevelsetValueType* s_eleT = (LevelsetValueType*)s_array;
+  double* s_vertT = (double*)s_array;
+  double* s_eleT = (double*)s_array;
   short* s_mem = (short*)&s_vertT[largest_vert_part];
   short l_mem[16] = {-1, -1, -1, -1, -1, -1, -1, -1,
                      -1, -1, -1, -1, -1, -1, -1, -1};
@@ -388,7 +388,7 @@ __global__ void kernel_update_values(int* active_block_list, int* seed_label, in
     }
   }
 
-  LevelsetValueType eleT[3];
+  double eleT[3];
   if (tidx < ne)
   {
     for (int i = 0; i < 3; i++)
@@ -417,14 +417,14 @@ __global__ void kernel_update_values(int* active_block_list, int* seed_label, in
   }
   __syncthreads();
 
-  LevelsetValueType TA, TB, TC;
+  double TA, TB, TC;
 
-  LevelsetValueType LenAB, LenBC, LenCA;
+  double LenAB, LenBC, LenCA;
   if (tidx < ne)
   {
-    LevelsetValueType c0 = ele_local_coords[0 * full_ele_num + (tidx + ele_start)];
-    LevelsetValueType c1 = ele_local_coords[1 * full_ele_num + (tidx + ele_start)];
-    LevelsetValueType c2 = ele_local_coords[2 * full_ele_num + (tidx + ele_start)];
+    double c0 = ele_local_coords[0 * full_ele_num + (tidx + ele_start)];
+    double c1 = ele_local_coords[1 * full_ele_num + (tidx + ele_start)];
+    double c2 = ele_local_coords[2 * full_ele_num + (tidx + ele_start)];
 
     LenAB = fabs(c0);
     LenBC = sqrt(c2 * c2 + (c1 - c0)*(c1 - c0));
@@ -508,8 +508,8 @@ __global__ void kernel_update_values(int* active_block_list, int* seed_label, in
 }
 
 __global__ void kernel_run_check_neghbor(int* active_block_list, int* seed_label, int largest_ele_part, int largest_vert_part, int full_ele_num, int* ele, int* ele_offsets,
-                                         int* vert_offsets, LevelsetValueType* vertT, LevelsetValueType* ele_local_coords,
-                                         int largest_num_inside_mem, int* mem_locations, int* mem_location_offsets, const int NITER, LevelsetValueType* vertT_out, int* con)
+                                         int* vert_offsets, double* vertT, double* ele_local_coords,
+                                         int largest_num_inside_mem, int* mem_locations, int* mem_location_offsets, const int NITER, double* vertT_out, int* con)
 {
   int bidx = active_block_list[blockIdx.x];
   int tidx = threadIdx.x;
@@ -520,11 +520,11 @@ __global__ void kernel_run_check_neghbor(int* active_block_list, int* seed_label
 
   int nv = vert_end - vert_start;
   int ne = ele_end - ele_start;
-  LevelsetValueType oldT, newT;
+  double oldT, newT;
 
   extern __shared__ char s_array[];
-  LevelsetValueType* s_vertT = (LevelsetValueType*)s_array;
-  LevelsetValueType* s_eleT = (LevelsetValueType*)s_array;
+  double* s_vertT = (double*)s_array;
+  double* s_eleT = (double*)s_array;
   short* s_mem = (short*)&s_vertT[largest_vert_part];
   short l_mem[16] = {-1, -1, -1, -1, -1, -1, -1, -1,
                      -1, -1, -1, -1, -1, -1, -1, -1};
@@ -562,7 +562,7 @@ __global__ void kernel_run_check_neghbor(int* active_block_list, int* seed_label
   }
   //  if (bidx == 4 && tidx == 0) for (int i = 0; i < 32; i++) printf("%d %d %d l_mem[%d]=%d\n", bidx, tidx, count, i, l_mem[i]);
 
-  LevelsetValueType eleT[3];
+  double eleT[3];
   if (tidx < ne)
   {
     for (int i = 0; i < 3; i++)
@@ -591,13 +591,13 @@ __global__ void kernel_run_check_neghbor(int* active_block_list, int* seed_label
   }
   __syncthreads();
 
-  LevelsetValueType TA, TB, TC;
-  LevelsetValueType LenAB, LenBC, LenCA;
+  double TA, TB, TC;
+  double LenAB, LenBC, LenCA;
   if (tidx < ne)
   {
-    LevelsetValueType c0 = ele_local_coords[0 * full_ele_num + (tidx + ele_start)];
-    LevelsetValueType c1 = ele_local_coords[1 * full_ele_num + (tidx + ele_start)];
-    LevelsetValueType c2 = ele_local_coords[2 * full_ele_num + (tidx + ele_start)];
+    double c0 = ele_local_coords[0 * full_ele_num + (tidx + ele_start)];
+    double c1 = ele_local_coords[1 * full_ele_num + (tidx + ele_start)];
+    double c2 = ele_local_coords[2 * full_ele_num + (tidx + ele_start)];
 
     LenAB = fabs(c0);
     LenBC = sqrt(c2 * c2 + (c1 - c0)*(c1 - c0));
@@ -670,7 +670,7 @@ __global__ void kernel_run_check_neghbor(int* active_block_list, int* seed_label
   }
 }
 
-__global__ void kernel_seedlabel(int nn, int full_ele_num, LevelsetValueType* vert_after_permute, int* vert_offsets, int* ele_after_permute, int* ele_offsets, int* label, LevelsetValueType* vertT_after_permute, LevelsetValueType* DT, int* active_block_list)
+__global__ void kernel_seedlabel(int nn, int full_ele_num, double* vert_after_permute, int* vert_offsets, int* ele_after_permute, int* ele_offsets, int* label, double* vertT_after_permute, double* DT, int* active_block_list)
 {
   int bidx = blockIdx.x;
   int tidx = threadIdx.x;
@@ -682,7 +682,7 @@ __global__ void kernel_seedlabel(int nn, int full_ele_num, LevelsetValueType* ve
   __syncthreads();
 
   //load values to shared memory
-  //  extern __shared__ LevelsetValueType s_vertT[];
+  //  extern __shared__ double s_vertT[];
   //  for (int vidx = vert_start; vidx < vert_end; vidx++)
   //  {
   //      s_vertT[vidx - vert_start] = vertT_after_permute[vidx];
@@ -695,9 +695,9 @@ __global__ void kernel_seedlabel(int nn, int full_ele_num, LevelsetValueType* ve
     int e1 = ele_after_permute[1 * full_ele_num + ele_start + tidx];
     int e2 = ele_after_permute[2 * full_ele_num + ele_start + tidx];
 
-    LevelsetValueType v0 = vertT_after_permute[e0];
-    LevelsetValueType v1 = vertT_after_permute[e1];
-    LevelsetValueType v2 = vertT_after_permute[e2];
+    double v0 = vertT_after_permute[e0];
+    double v1 = vertT_after_permute[e1];
+    double v2 = vertT_after_permute[e2];
     //    if (e0 == 3 || e1 == 3 || e2 == 3 || e3 == 3)
     //    {
     //      printf("some is three: %d %d %f %f %f %f %d %d %d %d\n", bidx, tidx, v0, v1, v2, v3, e0, e1, e2, e3);
@@ -761,7 +761,7 @@ __global__ void kernel_seedlabel(int nn, int full_ele_num, LevelsetValueType* ve
   }
 }
 
-__global__ void kernel_seedlabel_narrowband(int nn, int full_ele_num, const int* narrowband, LevelsetValueType* vert_after_permute, int* vert_offsets, int* ele_after_permute, int* ele_offsets, int* label, LevelsetValueType* vertT_after_permute, LevelsetValueType* DT, int* active_block_list)
+__global__ void kernel_seedlabel_narrowband(int nn, int full_ele_num, const int* narrowband, double* vert_after_permute, int* vert_offsets, int* ele_after_permute, int* ele_offsets, int* label, double* vertT_after_permute, double* DT, int* active_block_list)
 {
   int bidx = narrowband[blockIdx.x];
   int tidx = threadIdx.x;
@@ -773,7 +773,7 @@ __global__ void kernel_seedlabel_narrowband(int nn, int full_ele_num, const int*
   __syncthreads();
 
   //load values to shared memory
-  //  extern __shared__ LevelsetValueType s_vertT[];
+  //  extern __shared__ double s_vertT[];
   //  for (int vidx = vert_start; vidx < vert_end; vidx++)
   //  {
   //      s_vertT[vidx - vert_start] = vertT_after_permute[vidx];
@@ -786,9 +786,9 @@ __global__ void kernel_seedlabel_narrowband(int nn, int full_ele_num, const int*
     int e1 = ele_after_permute[1 * full_ele_num + ele_start + tidx];
     int e2 = ele_after_permute[2 * full_ele_num + ele_start + tidx];
 
-    LevelsetValueType v0 = vertT_after_permute[e0];
-    LevelsetValueType v1 = vertT_after_permute[e1];
-    LevelsetValueType v2 = vertT_after_permute[e2];
+    double v0 = vertT_after_permute[e0];
+    double v1 = vertT_after_permute[e1];
+    double v2 = vertT_after_permute[e2];
     //    if (e0 == 3 || e1 == 3 || e2 == 3 || e3 == 3)
     //    {
     //      printf("some is three: %d %d %f %f %f %f %d %d %d %d\n", bidx, tidx, v0, v1, v2, v3, e0, e1, e2, e3);
@@ -852,7 +852,7 @@ __global__ void kernel_seedlabel_narrowband(int nn, int full_ele_num, const int*
   }
 }
 
-__global__ void CopyOutBack(int* active_block_list, int* vert_offsets, LevelsetValueType* vertT, LevelsetValueType* vertT_out)
+__global__ void CopyOutBack(int* active_block_list, int* vert_offsets, double* vertT, double* vertT_out)
 {
   int bidx = active_block_list[blockIdx.x];
   int tidx = threadIdx.x;
@@ -865,7 +865,7 @@ __global__ void CopyOutBack(int* active_block_list, int* vert_offsets, LevelsetV
   }
 }
 
-__global__ void kernel_reinit_Tsign(int nn, LevelsetValueType* vertT, char* Tsign)
+__global__ void kernel_reinit_Tsign(int nn, double* vertT, char* Tsign)
 {
   int tidx = blockIdx.x * blockDim.x + threadIdx.x;
   for (int vidx = tidx; vidx < nn; vidx += blockDim.x * gridDim.x)
@@ -874,7 +874,7 @@ __global__ void kernel_reinit_Tsign(int nn, LevelsetValueType* vertT, char* Tsig
   }
 }
 
-__global__ void kernel_recover_Tsign(int* block_list, int* vert_offsets, LevelsetValueType* vertT, char* Tsign)
+__global__ void kernel_recover_Tsign(int* block_list, int* vert_offsets, double* vertT, char* Tsign)
 {
   int tidx = threadIdx.x;
   int bidx = block_list[blockIdx.x];
@@ -887,7 +887,7 @@ __global__ void kernel_recover_Tsign(int* block_list, int* vert_offsets, Levelse
   }
 }
 
-__global__ void kernel_recover_Tsign_whole(int nn, LevelsetValueType* vertT, char* Tsign)
+__global__ void kernel_recover_Tsign_whole(int nn, double* vertT, char* Tsign)
 {
   int tidx = blockIdx.x * blockDim.x + threadIdx.x;
   for (int vidx = tidx; vidx < nn; vidx += blockDim.x * gridDim.x)

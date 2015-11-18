@@ -8,7 +8,7 @@
 #ifndef MESHFIM_KERNELS_H
 #define  MESHFIM_KERNELS_H
 
-#include <mycutil.h>
+#include <cutil.h>
 
 struct count_op
 {
@@ -29,7 +29,7 @@ __global__ void kernel_fill_sequence(int nn, int* sequence)
 }
 
 __global__ void CopyOutBack_levelset(int* narrowband_list, int* vert_offsets,
-  LevelsetValueType* vertT, LevelsetValueType* vertT_out)
+    float* vertT, float* vertT_out)
 {
   int bidx = narrowband_list[blockIdx.x];
   int tidx = threadIdx.x;
@@ -42,10 +42,10 @@ __global__ void CopyOutBack_levelset(int* narrowband_list, int* vert_offsets,
   }
 }
 
-__global__ void kernel_updateT_single_stage(LevelsetValueType timestep, int* narrowband_list, int largest_ele_part,
-    int largest_vert_part, int full_ele_num, int* ele, int* ele_offsets,LevelsetValueType* cadv_local,
-    int nn, int* vert_offsets, LevelsetValueType* vert, LevelsetValueType* vertT, LevelsetValueType* ele_local_coords,
-    int largest_num_inside_mem, int* mem_locations, int* mem_location_offsets, LevelsetValueType* vertT_out)
+__global__ void kernel_updateT_single_stage(float timestep, int* narrowband_list, int largest_ele_part,
+    int largest_vert_part, int full_ele_num, int* ele, int* ele_offsets,float* cadv_local,
+    int nn, int* vert_offsets, float* vert, float* vertT, float* ele_local_coords,
+    int largest_num_inside_mem, int* mem_locations, int* mem_location_offsets, float* vertT_out)
 {
   int bidx = narrowband_list[blockIdx.x];
   int tidx = threadIdx.x;
@@ -56,27 +56,27 @@ __global__ void kernel_updateT_single_stage(LevelsetValueType timestep, int* nar
 
   int nv = vert_end - vert_start;
   int ne = ele_end - ele_start;
-  LevelsetValueType vertices[4][3];
-  LevelsetValueType sigma[3] = {cadv_local[0 * full_ele_num + ele_start],
+  float vertices[4][3];
+  float sigma[3] = {cadv_local[0 * full_ele_num + ele_start],
     cadv_local[1 * full_ele_num + ele_start],
     cadv_local[2 * full_ele_num + ele_start]};
-  LevelsetValueType alphatuda[4] = {0.0, 0.0, 0.0, 0.0};
-  LevelsetValueType volume, Hintegral, oldT;
-  LevelsetValueType nablaPhi[3] = {0.0, 0.0, 0.0};
-  LevelsetValueType nablaN[4][3];
-  LevelsetValueType abs_nabla_phi;
-  LevelsetValueType theta = 0;
+  float alphatuda[4] = {0.0, 0.0, 0.0, 0.0};
+  float volume, Hintegral, oldT;
+  float nablaPhi[3] = {0.0, 0.0, 0.0};
+  float nablaN[4][3];
+  float abs_nabla_phi;
+  float theta = 0;
 
   extern __shared__ char s_array[];
-  LevelsetValueType* s_vertT = (LevelsetValueType*)s_array;
-  LevelsetValueType* s_vert = (LevelsetValueType*)s_array;
+  float* s_vertT = (float*)s_array;
+  float* s_vert = (float*)s_array;
   //temperarily hold the inside_mem_locations
   short* s_mem = (short*)&s_vertT[largest_vert_part];
-  LevelsetValueType* s_alphatuda_Hintegral = (LevelsetValueType*)s_array;
-  LevelsetValueType* s_alphatuda_volume = (LevelsetValueType*)s_array;
-  LevelsetValueType* s_grad_phi = (LevelsetValueType*)s_array;
-  LevelsetValueType* s_volume = (LevelsetValueType*)s_array;
-  LevelsetValueType* s_curv_up = (LevelsetValueType*)s_array;
+  float* s_alphatuda_Hintegral = (float*)s_array;
+  float* s_alphatuda_volume = (float*)s_array;
+  float* s_grad_phi = (float*)s_array;
+  float* s_volume = (float*)s_array;
+  float* s_curv_up = (float*)s_array;
   short l_mem[32] = {-1, -1, -1, -1, -1, -1, -1, -1,
     -1, -1, -1, -1, -1, -1, -1, -1,
     -1, -1, -1, -1, -1, -1, -1, -1,
@@ -114,7 +114,7 @@ __global__ void kernel_updateT_single_stage(LevelsetValueType timestep, int* nar
     }
   }
 
-  LevelsetValueType eleT[4];
+  float eleT[4];
   if (tidx < ne)
   {
     for (int i = 0; i < 4; i++)
@@ -169,22 +169,22 @@ __global__ void kernel_updateT_single_stage(LevelsetValueType timestep, int* nar
 
   if (tidx < ne)
   {
-    LevelsetValueType cross[3];
-    LevelsetValueType v31[3] = {vertices[1][0] - vertices[3][0], vertices[1][1] - vertices[3][1], vertices[1][2] - vertices[3][2]};
-    LevelsetValueType v32[3] = {vertices[2][0] - vertices[3][0], vertices[2][1] - vertices[3][1], vertices[2][2] - vertices[3][2]};
-    LevelsetValueType v30[3] = {vertices[0][0] - vertices[3][0], vertices[0][1] - vertices[3][1], vertices[0][2] - vertices[3][2]};
+    float cross[3];
+    float v31[3] = {vertices[1][0] - vertices[3][0], vertices[1][1] - vertices[3][1], vertices[1][2] - vertices[3][2]};
+    float v32[3] = {vertices[2][0] - vertices[3][0], vertices[2][1] - vertices[3][1], vertices[2][2] - vertices[3][2]};
+    float v30[3] = {vertices[0][0] - vertices[3][0], vertices[0][1] - vertices[3][1], vertices[0][2] - vertices[3][2]};
     CROSS_PRODUCT(v31, v32, cross);
-    LevelsetValueType dotproduct = DOT_PRODUCT(cross, v30);
+    float dotproduct = DOT_PRODUCT(cross, v30);
 
     volume = fabs(dotproduct) / 6.0;
 
     //compute inverse of 4 by 4 matrix
-    LevelsetValueType a11 = vertices[0][0], a12 = vertices[0][1], a13 = vertices[0][2], a14 = 1.0;
-    LevelsetValueType a21 = vertices[1][0], a22 = vertices[1][1], a23 = vertices[1][2], a24 = 1.0;
-    LevelsetValueType a31 = vertices[2][0], a32 = vertices[2][1], a33 = vertices[2][2], a34 = 1.0;
-    LevelsetValueType a41 = vertices[3][0], a42 = vertices[3][1], a43 = vertices[3][2], a44 = 1.0;
+    float a11 = vertices[0][0], a12 = vertices[0][1], a13 = vertices[0][2], a14 = 1.0;
+    float a21 = vertices[1][0], a22 = vertices[1][1], a23 = vertices[1][2], a24 = 1.0;
+    float a31 = vertices[2][0], a32 = vertices[2][1], a33 = vertices[2][2], a34 = 1.0;
+    float a41 = vertices[3][0], a42 = vertices[3][1], a43 = vertices[3][2], a44 = 1.0;
 
-    LevelsetValueType det =
+    float det =
       a11 * a22 * a33 * a44 + a11 * a23 * a34 * a42 + a11 * a24 * a32 * a43
       + a12 * a21 * a34 * a43 + a12 * a23 * a31 * a44 + a12 * a24 * a33 * a41
       + a13 * a21 * a32 * a44 + a13 * a22 * a34 * a41 + a13 * a24 * a31 * a42
@@ -194,21 +194,21 @@ __global__ void kernel_updateT_single_stage(LevelsetValueType timestep, int* nar
       - a13 * a21 * a34 * a42 - a13 * a22 * a31 * a44 - a13 * a24 * a32 * a41
       - a14 * a21 * a32 * a43 - a14 * a22 * a33 * a41 - a14 * a23 * a31 * a42;
 
-    LevelsetValueType b11 = a22 * a33 * a44 + a23 * a34 * a42 + a24 * a32 * a43 - a22 * a34 * a43 - a23 * a32 * a44 - a24 * a33 * a42;
-    LevelsetValueType b12 = a12 * a34 * a43 + a13 * a32 * a44 + a14 * a33 * a42 - a12 * a33 * a44 - a13 * a34 * a42 - a14 * a32 * a43;
-    LevelsetValueType b13 = a12 * a23 * a44 + a13 * a24 * a42 + a14 * a22 * a43 - a12 * a24 * a43 - a13 * a22 * a44 - a14 * a23 * a42;
-    LevelsetValueType b14 = a12 * a24 * a33 + a13 * a22 * a34 + a14 * a23 * a32 - a12 * a23 * a34 - a13 * a24 * a32 - a14 * a22 * a33;
+    float b11 = a22 * a33 * a44 + a23 * a34 * a42 + a24 * a32 * a43 - a22 * a34 * a43 - a23 * a32 * a44 - a24 * a33 * a42;
+    float b12 = a12 * a34 * a43 + a13 * a32 * a44 + a14 * a33 * a42 - a12 * a33 * a44 - a13 * a34 * a42 - a14 * a32 * a43;
+    float b13 = a12 * a23 * a44 + a13 * a24 * a42 + a14 * a22 * a43 - a12 * a24 * a43 - a13 * a22 * a44 - a14 * a23 * a42;
+    float b14 = a12 * a24 * a33 + a13 * a22 * a34 + a14 * a23 * a32 - a12 * a23 * a34 - a13 * a24 * a32 - a14 * a22 * a33;
 
-    LevelsetValueType b21 = a21 * a34 * a43 + a23 * a31 * a44 + a24 * a33 * a41 - a21 * a33 * a44 - a23 * a34 * a41 - a24 * a31 * a43;
-    LevelsetValueType b22 = a11 * a33 * a44 + a13 * a34 * a41 + a14 * a31 * a43 - a11 * a34 * a43 - a13 * a31 * a44 - a14 * a33 * a41;
-    LevelsetValueType b23 = a11 * a24 * a43 + a13 * a21 * a44 + a14 * a23 * a41 - a11 * a23 * a44 - a13 * a24 * a41 - a14 * a21 * a43;
-    LevelsetValueType b24 = a11 * a23 * a34 + a13 * a24 * a31 + a14 * a21 * a33 - a11 * a24 * a33 - a13 * a21 * a34 - a14 * a23 * a31;
+    float b21 = a21 * a34 * a43 + a23 * a31 * a44 + a24 * a33 * a41 - a21 * a33 * a44 - a23 * a34 * a41 - a24 * a31 * a43;
+    float b22 = a11 * a33 * a44 + a13 * a34 * a41 + a14 * a31 * a43 - a11 * a34 * a43 - a13 * a31 * a44 - a14 * a33 * a41;
+    float b23 = a11 * a24 * a43 + a13 * a21 * a44 + a14 * a23 * a41 - a11 * a23 * a44 - a13 * a24 * a41 - a14 * a21 * a43;
+    float b24 = a11 * a23 * a34 + a13 * a24 * a31 + a14 * a21 * a33 - a11 * a24 * a33 - a13 * a21 * a34 - a14 * a23 * a31;
 
 
-    LevelsetValueType b31 = a21 * a32 * a44 + a22 * a34 * a41 + a24 * a31 * a42 - a21 * a34 * a42 - a22 * a31 * a44 - a24 * a32 * a41;
-    LevelsetValueType b32 = a11 * a34 * a42 + a12 * a31 * a44 + a14 * a32 * a41 - a11 * a32 * a44 - a12 * a34 * a41 - a14 * a31 * a42;
-    LevelsetValueType b33 = a11 * a22 * a44 + a12 * a24 * a41 + a14 * a21 * a42 - a11 * a24 * a42 - a12 * a21 * a44 - a14 * a22 * a41;
-    LevelsetValueType b34 = a11 * a24 * a32 + a12 * a21 * a34 + a14 * a22 * a31 - a11 * a22 * a34 - a12 * a24 * a31 - a14 * a21 * a32;
+    float b31 = a21 * a32 * a44 + a22 * a34 * a41 + a24 * a31 * a42 - a21 * a34 * a42 - a22 * a31 * a44 - a24 * a32 * a41;
+    float b32 = a11 * a34 * a42 + a12 * a31 * a44 + a14 * a32 * a41 - a11 * a32 * a44 - a12 * a34 * a41 - a14 * a31 * a42;
+    float b33 = a11 * a22 * a44 + a12 * a24 * a41 + a14 * a21 * a42 - a11 * a24 * a42 - a12 * a21 * a44 - a14 * a22 * a41;
+    float b34 = a11 * a24 * a32 + a12 * a21 * a34 + a14 * a22 * a31 - a11 * a22 * a34 - a12 * a24 * a31 - a14 * a21 * a32;
 
     nablaN[0][0] = b11 / det;
     nablaN[0][1] = b21 / det;
@@ -234,18 +234,18 @@ __global__ void kernel_updateT_single_stage(LevelsetValueType timestep, int* nar
     abs_nabla_phi = LENGTH(nablaPhi);
 
     //compute K and Kplus and Kminus
-    LevelsetValueType Kplus[4];
-    LevelsetValueType Kminus[4];
-    LevelsetValueType K[4];
+    float Kplus[4];
+    float Kminus[4];
+    float K[4];
     Hintegral = 0.0;
-    LevelsetValueType beta = 0;
+    float beta = 0;
 #pragma unroll
     for (int i = 0; i < 4; i++)
     {
       K[i] = volume * DOT_PRODUCT(sigma, nablaN[i]); // for H(\nabla u) = sigma DOT \nabla u
       Hintegral += K[i] * eleT[i];
-      Kplus[i] = fmax(K[i], (LevelsetValueType)0.0);
-      Kminus[i] = fmin(K[i], (LevelsetValueType)0.0);
+      Kplus[i] = fmax(K[i], (float)0.0);
+      Kminus[i] = fmin(K[i], (float)0.0);
       beta += Kminus[i];
     }
 
@@ -253,15 +253,15 @@ __global__ void kernel_updateT_single_stage(LevelsetValueType timestep, int* nar
 
     if (fabs(Hintegral) > 1e-8)
     {
-      LevelsetValueType delta[4];
+      float delta[4];
 #pragma unroll
       for (int i = 0; i < 4; i++)
       {
         delta[i] = Kplus[i] * beta * (Kminus[0] * (eleT[i] - eleT[0]) + Kminus[1] *
-          (eleT[i] - eleT[1]) + Kminus[2] * (eleT[i] - eleT[2]) + Kminus[3] * (eleT[i] - eleT[3]));
+            (eleT[i] - eleT[1]) + Kminus[2] * (eleT[i] - eleT[2]) + Kminus[3] * (eleT[i] - eleT[3]));
       }
 
-      LevelsetValueType alpha[4];
+      float alpha[4];
 #pragma unroll
       for (int i = 0; i < 4; i++)
       {
@@ -271,12 +271,12 @@ __global__ void kernel_updateT_single_stage(LevelsetValueType timestep, int* nar
 #pragma unroll
       for (int i = 0; i < 4; i++)
       {
-        theta += fmax((LevelsetValueType)0.0, alpha[i]);
+        theta += fmax((float)0.0, alpha[i]);
       }
 #pragma unroll
       for (int i = 0; i < 4; i++)
       {
-        alphatuda[i] = fmax(alpha[i], (LevelsetValueType)0.0) / theta;
+        alphatuda[i] = fmax(alpha[i], (float)0.0) / theta;
       }
     }
   }
@@ -293,7 +293,7 @@ __global__ void kernel_updateT_single_stage(LevelsetValueType timestep, int* nar
   }
   __syncthreads();
 
-  LevelsetValueType up = 0.0, down = 0.0;
+  float up = 0.0, down = 0.0;
   if (tidx < nv)
   {
 #pragma unroll
@@ -337,7 +337,7 @@ __global__ void kernel_updateT_single_stage(LevelsetValueType timestep, int* nar
   }
   __syncthreads();
 
-  LevelsetValueType sum_nb_volume = 0.0;
+  float sum_nb_volume = 0.0;
   if (tidx < nv)
   {
 #pragma unroll
@@ -360,7 +360,7 @@ __global__ void kernel_updateT_single_stage(LevelsetValueType timestep, int* nar
   }
   __syncthreads();
 
-  LevelsetValueType node_nabla_phi_up[3] = {0.0f, 0.0f, 0.0f};
+  float node_nabla_phi_up[3] = {0.0f, 0.0f, 0.0f};
   if (tidx < nv)
   {
 #pragma unroll
@@ -390,7 +390,7 @@ __global__ void kernel_updateT_single_stage(LevelsetValueType timestep, int* nar
   }
   __syncthreads();
 
-  LevelsetValueType curv_up = 0.0f;
+  float curv_up = 0.0f;
   if (tidx < nv)
   {
 #pragma unroll
@@ -404,8 +404,8 @@ __global__ void kernel_updateT_single_stage(LevelsetValueType timestep, int* nar
     }
     if (fabs(down) > 1e-8)
     {
-      LevelsetValueType eikonal = up / down;
-      LevelsetValueType node_eikonal = LENGTH(node_nabla_phi_up) / sum_nb_volume;
+      float eikonal = up / down;
+      float node_eikonal = LENGTH(node_nabla_phi_up) / sum_nb_volume;
       vertT_out[vert_start + tidx] = oldT - timestep * eikonal;
     }
     else
@@ -426,8 +426,8 @@ __global__ void kernel_compute_vert_ipermute(int nn, int* vert_permute, int* ver
 }
 
 __global__ void kernel_ele_and_vert(int full_num_ele, int ne, int* ele, int* ele_after_permute,
-  int* ele_permute, int nn, LevelsetValueType* vert, LevelsetValueType* vert_after_permute, 
-  LevelsetValueType* vertT, LevelsetValueType* vertT_after_permute, int* vert_permute, int* vert_ipermute)
+    int* ele_permute, int nn, float* vert, float* vert_after_permute,
+    float* vertT, float* vertT_after_permute, int* vert_permute, int* vert_ipermute)
 {
   int bidx = blockIdx.x;
   int tidx = bidx * blockDim.x + threadIdx.x;
@@ -453,9 +453,9 @@ __global__ void kernel_ele_and_vert(int full_num_ele, int ne, int* ele, int* ele
   }
 }
 
-__global__ void kernel_compute_local_coords(int full_num_ele, int nn, int* ele, int* ele_offsets, 
-  LevelsetValueType* vert, LevelsetValueType* ele_local_coords,
-    LevelsetValueType* cadv_global, LevelsetValueType* cadv_local)
+__global__ void kernel_compute_local_coords(int full_num_ele, int nn, int* ele, int* ele_offsets,
+    float* vert, float* ele_local_coords,
+    float* cadv_global, float* cadv_local)
 {
   int tidx = blockIdx.x * blockDim.x + threadIdx.x;
   for (int eidx = tidx; eidx < full_num_ele; eidx += blockDim.x * gridDim.x)
@@ -465,33 +465,33 @@ __global__ void kernel_compute_local_coords(int full_num_ele, int nn, int* ele, 
     int ele2 = ele[2 * full_num_ele + eidx];
     int ele3 = ele[3 * full_num_ele + eidx];
 
-    LevelsetValueType x0 = vert[0 * nn + ele0];
-    LevelsetValueType y0 = vert[1 * nn + ele0];
-    LevelsetValueType z0 = vert[2 * nn + ele0];
+    float x0 = vert[0 * nn + ele0];
+    float y0 = vert[1 * nn + ele0];
+    float z0 = vert[2 * nn + ele0];
 
-    LevelsetValueType x1 = vert[0 * nn + ele1];
-    LevelsetValueType y1 = vert[1 * nn + ele1];
-    LevelsetValueType z1 = vert[2 * nn + ele1];
+    float x1 = vert[0 * nn + ele1];
+    float y1 = vert[1 * nn + ele1];
+    float z1 = vert[2 * nn + ele1];
 
-    LevelsetValueType x2 = vert[0 * nn + ele2];
-    LevelsetValueType y2 = vert[1 * nn + ele2];
-    LevelsetValueType z2 = vert[2 * nn + ele2];
+    float x2 = vert[0 * nn + ele2];
+    float y2 = vert[1 * nn + ele2];
+    float z2 = vert[2 * nn + ele2];
 
-    LevelsetValueType x3 = vert[0 * nn + ele3];
-    LevelsetValueType y3 = vert[1 * nn + ele3];
-    LevelsetValueType z3 = vert[2 * nn + ele3];
+    float x3 = vert[0 * nn + ele3];
+    float y3 = vert[1 * nn + ele3];
+    float z3 = vert[2 * nn + ele3];
 
-    LevelsetValueType AB[3] = {x1 - x0, y1 - y0, z1 - z0};
-    LevelsetValueType AC[3] = {x2 - x0, y2 - y0, z2 - z0};
-    LevelsetValueType AD[3] = {x3 - x0, y3 - y0, z3 - z0};
-    LevelsetValueType lenAB = sqrt(AB[0] * AB[0] + AB[1] * AB[1] + AB[2] * AB[2]);
+    float AB[3] = {x1 - x0, y1 - y0, z1 - z0};
+    float AC[3] = {x2 - x0, y2 - y0, z2 - z0};
+    float AD[3] = {x3 - x0, y3 - y0, z3 - z0};
+    float lenAB = sqrt(AB[0] * AB[0] + AB[1] * AB[1] + AB[2] * AB[2]);
 
-    LevelsetValueType planeN[3];
+    float planeN[3];
     CROSS_PRODUCT(AB, AC, planeN);
-    LevelsetValueType lenN = sqrt(planeN[0] * planeN[0] + planeN[1] * planeN[1] + planeN[2] * planeN[2]);
-    LevelsetValueType Z[3] = {planeN[0] / lenN, planeN[1] / lenN, planeN[2] / lenN};
-    LevelsetValueType X[3] = {AB[0] / lenAB, AB[1] / lenAB, AB[2] / lenAB};
-    LevelsetValueType Y[3];
+    float lenN = sqrt(planeN[0] * planeN[0] + planeN[1] * planeN[1] + planeN[2] * planeN[2]);
+    float Z[3] = {planeN[0] / lenN, planeN[1] / lenN, planeN[2] / lenN};
+    float X[3] = {AB[0] / lenAB, AB[1] / lenAB, AB[2] / lenAB};
+    float Y[3];
     CROSS_PRODUCT(Z, X, Y);
 
     ele_local_coords[0 * full_num_ele + eidx] = lenAB;
@@ -684,7 +684,7 @@ __global__ void findPartIndicesNegStartKernel(int size, int *array, int *partInd
   }
 }
 
-__global__ void kernel_compute_vertT_before_permute(int nn, int* vert_permute, LevelsetValueType* vertT_after_permute, LevelsetValueType* vertT_before_permute)
+__global__ void kernel_compute_vertT_before_permute(int nn, int* vert_permute, float* vertT_after_permute, float* vertT_before_permute)
 {
   int bidx = blockIdx.x;
   int tidx = bidx * blockDim.x + threadIdx.x;

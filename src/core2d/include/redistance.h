@@ -34,7 +34,7 @@ public:
                      IdxVector_d& ele_after_permute_d, IdxVector_d& ele_offsets_d, Vector_d& ele_local_coords_d, IdxVector_d& mem_location_offsets, IdxVector_d& mem_locations,
                      IdxVector_d& part_label_d, IdxVector_d& block_xadj, IdxVector_d& block_adjncy);
 
-  void GenerateData(IdxVector_d& new_narrowband, int& num_new_narrowband, LevelsetValueType bandwidth, int stepcount, TriMesh* mesh, Vector_d& vertT_after_permute_d, int nparts, int largest_vert_part, int largest_ele_part, int largest_num_inside_mem, int full_num_ele,
+  void GenerateData(IdxVector_d& new_narrowband, int& num_new_narrowband, double bandwidth, int stepcount, TriMesh* mesh, Vector_d& vertT_after_permute_d, int nparts, int largest_vert_part, int largest_ele_part, int largest_num_inside_mem, int full_num_ele,
                     Vector_d& vert_after_permute_d, IdxVector_d& vert_offsets_d,
                     IdxVector_d& ele_after_permute_d, IdxVector_d& ele_offsets_d, Vector_d& ele_local_coords_d, IdxVector_d& mem_location_offsets, IdxVector_d& mem_locations,
                     IdxVector_d& part_label_d, IdxVector_d& block_xadj, IdxVector_d& block_adjncy, bool verbose = false);
@@ -73,7 +73,7 @@ public:
   vector<index> m_SeedPoints;
   vector<LabelType> m_Label;
   IdxVector_d m_Label_d;
-  LevelsetValueType m_StopDistance;
+  double m_StopDistance;
   IdxVector_d m_active_block_list_d;
   Vector_d m_DT_d;
   CharVector_d m_Tsign_d;

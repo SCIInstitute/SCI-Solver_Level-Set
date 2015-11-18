@@ -9,7 +9,7 @@
 #include <tetgen.h>
 #include <cuda_runtime.h>
 #include <time.h>
-#include <mycutil.h>
+#include <cutil.h>
 #include <cstring>
 #include <limits>
 
@@ -41,7 +41,7 @@ namespace LevelSet3d {
       int insideIterations_;
       int blockSize_;
       int sideLengths_;
-      LevelsetValueType bandwidth_;
+      float bandwidth_;
       int metisSize_;
       bool userSetInitial_;
       bool userSetAdvection_;
@@ -50,9 +50,9 @@ namespace LevelSet3d {
   //The static pointer to the mesh
   static TetMesh * mesh_ = NULL;
   //the answer vector
-  static std::vector < std::vector <LevelsetValueType> > time_values_;
+  static std::vector < std::vector <float> > time_values_;
   //accessor functions to the results.
-  std::vector < LevelsetValueType >& getResultAtIteration(size_t i) {
+  std::vector < float >& getResultAtIteration(size_t i) {
     return time_values_.at(i);
   }
   size_t numIterations() { return time_values_.size(); }
@@ -201,7 +201,7 @@ namespace LevelSet3d {
     rmsError.resize(numIterations());
     for (size_t i = 0; i < numIterations(); i++) {
       float sum = 0.f;
-      std::vector<LevelsetValueType> result = getResultAtIteration(i);
+      std::vector<float> result = getResultAtIteration(i);
       for (size_t j = 0; j < solution.size(); j++) {
         float err = std::abs(solution[j] - result[j]);
         sum +=  err * err;

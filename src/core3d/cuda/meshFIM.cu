@@ -6,7 +6,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <meshFIM_kernels.h>
-#include <mycutil.h>
+#include <cutil.h>
 #include <cusp/detail/format_utils.h>
 #include <cusp/print.h>
 #include <thrust/functional.h>
@@ -45,7 +45,7 @@ void meshFIM::writeFLD()
   fclose(fldfile);
 }
 
-void meshFIM::writeVTK(std::vector < std::vector <LevelsetValueType> > values)
+void meshFIM::writeVTK(std::vector < std::vector <float> > values)
 {
   int nv = m_meshPtr->vertices.size();
   int nt = m_meshPtr->tets.size();
@@ -80,13 +80,13 @@ void meshFIM::writeVTK(std::vector < std::vector <LevelsetValueType> > values)
   }
 }
 
-void meshFIM::updateT_single_stage_d(LevelsetValueType timestep, int niter, IdxVector_d& narrowband, int num_narrowband)
+void meshFIM::updateT_single_stage_d(float timestep, int niter, IdxVector_d& narrowband, int num_narrowband)
 {
   int nn = m_meshPtr->vertices.size();
   int nblocks = num_narrowband;
   int nthreads = largest_ele_part;
   thrust::fill(vertT_out.begin(), vertT_out.end(), 0.0);
-  int shared_size = sizeof(LevelsetValueType)* 4 * largest_ele_part + sizeof(short)*largest_vert_part*m_largest_num_inside_mem;
+  int shared_size = sizeof(float)* 4 * largest_ele_part + sizeof(short)*largest_vert_part*m_largest_num_inside_mem;
   cudaSafeCall((kernel_updateT_single_stage << <nblocks, nthreads, shared_size >> >(timestep, CAST(narrowband), largest_ele_part, largest_vert_part, full_num_ele,
           CAST(m_ele_after_permute_d), CAST(m_ele_offsets_d), CAST(m_cadv_local_d),
           nn, CAST(m_vert_offsets_d), CAST(m_vert_after_permute_d), CAST(m_vertT_after_permute_d),
@@ -100,18 +100,18 @@ void meshFIM::updateT_single_stage_d(LevelsetValueType timestep, int niter, IdxV
 
 //Single stage update
 
-void meshFIM::updateT_single_stage(LevelsetValueType timestep, int nside, int niter, vector<int>& narrowband)
+void meshFIM::updateT_single_stage(float timestep, int nside, int niter, vector<int>& narrowband)
 {
   vec3 sigma(1.0, 0.0, 1.0);
-  LevelsetValueType epsilon = 1.0;
+  float epsilon = 1.0;
   int nv = m_meshPtr->vertices.size();
   int nt = m_meshPtr->tets.size();
-  vector<LevelsetValueType> values(4);
-  vector<LevelsetValueType> up(nv, 0.0);
-  vector<LevelsetValueType> down(nv, 0.0);
+  vector<float> values(4);
+  vector<float> up(nv, 0.0);
+  vector<float> down(nv, 0.0);
   vector<vec3> node_grad_phi_up(nv, vec3(0.0, 0.0, 0.0));
-  vector<LevelsetValueType> node_grad_phi_down(nv, 0.0);
-  vector<LevelsetValueType> curv_up(nv, 0.0);
+  vector<float> node_grad_phi_down(nv, 0.0);
+  vector<float> curv_up(nv, 0.0);
 
 
   for(int bandidx = 0; bandidx < narrowband.size(); bandidx++)
@@ -131,16 +131,16 @@ void meshFIM::updateT_single_stage(LevelsetValueType timestep, int nside, int ni
     vec3 v32 = nodes[2] - nodes[3];
     vec3 v30 = nodes[0] - nodes[3];
     vec3 crossproduct = v31 CROSS v32;
-    LevelsetValueType dotproduct = crossproduct DOT v30;
-    LevelsetValueType volume = fabs(dotproduct) / 6.0;
+    float dotproduct = crossproduct DOT v30;
+    float volume = fabs(dotproduct) / 6.0;
 
     //compute inverse of 4 by 4 matrix
-    LevelsetValueType a11 = nodes[0][0], a12 = nodes[0][1], a13 = nodes[0][2], a14 = 1.0;
-    LevelsetValueType a21 = nodes[1][0], a22 = nodes[1][1], a23 = nodes[1][2], a24 = 1.0;
-    LevelsetValueType a31 = nodes[2][0], a32 = nodes[2][1], a33 = nodes[2][2], a34 = 1.0;
-    LevelsetValueType a41 = nodes[3][0], a42 = nodes[3][1], a43 = nodes[3][2], a44 = 1.0;
+    float a11 = nodes[0][0], a12 = nodes[0][1], a13 = nodes[0][2], a14 = 1.0;
+    float a21 = nodes[1][0], a22 = nodes[1][1], a23 = nodes[1][2], a24 = 1.0;
+    float a31 = nodes[2][0], a32 = nodes[2][1], a33 = nodes[2][2], a34 = 1.0;
+    float a41 = nodes[3][0], a42 = nodes[3][1], a43 = nodes[3][2], a44 = 1.0;
 
-    LevelsetValueType det =
+    float det =
       a11 * a22 * a33 * a44 + a11 * a23 * a34 * a42 + a11 * a24 * a32 * a43
       + a12 * a21 * a34 * a43 + a12 * a23 * a31 * a44 + a12 * a24 * a33 * a41
       + a13 * a21 * a32 * a44 + a13 * a22 * a34 * a41 + a13 * a24 * a31 * a42
@@ -150,26 +150,26 @@ void meshFIM::updateT_single_stage(LevelsetValueType timestep, int nside, int ni
       - a13 * a21 * a34 * a42 - a13 * a22 * a31 * a44 - a13 * a24 * a32 * a41
       - a14 * a21 * a32 * a43 - a14 * a22 * a33 * a41 - a14 * a23 * a31 * a42;
 
-    LevelsetValueType b11 = a22 * a33 * a44 + a23 * a34 * a42 + a24 * a32 * a43 - a22 * a34 * a43 - a23 * a32 * a44 - a24 * a33 * a42;
-    LevelsetValueType b12 = a12 * a34 * a43 + a13 * a32 * a44 + a14 * a33 * a42 - a12 * a33 * a44 - a13 * a34 * a42 - a14 * a32 * a43;
-    LevelsetValueType b13 = a12 * a23 * a44 + a13 * a24 * a42 + a14 * a22 * a43 - a12 * a24 * a43 - a13 * a22 * a44 - a14 * a23 * a42;
-    LevelsetValueType b14 = a12 * a24 * a33 + a13 * a22 * a34 + a14 * a23 * a32 - a12 * a23 * a34 - a13 * a24 * a32 - a14 * a22 * a33;
+    float b11 = a22 * a33 * a44 + a23 * a34 * a42 + a24 * a32 * a43 - a22 * a34 * a43 - a23 * a32 * a44 - a24 * a33 * a42;
+    float b12 = a12 * a34 * a43 + a13 * a32 * a44 + a14 * a33 * a42 - a12 * a33 * a44 - a13 * a34 * a42 - a14 * a32 * a43;
+    float b13 = a12 * a23 * a44 + a13 * a24 * a42 + a14 * a22 * a43 - a12 * a24 * a43 - a13 * a22 * a44 - a14 * a23 * a42;
+    float b14 = a12 * a24 * a33 + a13 * a22 * a34 + a14 * a23 * a32 - a12 * a23 * a34 - a13 * a24 * a32 - a14 * a22 * a33;
 
-    LevelsetValueType b21 = a21 * a34 * a43 + a23 * a31 * a44 + a24 * a33 * a41 - a21 * a33 * a44 - a23 * a34 * a41 - a24 * a31 * a43;
-    LevelsetValueType b22 = a11 * a33 * a44 + a13 * a34 * a41 + a14 * a31 * a43 - a11 * a34 * a43 - a13 * a31 * a44 - a14 * a33 * a41;
-    LevelsetValueType b23 = a11 * a24 * a43 + a13 * a21 * a44 + a14 * a23 * a41 - a11 * a23 * a44 - a13 * a24 * a41 - a14 * a21 * a43;
-    LevelsetValueType b24 = a11 * a23 * a34 + a13 * a24 * a31 + a14 * a21 * a33 - a11 * a24 * a33 - a13 * a21 * a34 - a14 * a23 * a31;
+    float b21 = a21 * a34 * a43 + a23 * a31 * a44 + a24 * a33 * a41 - a21 * a33 * a44 - a23 * a34 * a41 - a24 * a31 * a43;
+    float b22 = a11 * a33 * a44 + a13 * a34 * a41 + a14 * a31 * a43 - a11 * a34 * a43 - a13 * a31 * a44 - a14 * a33 * a41;
+    float b23 = a11 * a24 * a43 + a13 * a21 * a44 + a14 * a23 * a41 - a11 * a23 * a44 - a13 * a24 * a41 - a14 * a21 * a43;
+    float b24 = a11 * a23 * a34 + a13 * a24 * a31 + a14 * a21 * a33 - a11 * a24 * a33 - a13 * a21 * a34 - a14 * a23 * a31;
 
 
-    LevelsetValueType b31 = a21 * a32 * a44 + a22 * a34 * a41 + a24 * a31 * a42 - a21 * a34 * a42 - a22 * a31 * a44 - a24 * a32 * a41;
-    LevelsetValueType b32 = a11 * a34 * a42 + a12 * a31 * a44 + a14 * a32 * a41 - a11 * a32 * a44 - a12 * a34 * a41 - a14 * a31 * a42;
-    LevelsetValueType b33 = a11 * a22 * a44 + a12 * a24 * a41 + a14 * a21 * a42 - a11 * a24 * a42 - a12 * a21 * a44 - a14 * a22 * a41;
-    LevelsetValueType b34 = a11 * a24 * a32 + a12 * a21 * a34 + a14 * a22 * a31 - a11 * a22 * a34 - a12 * a24 * a31 - a14 * a21 * a32;
+    float b31 = a21 * a32 * a44 + a22 * a34 * a41 + a24 * a31 * a42 - a21 * a34 * a42 - a22 * a31 * a44 - a24 * a32 * a41;
+    float b32 = a11 * a34 * a42 + a12 * a31 * a44 + a14 * a32 * a41 - a11 * a32 * a44 - a12 * a34 * a41 - a14 * a31 * a42;
+    float b33 = a11 * a22 * a44 + a12 * a24 * a41 + a14 * a21 * a42 - a11 * a24 * a42 - a12 * a21 * a44 - a14 * a22 * a41;
+    float b34 = a11 * a24 * a32 + a12 * a21 * a34 + a14 * a22 * a31 - a11 * a22 * a34 - a12 * a24 * a31 - a14 * a21 * a32;
 
-    LevelsetValueType b41 = a21 * a33 * a42 + a22 * a31 * a43 + a23 * a32 * a41 - a21 * a32 * a43 - a22 * a33 * a41 - a23 * a31 * a42;
-    LevelsetValueType b42 = a11 * a32 * a43 + a12 * a33 * a41 + a13 * a31 * a42 - a11 * a33 * a42 - a12 * a31 * a43 - a13 * a32 * a41;
-    LevelsetValueType b43 = a11 * a23 * a42 + a12 * a21 * a43 + a13 * a22 * a41 - a11 * a22 * a43 - a12 * a23 * a41 - a13 * a21 * a42;
-    LevelsetValueType b44 = a11 * a22 * a33 + a12 * a23 * a31 + a13 * a21 * a32 - a11 * a23 * a32 - a12 * a21 * a33 - a13 * a22 * a31;
+    float b41 = a21 * a33 * a42 + a22 * a31 * a43 + a23 * a32 * a41 - a21 * a32 * a43 - a22 * a33 * a41 - a23 * a31 * a42;
+    float b42 = a11 * a32 * a43 + a12 * a33 * a41 + a13 * a31 * a42 - a11 * a33 * a42 - a12 * a31 * a43 - a13 * a32 * a41;
+    float b43 = a11 * a23 * a42 + a12 * a21 * a43 + a13 * a22 * a41 - a11 * a22 * a43 - a12 * a23 * a41 - a13 * a21 * a42;
+    float b44 = a11 * a22 * a33 + a12 * a23 * a31 + a13 * a21 * a32 - a11 * a23 * a32 - a12 * a21 * a33 - a13 * a22 * a31;
 
     vector<vec4> Arows(4);
     Arows[0] = vec4(b11 / det, b12 / det, b13 / det, b14 / det);
@@ -195,49 +195,49 @@ void meshFIM::updateT_single_stage(LevelsetValueType timestep, int nside, int ni
       nablaPhi[1] += nablaN[i][1] * values[i];
       nablaPhi[2] += nablaN[i][2] * values[i];
     }
-    LevelsetValueType abs_nabla_phi = len(nablaPhi);
+    float abs_nabla_phi = len(nablaPhi);
 
     //compute K and Kplus and Kminus
-    vector<LevelsetValueType> Kplus(4);
-    vector<LevelsetValueType> Kminus(4);
-    vector<LevelsetValueType> K(4);
-    LevelsetValueType Hintegral = 0.0;
-    LevelsetValueType beta = 0;
+    vector<float> Kplus(4);
+    vector<float> Kminus(4);
+    vector<float> K(4);
+    float Hintegral = 0.0;
+    float beta = 0;
     for(int i = 0; i < 4; i++)
     {
       K[i] = volume * (sigma DOT nablaN[i]); // for H(\nabla u) = sigma DOT \nabla u
       Hintegral += K[i] * values[i];
-      Kplus[i] = fmax(K[i], (LevelsetValueType)0.0);
-      Kminus[i] = fmin(K[i], (LevelsetValueType)0.0);
+      Kplus[i] = fmax(K[i], (float)0.0);
+      Kminus[i] = fmin(K[i], (float)0.0);
       beta += Kminus[i];
     }
     beta = 1.0 / beta;
 
     if(fabs(Hintegral) > 1e-16)
     {
-      vector<LevelsetValueType> delta(4);
+      vector<float> delta(4);
       for(int i = 0; i < 4; i++)
       {
         delta[i] = Kplus[i] * beta * (Kminus[0] * (values[i] - values[0]) + Kminus[1] * 
           (values[i] - values[1]) + Kminus[2] * (values[i] - values[2]) + Kminus[3] * (values[i] - values[3]));
       }
 
-      vector<LevelsetValueType> alpha(4);
+      vector<float> alpha(4);
       for(int i = 0; i < 4; i++)
       {
         alpha[i] = delta[i] / Hintegral;
       }
 
-      LevelsetValueType theta = 0;
+      float theta = 0;
       for(int i = 0; i < 4; i++)
       {
-        theta += fmax((LevelsetValueType)0.0, alpha[i]);
+        theta += fmax((float)0.0, alpha[i]);
       }
 
-      vector<LevelsetValueType> alphatuda(4);
+      vector<float> alphatuda(4);
       for(int i = 0; i < 4; i++)
       {
-        alphatuda[i] = fmax(alpha[i], (LevelsetValueType)0.0) / theta;
+        alphatuda[i] = fmax(alpha[i], (float)0.0) / theta;
       }
 
       for(int i = 0; i < 4; i++)
@@ -256,9 +256,9 @@ void meshFIM::updateT_single_stage(LevelsetValueType timestep, int nside, int ni
 
   for(int vidx = 0; vidx < nv; vidx++)
   {
-    LevelsetValueType eikonal = up[vidx] / down[vidx];
-    LevelsetValueType curvature = curv_up[vidx] / node_grad_phi_down[vidx];
-    LevelsetValueType node_eikonal = len(node_grad_phi_up[vidx]) / node_grad_phi_down[vidx];
+    float eikonal = up[vidx] / down[vidx];
+    float curvature = curv_up[vidx] / node_grad_phi_down[vidx];
+    float node_eikonal = len(node_grad_phi_up[vidx]) / node_grad_phi_down[vidx];
     if(fabs(down[vidx]) > 1e-16)
     {
       m_meshPtr->vertT[vidx] -= epsilon * node_eikonal * curvature * timestep;
@@ -270,9 +270,9 @@ void meshFIM::GraphPartition_Square(int squareLength, int squareWidth, int squar
     int blockLength, int blockWidth, int blockHeight, bool verbose)
 {
   int nn = m_meshPtr->vertices.size();
-  int numBlockLength = ceil((LevelsetValueType)squareLength / blockLength);
-  int numBlockWidth = ceil((LevelsetValueType)squareWidth / blockWidth);
-  int numBlockHeight = ceil((LevelsetValueType)squareHeight / blockHeight);
+  int numBlockLength = ceil((float)squareLength / blockLength);
+  int numBlockWidth = ceil((float)squareWidth / blockWidth);
+  int numBlockHeight = ceil((float)squareHeight / blockHeight);
   int numBlock = numBlockLength * numBlockWidth*numBlockHeight;
   npart_h = IdxVector_h(nn);
   nparts = numBlock;
@@ -358,7 +358,7 @@ void meshFIM::Partition_METIS(int metissize, bool verbose)
   int edgecut;
   int nn = m_meshPtr->vertices.size();
   npart_h = IdxVector_h(nn);
-  nparts = ceil((LevelsetValueType)nn / (LevelsetValueType)metissize);
+  nparts = ceil((float)nn / (float)metissize);
 
   // Counting up edges for adjacency:
   int edgeCount = 0;
@@ -444,7 +444,7 @@ void meshFIM::InitPatches(bool verbose)
   m_npart_d = IdxVector_d(npart_h.begin(), npart_h.end());
   m_part_label_d = IdxVector_d(m_npart_d.begin(), m_npart_d.end());
   int nthreads = 256;
-  int nblocks = min((int)ceil((LevelsetValueType)ne / nthreads), 65535);
+  int nblocks = min((int)ceil((float)ne / nthreads), 65535);
   cudaSafeCall((kernel_compute_ele_npart << <nblocks, nthreads >> >(ne,
           thrust::raw_pointer_cast(&m_npart_d[0]), thrust::raw_pointer_cast(&ele_d[0]),
           thrust::raw_pointer_cast(&ele_label_d[0]))));
@@ -499,10 +499,10 @@ void meshFIM::InitPatches2()
   IdxVector_d vert_permute(nn, 0);
   IdxVector_d vert_ipermute(nn, 0);
   int nthreads = 256;
-  int nblocks = min((int)ceil((LevelsetValueType)nn / nthreads), 65535);
+  int nblocks = min((int)ceil((float)nn / nthreads), 65535);
   cudaSafeCall((kernel_fill_sequence << <nblocks, nthreads >> >(nn, CAST(vert_permute))));
   thrust::sort_by_key(m_part_label_d.begin(), m_part_label_d.end(), vert_permute.begin());
-  nblocks = min((int)ceil((LevelsetValueType)nn / nthreads), 65535);
+  nblocks = min((int)ceil((float)nn / nthreads), 65535);
   cudaSafeCall((kernel_compute_vert_ipermute << <nblocks, nthreads >> >(nn,
           thrust::raw_pointer_cast(&vert_permute[0]), thrust::raw_pointer_cast(&vert_ipermute[0]))));
 
@@ -513,7 +513,7 @@ void meshFIM::InitPatches2()
   //permute the vert and ele values
   m_ele_after_permute_d = IdxVector_d(4 * full_num_ele);
   m_vertT_after_permute_d = Vector_d(nn);
-  nblocks = min((int)ceil((LevelsetValueType)full_num_ele / nthreads), 65535);
+  nblocks = min((int)ceil((float)full_num_ele / nthreads), 65535);
   cudaSafeCall((kernel_ele_and_vert << <nblocks, nthreads >> >(full_num_ele, ne,
           thrust::raw_pointer_cast(&ele_d[0]), thrust::raw_pointer_cast(&m_ele_after_permute_d[0]),
           thrust::raw_pointer_cast(&ele_permute[0]),
@@ -526,7 +526,7 @@ void meshFIM::InitPatches2()
   m_ele_local_coords_d = Vector_d(6 * full_num_ele);
   m_cadv_local_d = Vector_d(3 * full_num_ele);
   nthreads = 256;
-  nblocks = min((int)ceil((LevelsetValueType)full_num_ele / nthreads), 65535);
+  nblocks = min((int)ceil((float)full_num_ele / nthreads), 65535);
   cudaSafeCall((kernel_compute_local_coords << <nblocks, nthreads >> >(full_num_ele, nn,
           thrust::raw_pointer_cast(&m_ele_after_permute_d[0]), thrust::raw_pointer_cast(&m_ele_offsets_d[0]),
           thrust::raw_pointer_cast(&m_vert_after_permute_d[0]),
@@ -569,9 +569,9 @@ void meshFIM::GenerateBlockNeighbors()
   thrust::copy(blockMappedAdjacency.begin() + 1, blockMappedAdjacency.end(), m_block_adjncy_d.begin());
 }
 
-std::vector <std::vector <LevelsetValueType> > meshFIM::GenerateData(
-    char* filename, int nsteps, LevelsetValueType timestep, int inside_niter,
-    int nside, int block_size, LevelsetValueType bandwidth, int part_type,
+std::vector <std::vector <float> > meshFIM::GenerateData(
+    char* filename, int nsteps, float timestep, int inside_niter,
+    int nside, int block_size, float bandwidth, int part_type,
     int metis_size, bool verbose)
 {
   if (verbose)
@@ -585,9 +585,9 @@ std::vector <std::vector <LevelsetValueType> > meshFIM::GenerateData(
   int squareBlockLength = block_size;
   int squareBlockWidth = block_size;
   int squareBlockDepth = block_size;
-  //  LevelsetValueType starttime, endtime, duration;
+  //  float starttime, endtime, duration;
   clock_t starttime, endtime, starttime1, endtime1;
-  LevelsetValueType duration, duration1 = 0.0, duration2 = 0.0;
+  float duration, duration1 = 0.0, duration2 = 0.0;
 
   if(part_type == 1)
     GraphPartition_Square(squareLength, squareWidth, squareDepth,
@@ -621,7 +621,7 @@ std::vector <std::vector <LevelsetValueType> > meshFIM::GenerateData(
   if (verbose)
     printf("After  preprocessing\n");
   endtime = clock();
-  duration = (LevelsetValueType)(endtime - starttime) / CLOCKS_PER_SEC;
+  duration = (float)(endtime - starttime) / CLOCKS_PER_SEC;
   if (verbose)
     printf("pre processing time : %.10lf s\n", duration);
 
@@ -632,7 +632,7 @@ std::vector <std::vector <LevelsetValueType> > meshFIM::GenerateData(
   IdxVector_d narrowband_d(nparts);
   int num_narrowband = 0;
 
-  std::vector <std::vector <LevelsetValueType> >  ans;
+  std::vector <std::vector <float> >  ans;
   ans.push_back(m_meshPtr->vertT);
 
   starttime = clock();
@@ -666,7 +666,7 @@ std::vector <std::vector <LevelsetValueType> > meshFIM::GenerateData(
     duration2 += endtime1 - starttime1;
     ///////////////////done updating/////////////////////////////////////////////////
     int nthreads = 256;
-    int nblocks = min((int)ceil((LevelsetValueType)nv / nthreads), 655535);
+    int nblocks = min((int)ceil((float)nv / nthreads), 655535);
     cudaSafeCall((kernel_compute_vertT_before_permute << <nblocks, nthreads >> >(nv, CAST(m_vert_permute_d), CAST(m_vertT_after_permute_d), CAST(tmp_vertT_before_permute_d))));
     Vector_h vertT_before_permute_h = tmp_vertT_before_permute_d;
     for(int i = 0; i < nv; i++)
@@ -679,9 +679,9 @@ std::vector <std::vector <LevelsetValueType> > meshFIM::GenerateData(
   cudaThreadSynchronize();
   endtime = clock();
   if (verbose)
-    printf("redistance time : %.10lf s\n", (LevelsetValueType)duration1 / CLOCKS_PER_SEC);
+    printf("redistance time : %.10lf s\n", (float)duration1 / CLOCKS_PER_SEC);
   if (verbose)
-    printf("levelset update time : %.10lf s\n", (LevelsetValueType)duration2 / CLOCKS_PER_SEC);
+    printf("levelset update time : %.10lf s\n", (float)duration2 / CLOCKS_PER_SEC);
   duration = (double)(endtime - starttime) / (double)CLOCKS_PER_SEC;
   if (verbose)
     printf("Processing time : %.10lf s\n", duration);

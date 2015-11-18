@@ -15,19 +15,38 @@ set(EXTERNAL_DIR "${CMAKE_BINARY_DIR}/externals")
 include(ExternalProject)
 # Eikonal EXTERNAL
 set(EIKONAL_INSTALL_DIR "${EXTERNAL_DIR}/eikonal")
-ExternalProject_Add( eikonal
+file( WRITE ${CMAKE_BINARY_DIR}/generated/CMakeLists.txt
+  "cmake_minimum_required( VERSION 2.8 )\n"
+  "add_subdirectory( src )\n"
+  )
+ExternalProject_Add(eikonal
   PREFIX "${EIKONAL_INSTALL_DIR}"
   GIT_REPOSITORY "https://github.com/SCIInstitute/SCI-Solver_Eikonal.git"
+  CMAKE_ARGS -DBUILD_TESTING:bool=off -DBUILD_EXAMPLES:bool=off
+  UPDATE_COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/generated/CMakeLists.txt ${EIKONAL_INSTALL_DIR}/src/eikonal
   INSTALL_DIR "${EIKONAL_INSTALL_DIR}/include"
   BINARY_DIR "${EIKONAL_INSTALL_DIR}/lib"
   INSTALL_COMMAND ""
   )
-ExternalProject_Add_Step( eikonal copy_deps
-  COMMAND ${CMAKE_COMMAND} -E copy_directory ${EIKONAL_INSTALL_DIR}/src/eikonal/include ${EIKONAL_INSTALL_DIR}/include
-  DEPENDEES install
-)
-include_directories("${EIKONAL_INSTALL_DIR}/include")
-FILE(GLOB EIKONAL_LIBRARIES ${EIKONAL_INSTALL_DIR}/lib/*)
+include_directories("${EIKONAL_INSTALL_DIR}/src/eikonal/src/core3d/include")
+include_directories("${EIKONAL_INSTALL_DIR}/src/eikonal/src/core2d/include")
+include_directories("${EIKONAL_INSTALL_DIR}/lib/externals/metis/include")
+FILE(GLOB EIKONAL_LIBRARIES ${EIKONAL_INSTALL_DIR}/lib/src/core2d/${CMAKE_STATIC_LIBRARY_PREFIX}Eikonal-2D_CORE${CMAKE_STATIC_LIBRARY_SUFFIX}
+  ${EIKONAL_INSTALL_DIR}/lib/src/core3d/${CMAKE_STATIC_LIBRARY_PREFIX}Eikonal-3D_CORE${CMAKE_STATIC_LIBRARY_SUFFIX}
+  ${EIKONAL_INSTALL_DIR}/lib/externals/metis/lib/${CMAKE_STATIC_LIBRARY_PREFIX}metis${CMAKE_STATIC_LIBRARY_SUFFIX})
+message(STATUS "eikonal libs: ${EIKONAL_LIBRARIES}")
+# cusp
+set(CUSP_INSTALL_DIR "${EXTERNAL_DIR}/cusp")
+ExternalProject_Add( cusp
+  PREFIX "${CUSP_INSTALL_DIR}"
+  GIT_REPOSITORY "https://github.com/cibc-internal/cusp.git"
+  INSTALL_DIR "${CUSP_INSTALL_DIR}/include"
+  BINARY_DIR "${CUSP_INSTALL_DIR}/lib"
+  INSTALL_COMMAND ""
+  BUILD_COMMAND ""
+  CONFIGURE_COMMAND ""
+  )
+include_directories("${CUSP_INSTALL_DIR}/src")
 
 ###################
 #CMAKE SETTING CUDA_NVCC_FLAGS

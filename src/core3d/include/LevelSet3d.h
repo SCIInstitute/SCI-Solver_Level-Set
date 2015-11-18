@@ -25,7 +25,7 @@ public:
     timeStep_(1.),
     insideIterations_(1),
     blockSize_(16),
-    sideLengths_(1),
+    sideLengths_(16),
     bandwidth_(16.),
     metisSize_(16),
     userSetInitial_(false),

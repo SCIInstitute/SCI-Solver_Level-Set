@@ -2,10 +2,9 @@
 
 int main(int argc, char *argv[])
 {
-  LevelSet data(false);
+  LevelSet data(false,"../src/test/test_data/sphere334",false);
   bool fromCenter = false;
   //input filename (minus extension)
-  std::string filename;
   for (int i = 0; i < argc; i++) {
     if (strcmp(argv[i],"-v") == 0) {
       data.verbose_ = true;

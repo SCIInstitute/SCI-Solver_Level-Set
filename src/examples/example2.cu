@@ -2,7 +2,7 @@
 
 int main(int argc, char *argv[])
 {
-  LevelSet2d::LevelSet2d data;
+  LevelSet2d data;
   //input filename (minus extension)
   std::string filename;
   for (int i = 0; i < argc; i++) {
@@ -70,8 +70,8 @@ int main(int argc, char *argv[])
       exit(0);
     }
   }
-  LevelSet2d::solveLevelSet(data);
-  LevelSet2d::writeVTK();
+  data.solveLevelSet();
+  data.writeVTK();
   return 0;
 }
 

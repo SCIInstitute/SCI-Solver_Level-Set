@@ -121,7 +121,7 @@ __global__ void run_reduction3d(int *con, int *blockCon, int* ActiveList, int* v
   }
 }
 
-__device__ float localSolverTet1(float TA, float TB, float TC, float ACAC, float ACBC, float ACCD, float BCBC, float BCCD, float CDCD)
+__device__ float localSolverTet1Levelset(float TA, float TB, float TC, float ACAC, float ACBC, float ACCD, float BCBC, float BCCD, float CDCD)
 {
   if (TA >= LARGENUM && TB >= LARGENUM && TC >= LARGENUM)
     return LARGENUM;
@@ -408,10 +408,10 @@ __global__ void kernel_update_values(int* active_block_list, int* seed_label, in
       TC = s_eleT[tidx * 4 + 2];
       TD = s_eleT[tidx * 4 + 3];
 
-      s_eleT[tidx * 4 + 3] = fmin(TD, localSolverTet1(TA, TB, TC, ACAC, ACBC, ACCD, BCBC, BCCD, CDCD));
-      s_eleT[tidx * 4 + 0] = fmin(TA, localSolverTet1(TB, TD, TC, BCBC, -BCCD, -ACBC, CDCD, ACCD, ACAC));
-      s_eleT[tidx * 4 + 1] = fmin(TB, localSolverTet1(TA, TD, TC, ACAC, -ACCD, -ACBC, CDCD, BCCD, BCBC));
-      s_eleT[tidx * 4 + 2] = fmin(TC, localSolverTet1(TA, TB, TD, ADAD, ADBD, -ADCD, BDBD, -CDBD, CDCD));
+      s_eleT[tidx * 4 + 3] = fmin(TD, localSolverTet1Levelset(TA, TB, TC, ACAC, ACBC, ACCD, BCBC, BCCD, CDCD));
+      s_eleT[tidx * 4 + 0] = fmin(TA, localSolverTet1Levelset(TB, TD, TC, BCBC, -BCCD, -ACBC, CDCD, ACCD, ACAC));
+      s_eleT[tidx * 4 + 1] = fmin(TB, localSolverTet1Levelset(TA, TD, TC, ACAC, -ACCD, -ACBC, CDCD, BCCD, BCBC));
+      s_eleT[tidx * 4 + 2] = fmin(TC, localSolverTet1Levelset(TA, TB, TD, ADAD, ADBD, -ADCD, BDBD, -CDBD, CDCD));
       __syncthreads();
 
 
@@ -576,10 +576,10 @@ __global__ void kernel_run_check_neghbor(int* active_block_list, int* seed_label
       TC = s_eleT[tidx * 4 + 2];
       TD = s_eleT[tidx * 4 + 3];
 
-      s_eleT[tidx * 4 + 3] = fmin(TD, localSolverTet1(TA, TB, TC, ACAC, ACBC, ACCD, BCBC, BCCD, CDCD));
-      s_eleT[tidx * 4 + 0] = fmin(TA, localSolverTet1(TB, TD, TC, BCBC, -BCCD, -ACBC, CDCD, ACCD, ACAC));
-      s_eleT[tidx * 4 + 1] = fmin(TB, localSolverTet1(TA, TD, TC, ACAC, -ACCD, -ACBC, CDCD, BCCD, BCBC));
-      s_eleT[tidx * 4 + 2] = fmin(TC, localSolverTet1(TA, TB, TD, ADAD, ADBD, -ADCD, BDBD, -CDBD, CDCD));
+      s_eleT[tidx * 4 + 3] = fmin(TD, localSolverTet1Levelset(TA, TB, TC, ACAC, ACBC, ACCD, BCBC, BCCD, CDCD));
+      s_eleT[tidx * 4 + 0] = fmin(TA, localSolverTet1Levelset(TB, TD, TC, BCBC, -BCCD, -ACBC, CDCD, ACCD, ACAC));
+      s_eleT[tidx * 4 + 1] = fmin(TB, localSolverTet1Levelset(TA, TD, TC, ACAC, -ACCD, -ACBC, CDCD, BCCD, BCBC));
+      s_eleT[tidx * 4 + 2] = fmin(TC, localSolverTet1Levelset(TA, TB, TD, ADAD, ADBD, -ADCD, BDBD, -CDBD, CDCD));
       __syncthreads();
 
 

@@ -60,16 +60,19 @@ void meshFIM2d::writeVTK(std::vector< std::vector <float> > time_values)
     std::stringstream ss;
     ss << "result" << j << ".vtk";
     vtkfile = fopen(ss.str().c_str(), "w+");
-    fprintf(vtkfile, "# vtk DataFile Version 3.0\nvtk output\nASCII\nDATASET UNSTRUCTURED_GRID\n");
+    fprintf(vtkfile,
+      "# vtk DataFile Version 3.0\nvtk output\nASCII\nDATASET UNSTRUCTURED_GRID\n");
     fprintf(vtkfile, "POINTS %d float\n", nv);
     for (size_t i = 0; i < nv; i++)
     {
-      fprintf(vtkfile, "%.12f %.12f %.12f\n", m_meshPtr->vertices[i][0], m_meshPtr->vertices[i][1], m_meshPtr->vertices[i][2]);
+      fprintf(vtkfile, "%.12f %.12f %.12f\n", m_meshPtr->vertices[i][0], 
+        m_meshPtr->vertices[i][1], m_meshPtr->vertices[i][2]);
     }
     fprintf(vtkfile, "CELLS %d %d\n", nt, nt * 4);
     for (size_t i = 0; i < nt; i++)
     {
-      fprintf(vtkfile, "3 %d %d %d\n", m_meshPtr->faces[i][0], m_meshPtr->faces[i][1], m_meshPtr->faces[i][2]);
+      fprintf(vtkfile, "3 %d %d %d\n", m_meshPtr->faces[i][0],
+        m_meshPtr->faces[i][1], m_meshPtr->faces[i][2]);
     }
 
     fprintf(vtkfile, "CELL_TYPES %d\n", nt);
@@ -77,7 +80,8 @@ void meshFIM2d::writeVTK(std::vector< std::vector <float> > time_values)
     {
       fprintf(vtkfile, "5\n");
     }
-    fprintf(vtkfile, "POINT_DATA %d\nSCALARS traveltime float 1\nLOOKUP_TABLE default\n", nv);
+    fprintf(vtkfile,
+      "POINT_DATA %d\nSCALARS traveltime float 1\nLOOKUP_TABLE default\n", nv);
     for (size_t i = 0; i < nv; i++)
     {
       fprintf(vtkfile, "%.12f\n", time_values[j][i]);
@@ -86,26 +90,47 @@ void meshFIM2d::writeVTK(std::vector< std::vector <float> > time_values)
   }
 }
 
-void meshFIM2d::updateT_single_stage_d(double timestep, int niter, IdxVector_d& narrowband, int num_narrowband)
+void meshFIM2d::updateT_single_stage_d(double timestep, int niter, 
+  IdxVector_d& narrowband, int num_narrowband)
 {
   size_t nn = m_meshPtr->vertices.size();
   int nblocks = num_narrowband;
   int nthreads = largest_ele_part;
   thrust::fill(vertT_out.begin(), vertT_out.end(), 0.0);
-  int shared_size = sizeof (double)* 3 * largest_ele_part + sizeof (short) *largest_vert_part*m_largest_num_inside_mem;
-  cudaSafeCall((kernel_updateT_single_stage2d << <nblocks, nthreads, shared_size >> >(timestep, CAST(narrowband), largest_ele_part, largest_vert_part, full_num_ele,
-          CAST(m_ele_after_permute_d), CAST(m_ele_offsets_d), CAST(m_cadv_local_d),
-          nn, CAST(m_vert_offsets_d), CAST(m_vert_after_permute_d), CAST(m_vertT_after_permute_d),
-          CAST(m_ele_local_coords_d), m_largest_num_inside_mem, CAST(m_mem_locations), CAST(m_mem_location_offsets),
-          CAST(vertT_out))));
+  int shared_size = sizeof (double)* 3 * largest_ele_part + 
+    sizeof (short) *largest_vert_part*m_largest_num_inside_mem;
+
+  cudaSafeCall((
+    kernel_updateT_single_stage2d << <nblocks, nthreads, shared_size >> >(
+    timestep,
+    CAST(narrowband),
+    largest_ele_part,
+    largest_vert_part,
+    full_num_ele,
+    CAST(m_ele_after_permute_d),
+    CAST(m_ele_offsets_d), 
+    CAST(m_cadv_local_d),
+    nn, CAST(m_vert_offsets_d),
+    CAST(m_vert_after_permute_d), 
+    CAST(m_vertT_after_permute_d),
+    CAST(m_ele_local_coords_d),
+    m_largest_num_inside_mem, 
+    CAST(m_mem_locations), 
+    CAST(m_mem_location_offsets),
+    CAST(vertT_out))));
   nthreads = largest_vert_part;
-  cudaSafeCall((CopyOutBack_levelset2d << <nblocks, nthreads >> >(CAST(narrowband),
-          CAST(m_vert_offsets_d), CAST(m_vertT_after_permute_d), CAST(vertT_out))));
+
+  cudaSafeCall((CopyOutBack_levelset2d << <nblocks, nthreads >> >(
+    CAST(narrowband),
+    CAST(m_vert_offsets_d), 
+    CAST(m_vertT_after_permute_d), 
+    CAST(vertT_out))));
 }
 
 //Single stage update
 
-void meshFIM2d::updateT_single_stage(double timestep, int nside, int niter, vector<int>& narrowband)
+void meshFIM2d::updateT_single_stage(double timestep, int nside, 
+  int niter, vector<int>& narrowband)
 {
   size_t nv = m_meshPtr->vertices.size();
   size_t nt = m_meshPtr->faces.size();
@@ -271,7 +296,8 @@ void meshFIM2d::updateT_single_stage(double timestep, int nside, int niter, vect
   }
 }
 
-void meshFIM2d::GraphPartition_Square(int squareLength, int squareWidth, int blockLength, int blockWidth, bool verbose)
+void meshFIM2d::GraphPartition_Square(int squareLength, int squareWidth, 
+  int blockLength, int blockWidth, bool verbose)
 {
   size_t nn = m_meshPtr->vertices.size();
   int numBlockLength = ceil((double) squareLength / blockLength);
@@ -395,7 +421,8 @@ void meshFIM2d::Partition_METIS(int metissize, bool verbose)
   m_neighbor_sizes_d = neighbor_sizes;
   int* npart_h_ptr = thrust::raw_pointer_cast(&npart_h[0]);
 
-  METIS_PartGraphKway(&nn, xadj, adjncy, NULL, NULL, &wgtflag, &pnumflag, &nparts, options, &edgecut, npart_h_ptr);
+  METIS_PartGraphKway(&nn, xadj, adjncy, NULL, NULL, &wgtflag, 
+    &pnumflag, &nparts, options, &edgecut, npart_h_ptr);
 
   m_xadj_d = IdxVector_d(&xadj[0], &xadj[nn + 1]);
   m_adjncy_d = IdxVector_d(&adjncy[0], &adjncy[edgeCount]);
@@ -405,8 +432,10 @@ void meshFIM2d::Partition_METIS(int metissize, bool verbose)
   {
     part_sizes[npart_h[i]]++;
   }
-  int min_part_size = thrust::reduce(part_sizes.begin(), part_sizes.end(), 100000000, thrust::minimum<int>());
-  largest_vert_part = thrust::reduce(part_sizes.begin(), part_sizes.end(), -1, thrust::maximum<int>());
+  int min_part_size = thrust::reduce(part_sizes.begin(), 
+    part_sizes.end(), 100000000, thrust::minimum<int>());
+  largest_vert_part = thrust::reduce(part_sizes.begin(), 
+    part_sizes.end(), -1, thrust::maximum<int>());
 
   if (verbose)
     printf("Largest vertex partition size is: %d\n", largest_vert_part);
@@ -441,7 +470,10 @@ void meshFIM2d::InitPatches(bool verbose)
   int nthreads = 256;
   int nblocks = min((int) ceil((double) ne / nthreads), 65535);
   IdxVector_d ele_label_d(ne);
-  cudaSafeCall((kernel_compute_ele_npart2d << <nblocks, nthreads >> >(ne, thrust::raw_pointer_cast(&m_npart_d[0]), thrust::raw_pointer_cast(&ele_d[0]), thrust::raw_pointer_cast(&ele_label_d[0]))));
+  cudaSafeCall((kernel_compute_ele_npart2d << <nblocks, nthreads >> >(
+    ne, thrust::raw_pointer_cast(&m_npart_d[0]),
+    thrust::raw_pointer_cast(&ele_d[0]), 
+    thrust::raw_pointer_cast(&ele_label_d[0]))));
 
   full_num_ele = thrust::reduce(ele_label_d.begin(), ele_label_d.end());
 
@@ -452,16 +484,22 @@ void meshFIM2d::InitPatches(bool verbose)
   thrust::inclusive_scan(ele_label_d.begin(), ele_label_d.end(), ele_offsets_d.begin() + 1);
   IdxVector_d ele_full_label(full_num_ele);
   ele_permute = IdxVector_d(full_num_ele);
-  cudaSafeCall((kernel_fill_ele_label2d << <nblocks, nthreads >> >(ne, thrust::raw_pointer_cast(&ele_permute[0]), thrust::raw_pointer_cast(&ele_offsets_d[0]),
-          thrust::raw_pointer_cast(&m_npart_d[0]), thrust::raw_pointer_cast(&ele_d[0]),
-          thrust::raw_pointer_cast(&ele_full_label[0]))));
-  thrust::sort_by_key(ele_full_label.begin(), ele_full_label.end(), ele_permute.begin());
+  cudaSafeCall((kernel_fill_ele_label2d << <nblocks, nthreads >> >(ne,
+    thrust::raw_pointer_cast(&ele_permute[0]),
+    thrust::raw_pointer_cast(&ele_offsets_d[0]),
+    thrust::raw_pointer_cast(&m_npart_d[0]),
+    thrust::raw_pointer_cast(&ele_d[0]),
+    thrust::raw_pointer_cast(&ele_full_label[0]))));
+  thrust::sort_by_key(ele_full_label.begin(), ele_full_label.end(),
+    ele_permute.begin());
   m_ele_offsets_d = IdxVector_d(nparts + 1);
   IdxVector_d ones(full_num_ele, 1);
   IdxVector_d tmp(full_num_ele);
   IdxVector_d reduce_output(full_num_ele);
-  thrust::reduce_by_key(ele_full_label.begin(), ele_full_label.end(), ones.begin(), tmp.begin(), reduce_output.begin());
-  largest_ele_part = thrust::reduce(reduce_output.begin(), reduce_output.begin() + nparts, -1, thrust::maximum<int>());
+  thrust::reduce_by_key(ele_full_label.begin(), ele_full_label.end(),
+    ones.begin(), tmp.begin(), reduce_output.begin());
+  largest_ele_part = thrust::reduce(reduce_output.begin(), 
+    reduce_output.begin() + nparts, -1, thrust::maximum<int>());
   if (verbose)
     printf("Largest element partition size is: %d\n", largest_ele_part);
   if (largest_ele_part > 1024)
@@ -470,7 +508,8 @@ void meshFIM2d::InitPatches(bool verbose)
     exit(0);
   }
   m_ele_offsets_d[0] = 0;
-  thrust::inclusive_scan(reduce_output.begin(), reduce_output.begin() + nparts, m_ele_offsets_d.begin() + 1);
+  thrust::inclusive_scan(reduce_output.begin(),
+    reduce_output.begin() + nparts, m_ele_offsets_d.begin() + 1);
 }
 
 void meshFIM2d::InitPatches2()
@@ -486,32 +525,41 @@ void meshFIM2d::InitPatches2()
   thrust::sort_by_key(m_part_label_d.begin(), m_part_label_d.end(), vert_permute.begin());
   nblocks = min((int) ceil((double) nn / nthreads), 65535);
 
-  cudaSafeCall((kernel_compute_vert_ipermute2d << <nblocks, nthreads >> >(nn, thrust::raw_pointer_cast(&vert_permute[0]), thrust::raw_pointer_cast(&vert_ipermute[0]))));
+  cudaSafeCall((kernel_compute_vert_ipermute2d << <nblocks, nthreads >> >(nn,
+    thrust::raw_pointer_cast(&vert_permute[0]),
+    thrust::raw_pointer_cast(&vert_ipermute[0]))));
   m_vert_permute_d = IdxVector_d(vert_permute);
   m_vert_offsets_d = IdxVector_d(nparts + 1);
   cusp::detail::indices_to_offsets(m_part_label_d, m_vert_offsets_d);
   //permute the vert and ele values and Rinscribe
   m_ele_after_permute_d = IdxVector_d(3 * full_num_ele);
   m_vertT_after_permute_d = Vector_d(nn);
-  nblocks = min((int) ceil((double) full_num_ele / nthreads), 65535);
+  nblocks = min((int)ceil((double)full_num_ele / nthreads), 65535);
   cudaSafeCall((kernel_ele_and_vert2d << <nblocks, nthreads >> >(full_num_ele, ne,
-          thrust::raw_pointer_cast(&ele_d[0]), thrust::raw_pointer_cast(&m_ele_after_permute_d[0]), thrust::raw_pointer_cast(&ele_permute[0]),
-          nn, thrust::raw_pointer_cast(&vert_d[0]), thrust::raw_pointer_cast(&m_vert_after_permute_d[0]),
-          thrust::raw_pointer_cast(&m_vertT_d[0]), thrust::raw_pointer_cast(&m_vertT_after_permute_d[0]),
-          CAST(m_Rinscribe_before_permute_d), CAST(m_Rinscribe_d),
-          CAST(vert_permute),
-          thrust::raw_pointer_cast(&vert_ipermute[0]))));
+    thrust::raw_pointer_cast(&ele_d[0]),
+    thrust::raw_pointer_cast(&m_ele_after_permute_d[0]),
+    thrust::raw_pointer_cast(&ele_permute[0]),
+    nn, thrust::raw_pointer_cast(&vert_d[0]),
+    thrust::raw_pointer_cast(&m_vert_after_permute_d[0]),
+    thrust::raw_pointer_cast(&m_vertT_d[0]),
+    thrust::raw_pointer_cast(&m_vertT_after_permute_d[0]),
+    CAST(m_Rinscribe_before_permute_d),
+    CAST(m_Rinscribe_d),
+    CAST(vert_permute),
+    thrust::raw_pointer_cast(&vert_ipermute[0]))));
   //compute the local coords for each element
   m_ele_local_coords_d = Vector_d(3 * full_num_ele);
   m_cadv_local_d = Vector_d(2 * full_num_ele);
   nthreads = 256;
-  nblocks = min((int) ceil((float) full_num_ele / nthreads), 65535);
-  cudaSafeCall((kernel_compute_local_coords2d << <nblocks, nthreads >> >(full_num_ele, nn,
-          thrust::raw_pointer_cast(&m_ele_after_permute_d[0]), thrust::raw_pointer_cast(&m_ele_offsets_d[0]),
-          thrust::raw_pointer_cast(&m_vert_after_permute_d[0]),
-          thrust::raw_pointer_cast(&m_ele_local_coords_d[0]),
-          CAST(m_cadv_global_d),
-          CAST(m_cadv_local_d))));
+  nblocks = min((int)ceil((float)full_num_ele / nthreads), 65535);
+  cudaSafeCall((kernel_compute_local_coords2d << <nblocks, nthreads >> >(
+    full_num_ele, nn,
+    thrust::raw_pointer_cast(&m_ele_after_permute_d[0]),
+    thrust::raw_pointer_cast(&m_ele_offsets_d[0]),
+    thrust::raw_pointer_cast(&m_vert_after_permute_d[0]),
+    thrust::raw_pointer_cast(&m_ele_local_coords_d[0]),
+    CAST(m_cadv_global_d),
+    CAST(m_cadv_local_d))));
   //Generate redution list
 
   m_mem_locations = IdxVector_d(3 * full_num_ele);
@@ -534,19 +582,27 @@ void meshFIM2d::GenerateBlockNeighbors()
   mapAdjacencyToBlock(m_xadj_d, m_adjncy_d, adjacencyBlockLabel, blockMappedAdjacency, m_npart_d);
 
   // Zip up the block label and block mapped vectors and sort:
-  thrust::sort(thrust::make_zip_iterator(thrust::make_tuple(adjacencyBlockLabel.begin(), blockMappedAdjacency.begin())),
-      thrust::make_zip_iterator(thrust::make_tuple(adjacencyBlockLabel.end(), blockMappedAdjacency.end())));
+  thrust::sort(thrust::make_zip_iterator(thrust::make_tuple(
+    adjacencyBlockLabel.begin(), blockMappedAdjacency.begin())),
+      thrust::make_zip_iterator(
+      thrust::make_tuple(adjacencyBlockLabel.end(),
+      blockMappedAdjacency.end())));
 
   // Remove Duplicates and resize:
-  int newSize = thrust::unique(thrust::make_zip_iterator(thrust::make_tuple(adjacencyBlockLabel.begin(), blockMappedAdjacency.begin())),
-      thrust::make_zip_iterator(thrust::make_tuple(adjacencyBlockLabel.end(), blockMappedAdjacency.end()))) -
-    thrust::make_zip_iterator(thrust::make_tuple(adjacencyBlockLabel.begin(), blockMappedAdjacency.begin()));
+  int newSize = thrust::unique(thrust::make_zip_iterator(
+    thrust::make_tuple(adjacencyBlockLabel.begin(),
+    blockMappedAdjacency.begin())),
+      thrust::make_zip_iterator(thrust::make_tuple(
+      adjacencyBlockLabel.end(), blockMappedAdjacency.end()))) -
+    thrust::make_zip_iterator(thrust::make_tuple(
+    adjacencyBlockLabel.begin(), blockMappedAdjacency.begin()));
 
   adjacencyBlockLabel.resize(newSize);
   blockMappedAdjacency.resize(newSize);
   getPartIndicesNegStart(adjacencyBlockLabel, m_block_xadj_d);
   m_block_adjncy_d.resize(blockMappedAdjacency.size() - 1);
-  thrust::copy(blockMappedAdjacency.begin() + 1, blockMappedAdjacency.end(), m_block_adjncy_d.begin());
+  thrust::copy(blockMappedAdjacency.begin() + 1, 
+    blockMappedAdjacency.end(), m_block_adjncy_d.begin());
 
 }
 
@@ -562,42 +618,58 @@ void meshFIM2d::compute_deltaT(int num_narrowband, bool verbose)
 
   if (nthreads <= 32)
   {
-    cudaSafeCall((kernel_compute_timestep2d < 32 > << <nblocks, 32 >> >(full_num_ele, CAST(m_narrowband_d), CAST(m_ele_offsets_d), CAST(m_Rinscribe_d), CAST(m_cadv_local_d), CAST(m_ceik_global_d), CAST(m_ccurv_global_d),
-            CAST(timestep_per_block), CAST(Rin_per_block))));
+    cudaSafeCall((kernel_compute_timestep2d < 32 > << <nblocks, 32 >> >(
+      full_num_ele, CAST(m_narrowband_d), CAST(m_ele_offsets_d),
+      CAST(m_Rinscribe_d), CAST(m_cadv_local_d), CAST(m_ceik_global_d), 
+      CAST(m_ccurv_global_d), CAST(timestep_per_block), CAST(Rin_per_block))));
   }
   else if (nthreads <= 64)
   {
-    cudaSafeCall((kernel_compute_timestep2d < 64 > << <nblocks, 64 >> >(full_num_ele, CAST(m_narrowband_d), CAST(m_ele_offsets_d), CAST(m_Rinscribe_d), CAST(m_cadv_local_d), CAST(m_ceik_global_d), CAST(m_ccurv_global_d),
-            CAST(timestep_per_block), CAST(Rin_per_block))));
+    cudaSafeCall((kernel_compute_timestep2d < 64 > << <nblocks, 64 >> >(
+      full_num_ele, CAST(m_narrowband_d), CAST(m_ele_offsets_d), 
+      CAST(m_Rinscribe_d), CAST(m_cadv_local_d), CAST(m_ceik_global_d), 
+      CAST(m_ccurv_global_d), CAST(timestep_per_block), CAST(Rin_per_block))));
   }
   else if (nthreads <= 128)
   {
-    cudaSafeCall((kernel_compute_timestep2d < 128 > << <nblocks, 128 >> >(full_num_ele, CAST(m_narrowband_d), CAST(m_ele_offsets_d), CAST(m_Rinscribe_d), CAST(m_cadv_local_d), CAST(m_ceik_global_d), CAST(m_ccurv_global_d),
-            CAST(timestep_per_block), CAST(Rin_per_block))));
+    cudaSafeCall((kernel_compute_timestep2d < 128 > << <nblocks, 128 >> >(
+      full_num_ele, CAST(m_narrowband_d), CAST(m_ele_offsets_d),
+      CAST(m_Rinscribe_d), CAST(m_cadv_local_d), CAST(m_ceik_global_d),
+      CAST(m_ccurv_global_d), CAST(timestep_per_block), CAST(Rin_per_block))));
   }
   else if (nthreads <= 256)
   {
-    cudaSafeCall((kernel_compute_timestep2d < 256 > << <nblocks, 256 >> >(full_num_ele, CAST(m_narrowband_d), CAST(m_ele_offsets_d), CAST(m_Rinscribe_d), CAST(m_cadv_local_d), CAST(m_ceik_global_d), CAST(m_ccurv_global_d),
-            CAST(timestep_per_block), CAST(Rin_per_block))));
+    cudaSafeCall((kernel_compute_timestep2d < 256 > << <nblocks, 256 >> >(
+      full_num_ele, CAST(m_narrowband_d), CAST(m_ele_offsets_d), 
+      CAST(m_Rinscribe_d), CAST(m_cadv_local_d), CAST(m_ceik_global_d), 
+      CAST(m_ccurv_global_d), CAST(timestep_per_block), CAST(Rin_per_block))));
   }
   else if (nthreads <= 512)
   {
-    cudaSafeCall((kernel_compute_timestep2d < 512 > << <nblocks, 512 >> >(full_num_ele, CAST(m_narrowband_d), CAST(m_ele_offsets_d), CAST(m_Rinscribe_d), CAST(m_cadv_local_d), CAST(m_ceik_global_d), CAST(m_ccurv_global_d),
-            CAST(timestep_per_block), CAST(Rin_per_block))));
+    cudaSafeCall((kernel_compute_timestep2d < 512 > << <nblocks, 512 >> >(
+      full_num_ele, CAST(m_narrowband_d), CAST(m_ele_offsets_d),
+      CAST(m_Rinscribe_d), CAST(m_cadv_local_d), CAST(m_ceik_global_d), 
+      CAST(m_ccurv_global_d), CAST(timestep_per_block), CAST(Rin_per_block))));
   }
   else if (nthreads <= 1024)
   {
-    cudaSafeCall((kernel_compute_timestep2d < 1024 > << <nblocks, 1024 >> >(full_num_ele, CAST(m_narrowband_d), CAST(m_ele_offsets_d), CAST(m_Rinscribe_d), CAST(m_cadv_local_d), CAST(m_ceik_global_d), CAST(m_ccurv_global_d),
-            CAST(timestep_per_block), CAST(Rin_per_block))));
+    cudaSafeCall((kernel_compute_timestep2d < 1024 > << <nblocks, 1024 >> >(
+      full_num_ele, CAST(m_narrowband_d), CAST(m_ele_offsets_d),
+      CAST(m_Rinscribe_d), CAST(m_cadv_local_d), CAST(m_ceik_global_d), 
+      CAST(m_ccurv_global_d), CAST(timestep_per_block), CAST(Rin_per_block))));
   }
   else
   {
     printf("Error: nthreads greater than 256!!!\n");
   }
 
-  m_timestep = thrust::reduce(timestep_per_block.begin(), timestep_per_block.begin() + nnb, (double) LARGENUM, thrust::minimum<double > ());
+  m_timestep = thrust::reduce(timestep_per_block.begin(), 
+    timestep_per_block.begin() + nnb, (double) LARGENUM,
+    thrust::minimum<double > ());
   m_maxRin = -1.0;
-  m_maxRin = thrust::reduce(Rin_per_block.begin(), Rin_per_block.begin() + nnb, (double) - 1.0, thrust::maximum<double > ());
+  m_maxRin = thrust::reduce(Rin_per_block.begin(),
+    Rin_per_block.begin() + nnb, (double) - 1.0, 
+    thrust::maximum<double > ());
 
 }
 
@@ -621,7 +693,8 @@ std::vector< std::vector< float > > meshFIM2d::GenerateData(
   double duration;
 
   if (part_type == 1)
-    GraphPartition_Square(squareLength, squareWidth, squareBlockLength, squareBlockWidth,verbose);
+    GraphPartition_Square(squareLength, squareWidth, 
+    squareBlockLength, squareBlockWidth,verbose);
   else //partition with METIS
   {
     Partition_METIS(metis_size, verbose);
@@ -670,9 +743,10 @@ std::vector< std::vector< float > > meshFIM2d::GenerateData(
     printf("pre processing time : %.10lf s\n", duration);
   
   //Inite redistance
-  m_redist = new redistance(m_meshPtr, nparts, m_block_xadj_d, m_block_adjncy_d);
+  m_redist = new redistance(m_meshPtr, nparts,
+    m_block_xadj_d, m_block_adjncy_d);
 
-  //////////////////////////update values///////////////////////////////////////////
+  //////////////////////////update values//////////////////////////
   m_narrowband_d = IdxVector_d(nparts);
   timestep_per_block = Vector_d(nparts);
   Rin_per_block = Vector_d(nparts, -1);

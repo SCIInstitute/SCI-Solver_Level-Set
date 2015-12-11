@@ -146,7 +146,8 @@ __global__ void kernel_updateT_single_stage2d(double timestep, int* narrowband_l
     double a21 = local_coord0, a22 = 0.0, a23 = 1.0;
     double a31 = local_coord1, a32 = local_coord2, a33 = 1.0;
 
-    double det = a11 * a22 * a33 + a21 * a32 * a13 + a31 * a12 * a23 - a11 * a32 * a23 - a31 * a22 * a13 - a21 * a12 * a33;
+    double det = a11 * a22 * a33 + a21 * a32 * a13 + a31 * a12 * 
+      a23 - a11 * a32 * a23 - a31 * a22 * a13 - a21 * a12 * a33;
 
     double b11 = a22 * a33 - a23 * a32;
     double b12 = a13 * a32 - a12 * a33;

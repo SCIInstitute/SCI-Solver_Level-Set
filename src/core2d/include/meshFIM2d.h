@@ -60,6 +60,7 @@ class meshFIM2d
 
     TriMesh* m_meshPtr;
     redistance* m_redist;
+    int NumComputation;
     vector<int> narrowband;
     IdxVector_h npart_h;
     IdxVector_d m_npart_d;

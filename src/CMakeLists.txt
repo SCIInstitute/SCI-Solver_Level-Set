@@ -34,19 +34,7 @@ include_directories("${EIKONAL_INSTALL_DIR}/lib/externals/metis/include")
 SET(EIKONAL2D_LIB ${EIKONAL_INSTALL_DIR}/lib/src/core2d/${CMAKE_STATIC_LIBRARY_PREFIX}Eikonal-2D_CORE${CMAKE_STATIC_LIBRARY_SUFFIX})
 SET(EIKONAL3D_LIB ${EIKONAL_INSTALL_DIR}/lib/src/core3d/${CMAKE_STATIC_LIBRARY_PREFIX}Eikonal-3D_CORE${CMAKE_STATIC_LIBRARY_SUFFIX})
 SET(METIS_LIB ${EIKONAL_INSTALL_DIR}/lib/externals/metis/lib/${CMAKE_STATIC_LIBRARY_PREFIX}metis${CMAKE_STATIC_LIBRARY_SUFFIX})
-# cusp
-set(CUSP_INSTALL_DIR "${EXTERNAL_DIR}/cusp")
-ExternalProject_Add( cusp
-  PREFIX "${CUSP_INSTALL_DIR}"
-  GIT_REPOSITORY "https://github.com/cibc-internal/cusp.git"
-  INSTALL_DIR "${CUSP_INSTALL_DIR}/include"
-  BINARY_DIR "${CUSP_INSTALL_DIR}/lib"
-  INSTALL_COMMAND ""
-  BUILD_COMMAND ""
-  CONFIGURE_COMMAND ""
-  )
-include_directories("${CUSP_INSTALL_DIR}/src")
-
+include_directories("${EIKONAL_INSTALL_DIR}/lib/externals/cusp/src")
 ###################
 #CMAKE SETTING CUDA_NVCC_FLAGS
 #############################

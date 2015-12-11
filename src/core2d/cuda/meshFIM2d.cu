@@ -222,7 +222,9 @@ void meshFIM2d::updateT_single_stage(double timestep, int nside, int niter, vect
       vector<double> delta(4);
       for (int i = 0; i < 4; i++)
       {
-        delta[i] = Kplus[i] * beta * (Kminus[0] * (values[i] - values[0]) + Kminus[1] * (values[i] - values[1]) + Kminus[2] * (values[i] - values[2]) + Kminus[3] * (values[i] - values[3]));
+        delta[i] = Kplus[i] * beta * (Kminus[0] * (values[i] - 
+          values[0]) + Kminus[1] * (values[i] - values[1]) + Kminus[2] * 
+          (values[i] - values[2]) + Kminus[3] * (values[i] - values[3]));
       }
 
       vector<double> alpha(4);
@@ -681,16 +683,70 @@ std::vector< std::vector< float > > meshFIM2d::GenerateData(
   data.push_back(m_meshPtr->vertT);
   for (int stepcount = 0; stepcount < nsteps; stepcount++)
   {
-    m_redist->FindSeedPoint(m_narrowband_d, num_narrowband, m_meshPtr, m_vertT_after_permute_d, nparts, largest_vert_part, largest_ele_part, m_largest_num_inside_mem, full_num_ele,
-        m_vert_after_permute_d, m_vert_offsets_d, m_ele_after_permute_d, m_ele_offsets_d, m_ele_local_coords_d, m_mem_location_offsets, m_mem_locations,
-        m_part_label_d, m_block_xadj_d, m_block_adjncy_d);
-    m_redist->ReInitTsign(m_meshPtr, m_vertT_after_permute_d, nparts, largest_vert_part, largest_ele_part, m_largest_num_inside_mem, full_num_ele,
-        m_vert_after_permute_d, m_vert_offsets_d, m_ele_after_permute_d, m_ele_offsets_d, m_ele_local_coords_d, m_mem_location_offsets, m_mem_locations,
-        m_part_label_d, m_block_xadj_d, m_block_adjncy_d);
+    m_redist->FindSeedPoint(
+      m_narrowband_d, 
+      num_narrowband,
+      m_meshPtr, 
+      m_vertT_after_permute_d,
+      nparts,
+      largest_vert_part, 
+      largest_ele_part, 
+      m_largest_num_inside_mem, 
+      full_num_ele,
+      m_vert_after_permute_d,
+      m_vert_offsets_d, 
+      m_ele_after_permute_d, 
+      m_ele_offsets_d,
+      m_ele_local_coords_d, 
+      m_mem_location_offsets,
+      m_mem_locations,
+      m_part_label_d,
+      m_block_xadj_d, 
+      m_block_adjncy_d);
 
-    m_redist->GenerateData(m_narrowband_d, num_narrowband, bandwidth, stepcount, m_meshPtr, m_vertT_after_permute_d, nparts, largest_vert_part, largest_ele_part, m_largest_num_inside_mem, full_num_ele,
-        m_vert_after_permute_d, m_vert_offsets_d, m_ele_after_permute_d, m_ele_offsets_d, m_ele_local_coords_d, m_mem_location_offsets, m_mem_locations,
-        m_part_label_d, m_block_xadj_d, m_block_adjncy_d, verbose);
+    m_redist->ReInitTsign(
+      m_meshPtr, 
+      m_vertT_after_permute_d,
+      nparts, 
+      largest_vert_part, 
+      largest_ele_part, 
+      m_largest_num_inside_mem,
+      full_num_ele,
+      m_vert_after_permute_d, 
+      m_vert_offsets_d, 
+      m_ele_after_permute_d, 
+      m_ele_offsets_d, 
+      m_ele_local_coords_d, 
+      m_mem_location_offsets, 
+      m_mem_locations,
+      m_part_label_d, 
+      m_block_xadj_d, 
+      m_block_adjncy_d);
+
+    m_redist->GenerateData(
+      m_narrowband_d, 
+      num_narrowband, 
+      bandwidth, 
+      stepcount, 
+      m_meshPtr, 
+      m_vertT_after_permute_d, 
+      nparts, 
+      largest_vert_part, 
+      largest_ele_part, 
+      m_largest_num_inside_mem, 
+      full_num_ele,
+      m_vert_after_permute_d,
+      m_vert_offsets_d,
+      m_ele_after_permute_d, 
+      m_ele_offsets_d, 
+      m_ele_local_coords_d, 
+      m_mem_location_offsets, 
+      m_mem_locations,
+      m_part_label_d, 
+      m_block_xadj_d, 
+      m_block_adjncy_d, 
+      verbose);
+
     if (num_narrowband == 0) {
       std::cout << "NOTE: Ending at timestep " << stepcount <<
         " due to zero narrow band." << std::endl;
@@ -702,9 +758,15 @@ std::vector< std::vector< float > > meshFIM2d::GenerateData(
     //////////////////////////done updating/////////////////////////////////////////////////
     int nthreads = 256;
     int nblocks = min((int)ceil((double)nv / nthreads), 655535);
-    cudaSafeCall((kernel_compute_vertT_before_permute2d << <nblocks, nthreads >> >(nv, CAST(m_vert_permute_d),
-      CAST(m_vertT_after_permute_d), CAST(tmp_vertT_before_permute_d))));
+    cudaSafeCall((
+      kernel_compute_vertT_before_permute2d << <nblocks, nthreads >> >(
+      nv, 
+      CAST(m_vert_permute_d),
+      CAST(m_vertT_after_permute_d), 
+      CAST(tmp_vertT_before_permute_d))));
+
     Vector_h vertT_before_permute_h = tmp_vertT_before_permute_d;
+
     for (int i = 0; i < nv; i++)
     {
       m_meshPtr->vertT[i] = vertT_before_permute_h[i];

@@ -197,7 +197,8 @@ __global__ void kernel_updateT_single_stage2d(double timestep, int* narrowband_l
 #pragma unroll
       for (int i = 0; i < 3; i++)
       {
-        delta[i] = Kplus[i] * beta * (Kminus[0] * (eleT[i] - eleT[0]) + Kminus[1] * (eleT[i] - eleT[1]) + Kminus[2] * (eleT[i] - eleT[2]));
+        delta[i] = Kplus[i] * beta * (Kminus[0] * (eleT[i] - eleT[0]) +
+          Kminus[1] * (eleT[i] - eleT[1]) + Kminus[2] * (eleT[i] - eleT[2]));
       }
 
       double alpha[3];

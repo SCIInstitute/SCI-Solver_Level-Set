@@ -172,12 +172,14 @@ void LevelSet::solveLevelSet() {
     initializeMesh();
   }
   float mn = std::numeric_limits<float>::max();
-  float mx = std::numeric_limits<float>::min();
+  float mx = std::numeric_limits<float>::lowest();
   if (this->isTriMesh_) {
     for (size_t i = 0; i < this->triMesh_->vertices.size(); i++) {
       mn = std::min(mn, static_cast<float>(this->triMesh_->vertices[i][0]));
       mx = std::max(mx, static_cast<float>(this->triMesh_->vertices[i][0]));
     }
+    auto midX = (mn + mx) / 2.;
+    auto rangeX = mx - mn;
     //populate advection if it's empty
     if (!this->userSetAdvection_) {
       this->triMesh_->normals.resize(this->triMesh_->faces.size());
@@ -189,7 +191,8 @@ void LevelSet::solveLevelSet() {
     if (!this->userSetInitial_) {
       this->triMesh_->vertT.resize(this->triMesh_->vertices.size());
       for (size_t i = 0; i < this->triMesh_->vertices.size(); i++) {
-        this->triMesh_->vertT[i] = -(this->triMesh_->vertices[i][0] - mn) * 40. / (mx - mn) + 1.;
+        this->triMesh_->vertT[i] =
+          (this->triMesh_->vertices[i][0] - midX) / rangeX;
       }
     }
     if (FIMPtr2d_ != NULL) delete FIMPtr2d_;
@@ -221,7 +224,7 @@ void LevelSet::solveLevelSet() {
     if (!this->userSetInitial_) {
       this->tetMesh_->vertT.resize(this->tetMesh_->vertices.size());
       for (size_t i = 0; i < this->tetMesh_->vertices.size(); i++) {
-        this->tetMesh_->vertT[i] = this->tetMesh_->vertices[i][0] - (mx + mn) / 2.;
+        this->tetMesh_->vertT[i] = i == 0 ? 0 : LARGENUM;
       }
     }
     if (FIMPtr3d_ != NULL) delete FIMPtr3d_;

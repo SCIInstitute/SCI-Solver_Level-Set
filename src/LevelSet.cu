@@ -172,7 +172,7 @@ void LevelSet::solveLevelSet() {
     initializeMesh();
   }
   float mn = std::numeric_limits<float>::max();
-  float mx = std::numeric_limits<float>::lowest();
+  float mx = 1.f - mn;
   if (this->isTriMesh_) {
     for (size_t i = 0; i < this->triMesh_->vertices.size(); i++) {
       mn = std::min(mn, static_cast<float>(this->triMesh_->vertices[i][0]));
@@ -184,15 +184,14 @@ void LevelSet::solveLevelSet() {
     if (!this->userSetAdvection_) {
       this->triMesh_->normals.resize(this->triMesh_->faces.size());
       for (size_t i = 0; i < this->triMesh_->faces.size(); i++) {
-        this->triMesh_->normals[i] = point((mx - mn) / 40., 0, 0);
+        this->triMesh_->normals[i] = point(rangeX / 100., 0, 0);
       }
     }
     //fill in initial values for the mesh if not given by the user
     if (!this->userSetInitial_) {
       this->triMesh_->vertT.resize(this->triMesh_->vertices.size());
       for (size_t i = 0; i < this->triMesh_->vertices.size(); i++) {
-        this->triMesh_->vertT[i] =
-          (this->triMesh_->vertices[i][0] - midX) / rangeX;
+        this->triMesh_->vertT[i] = this->triMesh_->vertices[i][0] - midX;
       }
     }
     if (FIMPtr2d_ != NULL) delete FIMPtr2d_;
@@ -213,18 +212,20 @@ void LevelSet::solveLevelSet() {
       mn = std::min(mn, static_cast<float>(this->tetMesh_->vertices[i][0]));
       mx = std::max(mx, static_cast<float>(this->tetMesh_->vertices[i][0]));
     }
+    auto midX = (mn + mx) / 2.;
+    auto rangeX = mx - mn;
     //populate advection if it's empty
     if (!this->userSetAdvection_) {
       this->tetMesh_->normals.resize(this->tetMesh_->tets.size());
       for (size_t i = 0; i < this->tetMesh_->tets.size(); i++) {
-        this->tetMesh_->normals[i] = point((mx - mn) / 100., 0, 0);
+        this->tetMesh_->normals[i] = point(rangeX / 100., 0, 0);
       }
     }
     //fill in initial values for the mesh if not given by the user
     if (!this->userSetInitial_) {
       this->tetMesh_->vertT.resize(this->tetMesh_->vertices.size());
       for (size_t i = 0; i < this->tetMesh_->vertices.size(); i++) {
-        this->tetMesh_->vertT[i] = i == 0 ? 0 : LARGENUM;
+        this->tetMesh_->vertT[i] = this->tetMesh_->vertices[i][0] - midX;
       }
     }
     if (FIMPtr3d_ != NULL) delete FIMPtr3d_;

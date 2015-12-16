@@ -1,4 +1,5 @@
 #include "LevelSet.h"
+#include <limits>
 
 LevelSet::LevelSet(bool isTriMesh, std::string fname, bool verbose) :
   verbose_(verbose),
@@ -113,7 +114,7 @@ void LevelSet::initializeMesh() {
       this->triMesh_ = TriMesh::read(this->filename_.c_str(), this->verbose_);
       if (this->triMesh_ == NULL)
       {
-        printf("File open failed!!\n");
+        std::cerr << "File open failed!!" << std::endl;
         exit(0);
       }
       this->triMesh_->need_neighbors(this->verbose_);
@@ -126,7 +127,7 @@ void LevelSet::initializeMesh() {
       tetgenio in, addin, bgmin, out;
       if (!in.load_tetmesh((char*)this->filename_.c_str(), this->verbose_))
       {
-        printf("File open failed!!\n");
+        std::cerr << "File open failed!!" << std::endl; 
         exit(0);
       }
 
@@ -150,8 +151,8 @@ void LevelSet::solveLevelSet() {
     cudaDeviceProp deviceProp;
     cudaGetDeviceProperties(&deviceProp, device);
     if (this->verbose_)
-      printf("Device %d has compute capability %d.%d.\n",
-          device, deviceProp.major, deviceProp.minor);
+      std::cout << "Device %d has compute capability " << 
+      device << ": " << deviceProp.major << "." << deviceProp.minor << std::endl;
   }
   device = 0;
 
@@ -163,7 +164,7 @@ void LevelSet::solveLevelSet() {
 
   cudaSafeCall((cudaDeviceSetCacheConfig(cudaFuncCachePreferShared)));
   if (this->verbose_)
-    printf("Narrowband width is %f\n", this->bandwidth_);
+    std::cout << "Narrowband width is " << this->bandwidth_ << std::endl;
   clock_t starttime, endtime;
   starttime = clock();
 
@@ -175,11 +176,11 @@ void LevelSet::solveLevelSet() {
   float mx = 1.f - mn;
   if (this->isTriMesh_) {
     for (size_t i = 0; i < this->triMesh_->vertices.size(); i++) {
-      mn = std::min(mn, static_cast<float>(this->triMesh_->vertices[i][0]));
-      mx = std::max(mx, static_cast<float>(this->triMesh_->vertices[i][0]));
+      mn = std::min(mn, this->triMesh_->vertices[i][0]);
+      mx = std::max(mx, this->triMesh_->vertices[i][0]);
     }
-    auto midX = (mn + mx) / 2.;
-    auto rangeX = mx - mn;
+    double midX = (mn + mx) / 2.;
+    double rangeX = mx - mn;
     //populate advection if it's empty
     if (!this->userSetAdvection_) {
       this->triMesh_->normals.resize(this->triMesh_->faces.size());
@@ -206,11 +207,11 @@ void LevelSet::solveLevelSet() {
     double duration = (double)(endtime - starttime) * 1000 / CLOCKS_PER_SEC;
 
     if (this->verbose_)
-      printf("Computing time : %.10lf ms\n", duration);
+      std::cout << "Computing time : " << duration << " ms" << std::endl;
   } else {
     for (size_t i = 0; i < this->tetMesh_->vertices.size(); i++) {
-      mn = std::min(mn, static_cast<float>(this->tetMesh_->vertices[i][0]));
-      mx = std::max(mx, static_cast<float>(this->tetMesh_->vertices[i][0]));
+      mn = std::min(mn, this->tetMesh_->vertices[i][0]);
+      mx = std::max(mx, this->tetMesh_->vertices[i][0]);
     }
     auto midX = (mn + mx) / 2.;
     auto rangeX = mx - mn;
@@ -260,26 +261,26 @@ void LevelSet::printErrorGraph(std::vector<float> solution) {
   while (std::pow(static_cast<float>(10), max_log) < max_err) max_log++;
   while (std::pow(static_cast<float>(10), min_log) > min_err) min_log--;
   // print the error graph
-  printf("\n\nlog(Err)|\n");
+  std::cout << "\n\nlog(Err)|\n";
   bool printTick = true;
   for (int i = max_log; i >= min_log; i--) {
     if (printTick) {
-      printf("   10^%2d|", i);
+      std::cout << "   10^%2d|", i;
     } else {
-      printf("        |");
+      std::cout << "        |";
     }
     for (size_t j = 0; j < this->numIterations(); j++) {
       if (rmsError[j] > std::pow(static_cast<float>(10), i) &&
-          rmsError[j] < std::pow(static_cast<float>(10), i + 1))
-        printf("*");
+        rmsError[j] < std::pow(static_cast<float>(10), i + 1))
+        std::cout << "*";
       else
-        printf(" ");
+        std::cout << " ";
     }
-    printf("\n");
+    std::cout << "\n";
     printTick = !printTick;
   }
-  printf("--------|------------------------------------------");
-  printf("  Converged to: %.4f\n", rmsError[rmsError.size() - 1]);
-  printf("        |1   5    10   15   20   25   30   35\n");
-  printf("                   Iteration\n");
+  std::cout << "--------|------------------------------------------";
+  std::cout << "  Converged to: %.4f\n", rmsError[rmsError.size() - 1];
+  std::cout << "        |1   5    10   15   20   25   30   35\n";
+  std::cout << "                   Iteration\n";
 }

@@ -213,8 +213,8 @@ void LevelSet::solveLevelSet() {
       mn = std::min(mn, this->tetMesh_->vertices[i][0]);
       mx = std::max(mx, this->tetMesh_->vertices[i][0]);
     }
-    auto midX = (mn + mx) / 2.;
-    auto rangeX = mx - mn;
+    double midX = (mn + mx) / 2.;
+    double rangeX = mx - mn;
     //populate advection if it's empty
     if (!this->userSetAdvection_) {
       this->tetMesh_->normals.resize(this->tetMesh_->tets.size());

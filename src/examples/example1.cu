@@ -1,9 +1,10 @@
 #include <LevelSet.h>
+#include <cmath>
 
 int main(int argc, char *argv[])
 {
   LevelSet data(false,"../src/test/test_data/sphere334",false);
-  bool fromCenter = false;
+  std::string type = "x";
   //input filename (minus extension)
   for (int i = 0; i < argc; i++) {
     if (strcmp(argv[i],"-v") == 0) {
@@ -48,8 +49,9 @@ int main(int argc, char *argv[])
       if (i+1 >= argc) break;
       data.bandwidth_ = atof(argv[i+1]);
       i++;
-    } else if (strcmp(argv[i],"-c") == 0) {
-      fromCenter = true;
+    } else if (strcmp(argv[i], "-y") == 0) {
+      if (i + 1 >= argc) break;
+      type = std::string(argv[++i]);
     } else if (strcmp(argv[i],"-h") == 0) {
       std::cout << "Usage: ./Example1 [OPTIONS]" << std::endl;
       std::cout << "   -h                 Print this help message." << std::endl;
@@ -63,11 +65,11 @@ int main(int argc, char *argv[])
       std::cout << "   -b NUM_BLOCKS      # of blocks for Square partition type." << std::endl;
       std::cout << "   -m METIS_SIZE      The size for METIS partiation type." << std::endl;
       std::cout << "   -w BANDWIDTH       The Bandwidth for the algorithm." << std::endl;
-      std::cout << "   -c                 Initialize data to move away from center." << std::endl;
+      std::cout << "   -y EXAMPLE_TYPE    Example type: 'center', 'revolve', 'x'" << std::endl;
       exit(0);
     }
   }
-  if (fromCenter) {
+  if (type == "center"  || type == "revolve") {
     //find the center, max from center
     data.initializeMesh();
     point center(0, 0, 0);
@@ -86,7 +88,16 @@ int main(int argc, char *argv[])
     for (size_t i = 0; i < data.tetMesh_->vertices.size(); i++) {
       point p = data.tetMesh_->vertices[i] - center;
       double mag = std::sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
-      vals.push_back(mag - max / 2.);
+      if (type == "revolve") {
+        //get the angle with (+/-1,0,0)
+        float val = p[0];
+        if (val < 0.) val *= -1.;
+        float theta = std::acos(val / std::sqrt(p[0] * p[0] + p[1] * p[1]));
+        if (p[1] < 0.f) theta *= -1.f;
+        vals.push_back(10.f * theta);
+      } else {
+        vals.push_back(mag - max / 2.);
+      }
     }
     //initialize advection to be away from the center.
     std::vector<point> adv;
@@ -97,7 +108,20 @@ int main(int argc, char *argv[])
         / 3.f - center;
       float mag = std::sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
       mag /= max / 20.f;
-      adv.push_back(p / mag / mag);
+      if (type == "revolve") {
+        //only care about XY plane angle
+        point pt = point(std::max(data.tetMesh_->vertices[data.tetMesh_->tets[i][0]][0],
+          std::max(data.tetMesh_->vertices[data.tetMesh_->tets[i][1]][0],
+          data.tetMesh_->vertices[data.tetMesh_->tets[i][2]][0])),
+          std::max(data.tetMesh_->vertices[data.tetMesh_->tets[i][1]][1],
+          std::max(data.tetMesh_->vertices[data.tetMesh_->tets[i][2]][1],
+          data.tetMesh_->vertices[data.tetMesh_->tets[i][3]][1])),0);
+        //get the tangent to the central circle
+        point pt2 = pt CROSS point(0, 0, 1);
+        adv.push_back(pt2 * len(pt) / 100.f);
+      } else {
+        adv.push_back(p / mag / mag);
+      }
     }
     data.initializeVertices(vals);
     data.initializeAdvection(adv);

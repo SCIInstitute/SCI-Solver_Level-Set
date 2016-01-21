@@ -198,13 +198,54 @@ void redistance::GenerateData(IdxVector_d& new_narrowband, int& new_num_narrowba
       nblocks = numActiveNew;
       nthreads = largest_ele_part;
 
-      int sharedSize = sizeof(double)* 3 * largest_ele_part + sizeof(short)*largest_vert_part*largest_num_inside_mem;
-      cudaSafeCall((kernel_run_check_neghbor << <nblocks, nthreads, shared_size >> >(CAST(m_active_block_list_d), CAST(m_Label_d), largest_ele_part, largest_vert_part,
-              full_num_ele,
-              CAST(ele_after_permute_d), CAST(ele_offsets_d),
-              CAST(vert_offsets_d), CAST(m_DT_d),
-              CAST(ele_local_coords_d), largest_num_inside_mem, CAST(mem_locations), CAST(mem_location_offsets), 1,
-              CAST(DT_d_out), CAST(d_vert_con))));
+      int sharedSize = sizeof(double)* 3 * largest_ele_part + 
+        sizeof(short)*largest_vert_part*largest_num_inside_mem;
+      ////DEBUG find bad memory
+      /*
+      IdxVector_h active_block_list_h(m_active_block_list_d);
+      std::vector<int> act_blk_lst;
+      for (size_t i = 0; i < active_block_list_h.size(); i++) {
+        act_blk_lst.push_back(active_block_list_h[i]);
+      }
+      IdxVector_h labels_h(m_Label_d);
+      std::vector<int> labels;
+      for (size_t i = 0; i < labels_h.size(); i++) {
+        labels.push_back(labels_h[i]);
+      }
+      IdxVector_h ele_afterPermute_h(ele_after_permute_d);
+      std::vector<int> ele_after_permute;
+      for (size_t i = 0; i < ele_afterPermute_h.size(); i++) {
+        ele_after_permute.push_back(ele_afterPermute_h[i]);
+      }
+      IdxVector_h eleOffsets_h(ele_offsets_d);
+      std::vector<int> eleOffsets;
+      for (size_t i = 0; i < eleOffsets_h.size(); i++) {
+        eleOffsets.push_back(eleOffsets_h[i]);
+      }
+      IdxVector_h vertOffsets_h(vert_offsets_d);
+      std::vector<int> vertOffsets;
+      for (size_t i = 0; i < vertOffsets_h.size(); i++) {
+        vertOffsets.push_back(vertOffsets_h[i]);
+      }*/
+
+
+      cudaSafeCall((kernel_run_check_neghbor << <nblocks, nthreads, shared_size >> >(
+        CAST(m_active_block_list_d),
+        CAST(m_Label_d),
+        largest_ele_part,
+        largest_vert_part,
+        full_num_ele,
+        CAST(ele_after_permute_d),
+        CAST(ele_offsets_d),
+        CAST(vert_offsets_d), //
+        CAST(m_DT_d),
+        CAST(ele_local_coords_d), 
+        largest_num_inside_mem, 
+        CAST(mem_locations), 
+        CAST(mem_location_offsets), 1,
+        CAST(DT_d_out), 
+        CAST(d_vert_con))));
+
       if (sharedSize <= 0) {
         printf("Error: zero shared size");
       }
@@ -214,7 +255,11 @@ void redistance::GenerateData(IdxVector_d& new_narrowband, int& new_num_narrowba
       // 5. reduction
       ////////////////////////////////////////////////////////////////
       nthreads = largest_vert_part;
-      run_reduction << <nblocks, nthreads >> >(CAST(d_vert_con), CAST(d_block_con), CAST(m_active_block_list_d), CAST(vert_offsets_d));
+      run_reduction << <nblocks, nthreads >> >(
+        CAST(d_vert_con), 
+        CAST(d_block_con),
+        CAST(m_active_block_list_d),
+        CAST(vert_offsets_d));
 
       //////////////////////////////////////////////////////////////////
       // 6. update active list

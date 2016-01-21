@@ -104,21 +104,18 @@ int main(int argc, char *argv[])
     for (size_t i = 0; i < data.tetMesh_->tets.size(); i++) {
       point p = (data.tetMesh_->vertices[data.tetMesh_->tets[i][0]] +
         data.tetMesh_->vertices[data.tetMesh_->tets[i][1]] +
-        data.tetMesh_->vertices[data.tetMesh_->tets[i][2]])
-        / 3.f - center;
+        data.tetMesh_->vertices[data.tetMesh_->tets[i][2]] +
+        data.tetMesh_->vertices[data.tetMesh_->tets[i][3]])
+        / 4.f - center;
       float mag = std::sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
       mag /= max / 20.f;
       if (type == "revolve") {
         //only care about XY plane angle
-        point pt = point(std::max(data.tetMesh_->vertices[data.tetMesh_->tets[i][0]][0],
-          std::max(data.tetMesh_->vertices[data.tetMesh_->tets[i][1]][0],
-          data.tetMesh_->vertices[data.tetMesh_->tets[i][2]][0])),
-          std::max(data.tetMesh_->vertices[data.tetMesh_->tets[i][1]][1],
-          std::max(data.tetMesh_->vertices[data.tetMesh_->tets[i][2]][1],
-          data.tetMesh_->vertices[data.tetMesh_->tets[i][3]][1])),0);
         //get the tangent to the central circle
-        point pt2 = pt CROSS point(0, 0, 1);
-        adv.push_back(pt2 * len(pt) / 100.f);
+        point p2 = p;
+        p2[2] = 0.f;
+        point p3 = p2 CROSS point(0, 0, 1);
+        adv.push_back(p3 / (len (p3)));
       } else {
         adv.push_back(p / mag / mag);
       }

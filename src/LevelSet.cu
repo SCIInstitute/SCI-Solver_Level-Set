@@ -133,7 +133,8 @@ void LevelSet::initializeMesh() {
 
       this->tetMesh_->init(in.pointlist, in.numberofpoints, in.trifacelist,
           in.numberoffacets, in.tetrahedronlist, in.numberoftetrahedra,
-          in.numberoftetrahedronattributes, in.tetrahedronattributelist,
+          in.tetrahedronattributelist,
+          std::vector<float>(),
           this->verbose_);
       this->tetMesh_->reorient();
       this->tetMesh_->need_neighbors(this->verbose_);

@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
         point p2 = p;
         p2[2] = 0.f;
         point p3 = p2 CROSS point(0, 0, 1);
-        adv.push_back(p3 / (len (p3)));
+        adv.push_back(p3 * len(p2) / (100.f * len (p3)));
       } else {
         adv.push_back(p / mag / mag);
       }

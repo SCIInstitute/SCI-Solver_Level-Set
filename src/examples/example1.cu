@@ -77,17 +77,17 @@ int main(int argc, char *argv[])
       center = center + data.tetMesh_->vertices[i];
     }
     center = center / static_cast<float>(data.tetMesh_->vertices.size());
-    double max = 0.;
+    float max = 0.;
     for (size_t i = 0; i < data.tetMesh_->vertices.size(); i++) {
       point p = data.tetMesh_->vertices[i] - center;
-      double mag = std::sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
+      float mag = len(p);
       max = std::max(max, mag);
     }
     //initialize values of verts
     std::vector<float> vals;
     for (size_t i = 0; i < data.tetMesh_->vertices.size(); i++) {
       point p = data.tetMesh_->vertices[i] - center;
-      double mag = std::sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
+      double mag = len(p);
       if (type == "revolve") {
         //get the angle with (+/-1,0,0)
         float val = p[0];
@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
         data.tetMesh_->vertices[data.tetMesh_->tets[i][2]] +
         data.tetMesh_->vertices[data.tetMesh_->tets[i][3]])
         / 4.f - center;
-      float mag = std::sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
+      float mag = len(p);
       mag /= max / 20.f;
       if (type == "revolve") {
         //only care about XY plane angle

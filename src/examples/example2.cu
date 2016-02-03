@@ -4,6 +4,7 @@ int main(int argc, char *argv[])
 {
   LevelSet data(true);
   std::string type = "x";
+  float isovalue = 0.;
   //input filename (minus extension)
   std::string filename;
   for (int i = 0; i < argc; i++) {
@@ -23,6 +24,10 @@ int main(int argc, char *argv[])
     else if (strcmp(argv[i], "-t") == 0) {
       if (i + 1 >= argc) break;
       data.timeStep_ = atof(argv[i + 1]);
+      i++;
+    } else if (strcmp(argv[i], "-o") == 0) {
+      if (i + 1 >= argc) break;
+      isovalue = atof(argv[i + 1]);
       i++;
     }
     else if (strcmp(argv[i], "-s") == 0) {
@@ -70,11 +75,12 @@ int main(int argc, char *argv[])
       std::cout << "   -b NUM_BLOCKS      # of blocks for Square partition type." << std::endl;
       std::cout << "   -m METIS_SIZE      The size for METIS partiation type." << std::endl;
       std::cout << "   -w BANDWIDTH       The Bandwidth for the algorithm." << std::endl;
-      std::cout << "   -y EXAMPLE_TYPE    Example type: 'revolve', 'x'" << std::endl;
+      std::cout << "   -y EXAMPLE_TYPE    Example type: 'revolve', 'x', 'center, 'curvature'" << std::endl;
+      std::cout << "   -o ISOVALUE        The isovalue for curvature." << std::endl;
       exit(0);
     }
   }
-  if (type == "center" || type == "revolve") {
+  if (type == "center" || type == "revolve" || type == "curvature") {
     //find the center, max from center
     data.initializeMesh();
     point center(0, 0, 0);
@@ -103,7 +109,12 @@ int main(int argc, char *argv[])
         if (p[1] < 0.f) {
           theta *= -1.f;
         }
-        vals.push_back(10.f * theta);
+        if (type == "revolve") {
+          vals.push_back(10.f * theta);
+        } else {
+          vals.push_back(std::max(std::abs(p[0]),
+            std::max(std::abs(p[1]), std::abs(p[2]))) - isovalue);
+        }
       }
     }
     //initialize advection to be away from the center.
@@ -121,7 +132,11 @@ int main(int argc, char *argv[])
       } else {
         //get the tangent to the central circle
         point p2 = p CROSS point(0, 0, 1);
-        adv.push_back(p2 * len(p) / 100.f);
+        if (type == "revolve") {
+          adv.push_back(p2 * len(p) / 100.f);
+        } else {
+          adv.push_back(point(0.f, 0.f, 0.f));
+        }
       }
     }
     data.initializeVertices(vals);

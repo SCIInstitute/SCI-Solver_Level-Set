@@ -5,6 +5,7 @@ int main(int argc, char *argv[])
 {
   LevelSet data(false,"../src/test/test_data/sphere334",false);
   std::string type = "x";
+  float isovalue = 0.;
   //input filename (minus extension)
   for (int i = 0; i < argc; i++) {
     if (strcmp(argv[i],"-v") == 0) {
@@ -37,6 +38,10 @@ int main(int argc, char *argv[])
       if (i+1 >= argc) break;
       data.partitionType_ = atoi(argv[i+1]);
       i++;
+    } else if (strcmp(argv[i], "-o") == 0) {
+      if (i + 1 >= argc) break;
+      isovalue = atof(argv[i + 1]);
+      i++;
     } else if (strcmp(argv[i],"-m") == 0) {
       if (i+1 >= argc) break;
       data.metisSize_ = atoi(argv[i+1]);
@@ -65,11 +70,12 @@ int main(int argc, char *argv[])
       std::cout << "   -b NUM_BLOCKS      # of blocks for Square partition type." << std::endl;
       std::cout << "   -m METIS_SIZE      The size for METIS partiation type." << std::endl;
       std::cout << "   -w BANDWIDTH       The Bandwidth for the algorithm." << std::endl;
-      std::cout << "   -y EXAMPLE_TYPE    Example type: 'center', 'revolve', 'x'" << std::endl;
+      std::cout << "   -y EXAMPLE_TYPE    Example type: 'center', 'revolve', 'x', 'curvature'" << std::endl;
+      std::cout << "   -o ISOVALUE        The isovalue for curvature." << std::endl;
       exit(0);
     }
   }
-  if (type == "center"  || type == "revolve") {
+  if (type == "center"  || type == "revolve" || type == "curvature") {
     //find the center, max from center
     data.initializeMesh();
     point center(0, 0, 0);
@@ -96,7 +102,12 @@ int main(int argc, char *argv[])
         if (p[1] < 0.f) theta *= -1.f;
         vals.push_back(10.f * theta);
       } else {
-        vals.push_back(mag - max / 2.);
+        if (type == "center") {
+          vals.push_back(mag - max / 2.);
+        } else {
+          vals.push_back(std::max(std::abs(p[0]),
+            std::max(std::abs(p[1]), std::abs(p[2]))) - isovalue);
+        }
       }
     }
     //initialize advection to be away from the center.
@@ -117,7 +128,11 @@ int main(int argc, char *argv[])
         point p3 = p2 CROSS point(0, 0, 1);
         adv.push_back(p3 * len(p2) / (100.f * len (p3)));
       } else {
-        adv.push_back(p / mag / mag);
+        if (type == "center") {
+          adv.push_back(p / mag / mag);
+        } else {
+          adv.push_back(point(0.f,0.f,0.f));
+        }
       }
     }
     data.initializeVertices(vals);

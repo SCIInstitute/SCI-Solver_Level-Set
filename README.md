@@ -106,8 +106,12 @@ Follow the example source code in <code>src/examples</code> to learn how to use 
 To run examples similar to the paper, the following example calls would do so:<br/>
 <b>2D LevelSet, Sphere </b><br/>
 <code>examples/Example2 -v -i ../src/test/test_data/sphere_1154verts.ply</code><br/>
+<b>2D LevelSet Curvature, Square </b><br/>
+<code>$ examples/Example2.exe -v -i ../src/test/test_data/SquareMesh_size16.ply -y curvature -o 0.5 -n 1</code><br/>
 <b>3D LevelSet, Torus </b> <br/>
-<code>examples/Example1 -v -i ../src/test/test_data/torus -y revolve -n 100</code><br/> 300</code><br/>
+<code>examples/Example1 -v -i ../src/test/test_data/torus -y revolve -n 100</code><br/> <br/>
+<b>3D LevelSet Curvature, Cube </b><br/>
+<code>$ examples/Example1.exe -v -i ../src/test/test_data/CubeMesh_size256step8_correct -y curvature -o 0.5 -n 1 -w 128</code><br/>
 
 Using the Library
 ==============

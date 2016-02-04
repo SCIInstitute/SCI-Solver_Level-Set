@@ -22,7 +22,7 @@ Table of Contents
 <h4>LevelSet Aknowledgements</h4>
 **<a href ="http://onlinelibrary.wiley.com/doi/10.1002/cpe.3320/full">Fast Parallel Solver for the 
 Levelset Equations on Unstructured Meshes</a>**<br/>
-<img src="https://raw.githubusercontent.com/SCIInstitute/SCI-Solver_Level-Set/master/src/Resources/cropped.png"  align="right" hspace="20" width=460>
+<img src="https://raw.githubusercontent.com/SCIInstitute/SCI-Solver_Level-Set/master/src/Resources/sphere.gif"  align="right" hspace="20" width=460>
 
 **AUTHORS:**
 <br/>Zhisong Fu(*a*) <br/>
@@ -39,10 +39,10 @@ Google Test</a> is used for testing.
 Requirements
 ==============
 
- * Git, CMake (3.0+ recommended), and the standard system build environment tools.
+ * Git, CMake (2.8+ recommended), and the standard system build environment tools.
  * You will need a CUDA Compatible Graphics card. See <a href="https://developer.nvidia.com/cuda-gpus">here</a> You will also need to be sure your card has CUDA compute capability of at least 2.0.
- * SCI-Solver_Level-Set is compatible with the latest CUDA toolkit (7.0). Download <a href="https://developer.nvidia.com/cuda-downloads">here</a>.
- * This project has been tested on OpenSuse 13.1 (Bottle) on NVidia GeForce GTX 680 HD, Windows 7 on NVidia GeForce GTX 775M, and OSX 10.10 on NVidia GeForce GTX 775M. 
+ * SCI-Solver_Level-Set is compatible with the latest CUDA toolkit (7.5). Download <a href="https://developer.nvidia.com/cuda-downloads">here</a>.
+ * This project has been tested on OpenSuse 13.1 (Bottle) on NVidia GeForce GTX 680 HD, Windows 10 on NVidia GeForce GTX 775M, and OSX 10.10 on NVidia GeForce GTX 775M. 
  * If you have a CUDA graphics card equal to or greater than our test machines and are experiencing issues, please contact the repository owners.
  * Windows: You will need Microsoft Visual Studio 2010+ build tools. This document describes the "NMake" process.
  * OSX: Please be sure to follow setup for CUDA <a href="http://docs.nvidia.com/cuda/cuda-getting-started-guide-for-mac-os-x/#axzz3W4nXNNin">here</a>. There are several compatability requirements for different MAC machines, including using a different version of CUDA (ie. 5.5).
@@ -71,7 +71,7 @@ nmake
 
 **Note:** For all platforms, you may need to specify your CUDA toolkit location (especially if you have multiple CUDA versions installed):
 ```c++
-cmake -DCUDA_TOOLKIT_ROOT_DIR="~/NVIDIA/CUDA-7.0" ../src
+cmake -DCUDA_TOOLKIT_ROOT_DIR="~/NVIDIA/CUDA-7.5" ../src
 ```
 (Assuming this is the location).
 
@@ -102,6 +102,12 @@ examples/Example1
 Each example has a <code>-h</code> flag that prints options for that example. <br/>
 
 Follow the example source code in <code>src/examples</code> to learn how to use the library.
+<br/>
+To run examples similar to the paper, the following example calls would do so:<br/>
+<b>2D LevelSet, Sphere </b><br/>
+<code>examples/Example2 -v -i ../src/test/test_data/sphere_1154verts.ply</code><br/>
+<b>3D LevelSet, Torus </b> <br/>
+<code>examples/Example1 -v -i ../src/test/test_data/torus -y revolve -n 100</code><br/> 300</code><br/>
 
 Using the Library
 ==============
@@ -135,6 +141,12 @@ int main(int argc, char *argv[])
 }
 ```
 
+The following accessor functions are available before running the solver:
+```c++
+void LevelSet::initializeVertices(std::vector<float> values);
+void LevelSet::initializeAdvection(std::vector<point> values);
+void LevelSet::initializeMesh();
+```
 The following accessor functions are available after running the solver:
 ```c++
 std::vector < float > LevelSet::getResultAtIteration(size_t i);
@@ -163,6 +175,7 @@ std::vector < std::vector < LevelsetValueType > > LevelSet::time_values_;
       LevelsetValueType bandwidth_;     //The algorithm bandwidth             [Default 16.]
       int metisSize_;                   //If unstructured, # of METIS patches [Default 16]
       int isTriMesh_;                   //If this is a triangle mesh          [Default true]
+      ...
   };
 ```
 <br/>

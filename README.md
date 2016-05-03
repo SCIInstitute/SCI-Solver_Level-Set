@@ -1,7 +1,7 @@
-SCI-Solver_Level-Set
+GPUTUM: Level-Set
 ====================
 
-SCI-Solver_Level-Set is a C++/CUDA library written to solve a system of level set equations on unstructured meshes. It is designed to solve the equations quickly by using GPU hardware.
+GPUTUM Level-Set is a C++/CUDA library written to solve a system of level set equations on unstructured meshes. It is designed to solve the equations quickly by using GPU hardware.
 
 The code was written by Zhisong Fu at the Scientific Computing and Imaging Institute, 
 University of Utah, Salt Lake City, USA. The theory behind this code is published in the papers linked below. 

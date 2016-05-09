@@ -195,6 +195,7 @@ expected results. To build the tests, you will need to set
 ```c++
 cmake -DBUILD_TESTING=ON ../src
 ```
+**NOTE** No regression tests have been implemented for this library yet.
 <h4>Windows</h4>
 The gtest library included in the repo needs to be built with 
 forced shared libraries on Windows, so use the following:

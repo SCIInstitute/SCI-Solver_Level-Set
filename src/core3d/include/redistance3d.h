@@ -9,7 +9,6 @@
 #include <time.h>
 #include <stdio.h>
 #include <types.h>
-using namespace std;
 
 #ifndef _EPS
 #define _EPS 1e-9
@@ -55,7 +54,7 @@ public:
     block_xadj_h = IdxVector_h(block_xadj.begin(), block_xadj.end());
     block_adjncy_h = IdxVector_h(block_adjncy.begin(), block_adjncy.end());
     h_ActiveList = IdxVector_h(nparts);
-    h_BlockLabel = vector<int>(nparts, FarPoint);
+    h_BlockLabel = std::vector<int>(nparts, FarPoint);
     d_block_vertT_min = Vector_d(nparts);
     h_block_vertT_min = Vector_h(nparts);
   };
@@ -65,14 +64,14 @@ public:
   };
 
   int NumComputation;
-  list<index> m_ActivePoints;
-  vector<index> m_SeedPoints;
-  vector<LabelType> m_Label;
+  std::list<index> m_ActivePoints;
+  std::vector<index> m_SeedPoints;
+  std::vector<LabelType> m_Label;
   IdxVector_d m_Label_d;
   IdxVector_d m_active_block_list_d;
   Vector_d m_DT_d;
   CharVector_d m_Tsign_d;
-  vector<int> h_ActiveListNew;
+  std::vector<int> h_ActiveListNew;
   IdxVector_d tmp_new_narrowband;
   Vector_d DT_d_out;
   IdxVector_d d_vert_con;
@@ -82,7 +81,7 @@ public:
   IdxVector_h block_adjncy_h;
 
   IdxVector_h h_ActiveList;
-  vector<int> h_BlockLabel;
+  std::vector<int> h_BlockLabel;
   Vector_d d_block_vertT_min;
   Vector_h h_block_vertT_min;
 };

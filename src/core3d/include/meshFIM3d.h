@@ -18,7 +18,7 @@ class meshFIM3d
 {
   public:
 
-    void updateT_single_stage(float, int, int, vector<int>&);
+    void updateT_single_stage(float, int, int, std::vector<int>&);
     void updateT_single_stage_d(float, int, IdxVector_d&, int);
     void getPartIndicesNegStart(IdxVector_d& sortedPartition, IdxVector_d& partIndices);
     void mapAdjacencyToBlock(IdxVector_d &adjIndexes, IdxVector_d &adjacency,
@@ -69,7 +69,7 @@ class meshFIM3d
     TetMesh* m_meshPtr;
     redistance3d* m_redist;
     int NumComputation;
-    vector<int> narrowband;
+    std::vector<int> narrowband;
     IdxVector_h npart_h;
     IdxVector_d m_npart_d;
     IdxVector_d m_part_label_d;

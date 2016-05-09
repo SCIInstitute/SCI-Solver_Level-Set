@@ -19,7 +19,7 @@ class meshFIM2d
 {
   public:
 
-    void updateT_single_stage(double, int, int, vector<int>&);
+    void updateT_single_stage(double, int, int, std::vector<int>&);
     void updateT_single_stage_d(double, int, IdxVector_d&, int);
     void getPartIndicesNegStart(IdxVector_d& sortedPartition,
       IdxVector_d& partIndices);
@@ -61,7 +61,7 @@ class meshFIM2d
     TriMesh* m_meshPtr;
     redistance* m_redist;
     int NumComputation;
-    vector<int> narrowband;
+    std::vector<int> narrowband;
     IdxVector_h npart_h;
     IdxVector_d m_npart_d;
     IdxVector_d m_part_label_d;

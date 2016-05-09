@@ -113,6 +113,9 @@ To run examples similar to the paper, the following example calls would do so:<b
 <b>3D LevelSet Curvature, Cube </b><br/>
 <code>$ examples/Example1.exe -v -i ../src/test/test_data/CubeMesh_size256step8_correct -y curvature -o 0.5 -n 1 -w 128</code><br/>
 
+**NOTE** All examples output a set of <code>result.vtk</code> VTK files in the current directory 
+numbered with the time step iterations. These files are easily viewed via VTK readers like Paraview.
+
 Using the Library
 ==============
 

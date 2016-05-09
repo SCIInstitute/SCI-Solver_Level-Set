@@ -100,18 +100,18 @@ void meshFIM3d::updateT_single_stage_d(float timestep, int niter, IdxVector_d& n
 
 //Single stage update
 
-void meshFIM3d::updateT_single_stage(float timestep, int nside, int niter, vector<int>& narrowband)
+void meshFIM3d::updateT_single_stage(float timestep, int nside, int niter, std::vector<int>& narrowband)
 {
   vec3 sigma(1.0, 0.0, 1.0);
   float epsilon = 1.0;
   int nv = m_meshPtr->vertices.size();
   int nt = m_meshPtr->tets.size();
-  vector<float> values(4);
-  vector<float> up(nv, 0.0);
-  vector<float> down(nv, 0.0);
-  vector<vec3> node_grad_phi_up(nv, vec3(0.0, 0.0, 0.0));
-  vector<float> node_grad_phi_down(nv, 0.0);
-  vector<float> curv_up(nv, 0.0);
+  std::vector<float> values(4);
+  std::vector<float> up(nv, 0.0);
+  std::vector<float> down(nv, 0.0);
+  std::vector<vec3> node_grad_phi_up(nv, vec3(0.0, 0.0, 0.0));
+  std::vector<float> node_grad_phi_down(nv, 0.0);
+  std::vector<float> curv_up(nv, 0.0);
 
 
   for(int bandidx = 0; bandidx < narrowband.size(); bandidx++)
@@ -122,7 +122,7 @@ void meshFIM3d::updateT_single_stage(float timestep, int nside, int niter, vecto
       values[j] = m_meshPtr->vertT[m_meshPtr->tets[tidx][j]];
     }
     //compute ni normals
-    vector<vec3> nodes(4);
+    std::vector<vec3> nodes(4);
     nodes[0] = (vec3)m_meshPtr->vertices[m_meshPtr->tets[tidx][0]];
     nodes[1] = (vec3)m_meshPtr->vertices[m_meshPtr->tets[tidx][1]];
     nodes[2] = (vec3)m_meshPtr->vertices[m_meshPtr->tets[tidx][2]];
@@ -171,13 +171,13 @@ void meshFIM3d::updateT_single_stage(float timestep, int nside, int niter, vecto
     float b43 = a11 * a23 * a42 + a12 * a21 * a43 + a13 * a22 * a41 - a11 * a22 * a43 - a12 * a23 * a41 - a13 * a21 * a42;
     float b44 = a11 * a22 * a33 + a12 * a23 * a31 + a13 * a21 * a32 - a11 * a23 * a32 - a12 * a21 * a33 - a13 * a22 * a31;
 
-    vector<vec4> Arows(4);
+    std::vector<vec4> Arows(4);
     Arows[0] = vec4(b11 / det, b12 / det, b13 / det, b14 / det);
     Arows[1] = vec4(b21 / det, b22 / det, b23 / det, b24 / det);
     Arows[2] = vec4(b31 / det, b32 / det, b33 / det, b34 / det);
     Arows[3] = vec4(b41 / det, b42 / det, b43 / det, b44 / det);
 
-    vector<vec3> nablaN(4);
+    std::vector<vec3> nablaN(4);
     for(int i = 0; i < 4; i++)
     {
       vec4 RHS(0.0, 0.0, 0.0, 0.0);
@@ -198,9 +198,9 @@ void meshFIM3d::updateT_single_stage(float timestep, int nside, int niter, vecto
     float abs_nabla_phi = len(nablaPhi);
 
     //compute K and Kplus and Kminus
-    vector<float> Kplus(4);
-    vector<float> Kminus(4);
-    vector<float> K(4);
+    std::vector<float> Kplus(4);
+    std::vector<float> Kminus(4);
+    std::vector<float> K(4);
     float Hintegral = 0.0;
     float beta = 0;
     for(int i = 0; i < 4; i++)
@@ -215,14 +215,14 @@ void meshFIM3d::updateT_single_stage(float timestep, int nside, int niter, vecto
 
     if(fabs(Hintegral) > 1e-16)
     {
-      vector<float> delta(4);
+      std::vector<float> delta(4);
       for(int i = 0; i < 4; i++)
       {
         delta[i] = Kplus[i] * beta * (Kminus[0] * (values[i] - values[0]) + Kminus[1] * 
           (values[i] - values[1]) + Kminus[2] * (values[i] - values[2]) + Kminus[3] * (values[i] - values[3]));
       }
 
-      vector<float> alpha(4);
+      std::vector<float> alpha(4);
       for(int i = 0; i < 4; i++)
       {
         alpha[i] = delta[i] / Hintegral;
@@ -234,7 +234,7 @@ void meshFIM3d::updateT_single_stage(float timestep, int nside, int niter, vecto
         theta += fmax((float)0.0, alpha[i]);
       }
 
-      vector<float> alphatuda(4);
+      std::vector<float> alphatuda(4);
       for(int i = 0; i < 4; i++)
       {
         alphatuda[i] = fmax(alpha[i], (float)0.0) / theta;

@@ -115,6 +115,8 @@ To run examples similar to the paper, the following example calls would do so:<b
 
 **NOTE** All examples output a set of <code>result.vtk</code> VTK files in the current directory 
 numbered with the time step iterations. These files are easily viewed via VTK readers like Paraview.
+You can clip and add iso-values to more distinctly visualize the result. Opening the set of files
+at one time allows you to run a time sequence to view the iteration steps.
 
 Using the Library
 ==============

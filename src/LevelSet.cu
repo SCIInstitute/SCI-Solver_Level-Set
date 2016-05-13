@@ -127,7 +127,7 @@ void LevelSet::initializeMesh() {
       tetgenio in, addin, bgmin, out;
       if (!in.load_tetmesh((char*)this->filename_.c_str(), this->verbose_))
       {
-        std::cerr << "File open failed!!" << std::endl; 
+        std::cerr << "File open failed!!" << std::endl;
         exit(0);
       }
 
@@ -152,8 +152,8 @@ void LevelSet::solveLevelSet() {
     cudaDeviceProp deviceProp;
     cudaGetDeviceProperties(&deviceProp, device);
     if (this->verbose_)
-      std::cout << "Device %d has compute capability " << 
-      device << ": " << deviceProp.major << "." << deviceProp.minor << std::endl;
+      std::cout << "Device %d has compute capability " <<
+        device << ": " << deviceProp.major << "." << deviceProp.minor << std::endl;
   }
   device = 0;
 
@@ -259,8 +259,10 @@ void LevelSet::printErrorGraph(std::vector<float> solution) {
   float max_err = rmsError[0];
   float min_err = rmsError[rmsError.size() - 1];
   int max_log = -10, min_log = 10;
-  while (std::pow(static_cast<float>(10), max_log) < max_err) max_log++;
-  while (std::pow(static_cast<float>(10), min_log) > min_err) min_log--;
+  while (std::powf(static_cast<float>(10),
+        static_cast<float>(max_log)) < max_err) max_log++;
+  while (std::powf(static_cast<float>(10),
+        static_cast<float>(min_log)) > min_err) min_log--;
   // print the error graph
   std::cout << "\n\nlog(Err)|\n";
   bool printTick = true;
@@ -271,8 +273,10 @@ void LevelSet::printErrorGraph(std::vector<float> solution) {
       std::cout << "        |";
     }
     for (size_t j = 0; j < this->numIterations(); j++) {
-      if (rmsError[j] > std::pow(static_cast<float>(10), i) &&
-        rmsError[j] < std::pow(static_cast<float>(10), i + 1))
+      if (rmsError[j] > std::powf(static_cast<float>(10),
+            static_cast<float>(i)) &&
+          rmsError[j] < std::powf(static_cast<float>(10),
+            static_cast<float>(i + 1)))
         std::cout << "*";
       else
         std::cout << " ";

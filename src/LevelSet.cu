@@ -259,9 +259,9 @@ void LevelSet::printErrorGraph(std::vector<float> solution) {
   float max_err = rmsError[0];
   float min_err = rmsError[rmsError.size() - 1];
   int max_log = -10, min_log = 10;
-  while (std::powf(static_cast<float>(10),
+  while (std::pow(static_cast<float>(10),
         static_cast<float>(max_log)) < max_err) max_log++;
-  while (std::powf(static_cast<float>(10),
+  while (std::pow(static_cast<float>(10),
         static_cast<float>(min_log)) > min_err) min_log--;
   // print the error graph
   std::cout << "\n\nlog(Err)|\n";
@@ -273,9 +273,9 @@ void LevelSet::printErrorGraph(std::vector<float> solution) {
       std::cout << "        |";
     }
     for (size_t j = 0; j < this->numIterations(); j++) {
-      if (rmsError[j] > std::powf(static_cast<float>(10),
+      if (rmsError[j] > std::pow(static_cast<float>(10),
             static_cast<float>(i)) &&
-          rmsError[j] < std::powf(static_cast<float>(10),
+          rmsError[j] < std::pow(static_cast<float>(10),
             static_cast<float>(i + 1)))
         std::cout << "*";
       else

@@ -52,7 +52,8 @@ Building
 
 <h3>Linux and OSX</h3>
 In a terminal:
-```c++
+
+```console
 mkdir SCI-Solver_Level-Set/build
 cd SCI-Solver_Level-Set/build
 cmake ../src
@@ -62,7 +63,8 @@ make
 <h3>Windows</h3>
 Open a Visual Studio (32 or 64 bit) Native Tools Command Prompt. 
 Follow these commands:
-```c++
+
+```console
 mkdir C:\Path\To\SCI-Solver_Level-Set\build
 cd C:\Path\To\SCI-Solver_Level-Set\build
 cmake -G "NMake Makefiles" ..\src
@@ -70,14 +72,15 @@ nmake
 ```
 
 **Note:** For all platforms, you may need to specify your CUDA toolkit location (especially if you have multiple CUDA versions installed):
-```c++
+
+```console
 cmake -DCUDA_TOOLKIT_ROOT_DIR="~/NVIDIA/CUDA-7.5" ../src
 ```
 (Assuming this is the location).
 
 **Note:** If you have compile errors such as <code>undefined reference: atomicAdd</code>, it is likely you need to set your compute capability manually. CMake outputs whether compute capability was determined automatically, or if you need to set it manually. The default minimum compute capability is 2.0.
 
-```c++
+```console
 cmake -DCUDA_COMPUTE_CAPABILITY=20 ../src
 make
 ```
@@ -87,7 +90,7 @@ Running Examples
 
 You will need to enable examples in your build to compile and run them.
 
-```c++
+```console
 cmake -DBUILD_EXAMPLES=ON ../src
 make
 ```
@@ -96,7 +99,7 @@ You will find the example binaries built in the <code>build/examples</code> dire
 
 Run the example in the build directory:
 
-```c++
+```console
 examples/Example1 
 ```
 Each example has a <code>-h</code> flag that prints options for that example. <br/>
